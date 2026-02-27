@@ -1,0 +1,17 @@
+
+{
+
+  "include": ["backend"],
+
+  "pythonPath": "./venv/bin/python",
+
+  "pythonVersion": "3.14",
+
+  "venvPath": ".",
+
+  "venv": "venv",
+
+  "extraPaths": ["backend"]
+
+}
+
