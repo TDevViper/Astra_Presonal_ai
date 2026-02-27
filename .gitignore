@@ -1,0 +1,54 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.Python
+
+# Virtual Environments
+.venv/
+venv/
+venv311/
+
+# Environment Variables
+.env
+
+# =========================
+# Node / Frontend
+# =========================
+node_modules/
+dist/
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+
+# =========================
+# macOS
+# =========================
+.DS_Store
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+
+# =========================
+# Model Files
+# =========================
+*.pt
+*.pth
+*.h5
+
+
+# memory.json
+
+backend/data/
+backend/memory/data/
+memory.json
+*.sqlite3
