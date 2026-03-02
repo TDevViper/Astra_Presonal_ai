@@ -9,11 +9,11 @@ class CapabilityManager:
     
     def __init__(self):
         self._capabilities = {
-            "web_search": False,
-            "file_read": True,
-            "file_write": False,
-            "python_exec": True,
-            "memory_read": True,
+            "web_search":   True,   # enabled — search_agent is implemented
+            "file_read":    True,
+            "file_write":   False,
+            "python_exec":  True,
+            "memory_read":  True,
             "memory_write": True,
         }
     

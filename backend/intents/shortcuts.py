@@ -16,20 +16,10 @@ CAN_DO_HINDI     = "Main baat kar sakta hoon, web search kar sakta hoon, cheezei
 
 INTENTS = {
     # ── CREATOR (English) ──────────────────────────────────
-    "who made you":        CREATOR_RESPONSE,
-    "who created you":     CREATOR_RESPONSE,
-    "who built you":       CREATOR_RESPONSE,
-    "who developed you":   CREATOR_RESPONSE,
-    "your creator":        CREATOR_RESPONSE,
     "did arnav":           CREATOR_RESPONSE,
     "arnav build":         CREATOR_RESPONSE,
     "arnav made":          CREATOR_RESPONSE,
     "arnav create":        CREATOR_RESPONSE,
-    "made by":             CREATOR_RESPONSE,
-    "built by":            CREATOR_RESPONSE,
-    "created by":          CREATOR_RESPONSE,
-    "who is your creator": CREATOR_RESPONSE,
-    "who programmed you":  CREATOR_RESPONSE,
 
     # ── CREATOR (Hindi) ────────────────────────────────────
     "kisne banaya":        CREATOR_HINDI,
@@ -40,12 +30,8 @@ INTENTS = {
     "arnav ne banaya":     CREATOR_HINDI,
 
     # ── IDENTITY (English) ─────────────────────────────────
-    "who are you":         WHO_ARE_YOU,
-    "what are you":        WHO_ARE_YOU,
     "your name":           WHO_ARE_YOU,
     "what's your name":    WHO_ARE_YOU,
-    "introduce yourself":  WHO_ARE_YOU,
-    "tell me about yourself": WHO_ARE_YOU,
 
     # ── IDENTITY (Hindi) ───────────────────────────────────
     "tum kaun ho":         WHO_HINDI,
@@ -73,7 +59,6 @@ INTENTS = {
     "hello":               HOW_ARE_YOU,
 
     # ── CAPABILITIES (English) ─────────────────────────────
-    "what can you do":     WHAT_CAN_YOU_DO,
     "what you can do":     WHAT_CAN_YOU_DO,
     "your abilities":      WHAT_CAN_YOU_DO,
     "your features":       WHAT_CAN_YOU_DO,

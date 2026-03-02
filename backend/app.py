@@ -37,6 +37,9 @@ class ColoredFormatter(logging.Formatter):
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+logging.getLogger("agents.react_agent").setLevel(logging.INFO)
+logging.getLogger("agents.reasoner").setLevel(logging.INFO)
+logging.getLogger("agents.critic").setLevel(logging.INFO)
 handler = logging.StreamHandler()
 handler.setFormatter(ColoredFormatter())
 logger.addHandler(handler)
