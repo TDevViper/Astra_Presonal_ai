@@ -9,9 +9,10 @@ from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
-# Path to memory file
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MEMORY_FILE = os.path.join(os.path.dirname(BASE_DIR), "memory.json")
+# Path to memory file — unified with config.py
+# backend/memory/memory_engine.py → go up one level = backend/ → memory/data/memory.json
+BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # = backend/
+MEMORY_FILE = os.path.join(BASE_DIR, "memory", "data", "memory.json")
 
 DEFAULT_MEMORY = {
     "user_facts": [],
@@ -64,7 +65,7 @@ def save_memory(memory: Dict[str, Any]) -> bool:
         return False
 
 
-def update_memory(memory: dict, category: str, key: str = None, value=None):
+def update_memory(memory: dict, category: str, key: "str | None" = None, value=None):
     """
     Update memory structure safely.
     
@@ -93,4 +94,3 @@ def update_memory(memory: dict, category: str, key: str = None, value=None):
         memory[category][key] = value
 
     return memory
-

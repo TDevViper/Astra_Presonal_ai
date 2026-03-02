@@ -36,8 +36,9 @@ function VoiceButton({ onTranscript }) {
       });
       const d = await r.json();
       if (d.text?.trim()) onTranscript(d.text.trim());
-    } catch {}
-    finally { setState("idle"); }
+     } catch (err) {
+      console.error("Voice listen failed:", err);
+    } finally { setState("idle"); }
   };
   return (
     <button onClick={handle} disabled={state !== "idle"} style={{
@@ -242,9 +243,15 @@ export default function App() {
     }
   };
 
-  const fetchMemory = async () => {
-    try { const r = await fetch(`${API}/memory`); if (r.ok) setMemory(await r.json()); } catch {}
-  };
+  // ✅ FIXED
+const fetchMemory = async () => {
+  try {
+    const r = await fetch(`${API}/memory`);
+    if (r.ok) setMemory(await r.json());
+  } catch (err) {
+    console.error("Failed to fetch memory:", err);
+  }
+};
 
   const addSystem = (text) => setMessages(p => [...p, { role: "system", content: text, id: Date.now() }]);
 

@@ -40,6 +40,9 @@ from reflection.refinement import refine_reply
 from websearch.search_agent import WebSearchAgent
 
 from utils.cleaner import clean_text
+from memory.episodic import store_episode, build_episodic_context
+from core.self_awareness import is_self_query, get_self_response
+from personality.system import build_system_prompt
 from utils.polisher import polish_reply
 from utils.limiter import limit_words
 
@@ -89,6 +92,10 @@ class Brain:
             memory    = load_memory()
             memory    = ensure_emotion_memory(memory)
             user_name = memory.get("preferences", {}).get("name", "Arnav")
+            user_loc  = memory.get("preferences", {}).get("location", "")
+
+            # Keep TruthGuard in sync with latest user info
+            self.truth_guard.update_user_info(user_name=user_name, user_location=user_loc)
 
             # ── 1. Emotion ────────────────────────────────────
             emotion_label, emotion_score = detect_emotion(user_input)
@@ -103,6 +110,16 @@ class Brain:
                     reply=shortcut, emotion=emotion_label,
                     intent="shortcut", agent="intent_handler",
                     confidence=confidence_score("shortcut", "shortcut")
+                )
+
+            # ── 2.1 Self-awareness ────────────────────────────
+            if is_self_query(user_input):
+                reply = get_self_response(user_input, user_name)
+                save_memory(memory)
+                return self._build_reply(
+                    reply=reply, emotion=emotion_label,
+                    intent="self_awareness", agent="self",
+                    confidence=1.0
                 )
 
             # ── 2.5 Tools ─────────────────────────────────────
@@ -164,33 +181,71 @@ class Brain:
             selected_model = self.model_manager.select_model(user_input, query_intent)
             logger.info(f"model_selected | model={selected_model} intent={query_intent}")
 
-            # ── 7. Reasoning ──────────────────────────────────
-            processed_input = reason(user_input)
+            # ── 7. Reasoning pre-process ──────────────────────
+            processed_input = reason(user_input, model=selected_model)
 
             # ── 8. Context with semantic memory ───────────────
             semantic_ctx, sem_confidence_boost = build_semantic_context(
                 user_input, user_name=user_name
             )
-            context = self._build_context(memory, user_name, user_input, semantic_ctx)
+            # Episodic context — past conversations
+            episodic_ctx = build_episodic_context(user_input, user_name)
 
-            # ── 9. History ────────────────────────────────────
-            self._add_to_history("user", processed_input)
+            # Build rich personality-aware system prompt
+            from utils.language_detector import detect_language, get_language_instruction
+            lang = detect_language(user_input)
+            lang_instr = get_language_instruction(lang)
+            context = build_system_prompt(
+                user_name=user_name, memory=memory,
+                emotion=emotion_label, intent=query_intent,
+                episodic_ctx=episodic_ctx, semantic_ctx=semantic_ctx,
+                lang_instruction=lang_instr
+            )
 
-            # ── 10. LLM call ──────────────────────────────────
-            messages = [{"role": "system", "content": context}] + self.conversation_history
-
-            try:
-                response = ollama.chat(
+            # ── 9. ReAct for complex queries ───────────────────
+            from agents.react_agent import react, needs_react
+            react_reply = ""
+            if needs_react(user_input):
+                logger.info("⚛️  ReAct agent triggered")
+                react_reply = react(
+                    user_input,
                     model=selected_model,
-                    messages=messages,
-                    options={"temperature": 0.7, "num_predict": 400, "top_p": 0.9}
+                    context=semantic_ctx,
+                    user_name=user_name
                 )
-                reply = response["message"]["content"]
-            except Exception:
-                reply = "I can't reach my model right now."
+
+            if react_reply and len(react_reply.split()) >= 10:
+                reply = react_reply
+                self._add_to_history("user", processed_input)
+                self._add_to_history("assistant", reply)
+                # ReAct replies: skip word limiter, apply only fast fixes
+                reply = reply.strip()
+                save_memory(memory)
+                return self._build_reply(
+                    reply=reply, emotion=emotion_label,
+                    intent=query_intent, agent=f"ollama/{selected_model}",
+                    memory_updated=memory_updated, confidence=0.85
+                )
+            else:
+                # ── 10. Standard LLM call ─────────────────────
+                self._add_to_history("user", processed_input)
+                messages = [{"role": "system", "content": context}] + self.conversation_history
+
+                try:
+                    response = ollama.chat(
+                        model=selected_model,
+                        messages=messages,
+                        options={"temperature": 0.7, "num_predict": 400, "top_p": 0.9}
+                    )
+                    reply = response["message"]["content"]
+                except Exception:
+                    reply = "I can't reach my model right now."
+
+                self._add_to_history("assistant", reply)
 
             # ── 11. Post-processing ───────────────────────────
-            reply = critic_review(reply, user_name, memory)
+            reply = critic_review(reply, user_name, memory, user_input=user_input,
+                                  model=selected_model)
             reply = refine_reply(reply, memory, user_name)
 
             is_valid, violation = self.truth_guard.validate(reply)
@@ -198,7 +253,7 @@ class Brain:
                 reply = self.truth_guard.get_safe_reply(violation)
 
             reply = polish_reply(reply)
-            reply = limit_words(reply, max_words=60)  # Priority 6: hard brevity
+            reply = limit_words(reply, max_words=150)  # Context-aware: technical gets 200, casual gets 150
 
             if emotion_score > 0.7 and emotion_label in ["sad", "angry", "anxious", "tired"]:
                 emo   = emotion_reply(emotion_label, emotion_score, user_name, memory)
@@ -222,6 +277,10 @@ class Brain:
             base_conf = confidence_score(f"ollama/{selected_model}", query_intent)
             final_conf = max(base_conf, sem_confidence_boost)  # Priority 4
             logger.info(f"confidence_score | base={base_conf:.2f} semantic_boost={sem_confidence_boost:.2f} final={final_conf:.2f}")
+
+            # Store episode for long-term episodic memory
+            store_episode(user_input, reply, intent=query_intent,
+                          emotion=emotion_label, user_name=user_name)
 
             return self._build_reply(
                 reply=reply, emotion=emotion_label,
