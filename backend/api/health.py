@@ -4,6 +4,7 @@
 # ==========================================
 
 from flask import Blueprint, jsonify
+from core.proactive import get_welcome_back, analyze_patterns
 import ollama
 
 health_bp = Blueprint("health", __name__)
@@ -20,6 +21,17 @@ def health():
     # Overall status = degraded if any component is down
     if any(v.get("status") == "error" for v in status.values() if isinstance(v, dict)):
         status["status"] = "degraded"
+
+    # Add welcome back message
+    try:
+        welcome = get_welcome_back(user_name="Arnav")
+        if welcome:
+            status["welcome"] = welcome
+        patterns = analyze_patterns()
+        if patterns.get("top_topics"):
+            status["frequent_topics"] = patterns["top_topics"][:3]
+    except Exception:
+        pass
 
     return jsonify(status), 200 if status["status"] == "ok" else 207
 

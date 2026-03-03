@@ -1,3 +1,23 @@
+
+def duckduckgo_search(query: str, num_results: int = 5) -> list:
+    """Free search fallback — no API key needed."""
+    try:
+        from duckduckgo_search import DDGS
+        results = []
+        with DDGS() as ddgs:
+            for r in ddgs.text(query, max_results=num_results):
+                results.append({
+                    "title":   r.get("title", ""),
+                    "snippet": r.get("body", ""),
+                    "source":  r.get("href", ""),
+                    "type":    "organic"
+                })
+        logger.info(f"🦆 DuckDuckGo: {len(results)} results for: {query}")
+        return results
+    except Exception as e:
+        logger.error(f"DuckDuckGo failed: {e}")
+        return []
+
 # astra_engine/websearch/search.py
 
 import os
@@ -14,8 +34,8 @@ SERPER_URL = "https://google.serper.dev/search"
 def serper_search(query: str, num_results: int = 5) -> Optional[list]:
     """Search Google via Serper API."""
     if not SERPER_API_KEY:
-        logger.error("❌ SERPER_API_KEY not set in .env")
-        return None
+        logger.warning("⚠️  No SERPER key — using DuckDuckGo")
+        return duckduckgo_search(query, num_results)
 
     try:
         response = requests.post(

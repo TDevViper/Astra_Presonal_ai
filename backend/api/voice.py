@@ -1,82 +1,77 @@
+# ==========================================
+# api/voice.py — JARVIS Voice API
+# ==========================================
+
 import logging
 from flask import Blueprint, request, jsonify
 
-logger = logging.getLogger(__name__)
-
-voice_bp = Blueprint("voice", __name__)
-
-
-@voice_bp.route("/voice/status", methods=["GET"])
-def voice_status():
-    """Get voice engine status."""
-    from voice.voice_engine import voice_engine
-    return jsonify(voice_engine.get_status())
-
-
-@voice_bp.route("/voice/start", methods=["POST"])
-def voice_start():
-    """Start voice mode."""
-    try:
-        from voice.voice_engine import voice_engine
-        data = request.get_json() or {}
-        mode = data.get("mode", "wake_word")  # wake_word | push_to_talk
-
-        if mode == "wake_word":
-            voice_engine.start_wake_word_mode()
-            return jsonify({"status": "started", "mode": "wake_word"})
-
-        elif mode == "push_to_talk":
-            duration = data.get("duration", 5)
-            voice_engine.start_push_to_talk(duration=duration)
-            return jsonify({"status": "listening", "mode": "push_to_talk", "duration": duration})
-
-        return jsonify({"error": "Invalid mode. Use 'wake_word' or 'push_to_talk'"}), 400
-
-    except Exception as e:
-        logger.error(f"❌ Voice start error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-
-@voice_bp.route("/voice/stop", methods=["POST"])
-def voice_stop():
-    """Stop voice engine."""
-    try:
-        from voice.voice_engine import voice_engine
-        voice_engine.stop()
-        return jsonify({"status": "stopped"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+logger    = logging.getLogger(__name__)
+voice_bp  = Blueprint("voice", __name__)
 
 
 @voice_bp.route("/voice/say", methods=["POST"])
-def voice_say():
-    """Make ASTRA speak a specific text."""
+def say():
+    """Speak text aloud."""
+    data = request.get_json()
+    text = data.get("text", "").strip()
+    if not text:
+        return jsonify({"error": "No text"}), 400
     try:
-        data = request.get_json()
-        text = data.get("text", "")
-        if not text:
-            return jsonify({"error": "No text provided"}), 400
-
-        from voice.speaker import speak_async
-        speak_async(text)
-        return jsonify({"status": "speaking", "text": text})
-
+        from voice.voice_engine import speak
+        speak(text)
+        return jsonify({"status": "speaking", "text": text[:100]})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
 @voice_bp.route("/voice/listen", methods=["POST"])
-def voice_listen():
+def listen():
     """Record audio and return transcription."""
+    data     = request.get_json() or {}
+    duration = int(data.get("duration", 5))
     try:
-        data = request.get_json() or {}
-        duration = data.get("duration", 5)
-
-        from voice.listener import listen
-        text = listen(duration=duration)
-
-        return jsonify({"status": "transcribed", "text": text})
-
+        from voice.voice_engine import listen_once
+        text = listen_once(duration=duration)
+        return jsonify({"text": text, "duration": duration})
     except Exception as e:
-        logger.error(f"❌ Listen error: {e}")
+        logger.error(f"Listen error: {e}")
+        return jsonify({"error": str(e), "text": ""}), 500
+
+
+@voice_bp.route("/voice/start", methods=["POST"])
+def start_wake():
+    """Start wake word listener."""
+    try:
+        from voice.voice_engine import WakeWordListener
+        from core.brain import brain
+
+        def on_wake(query: str):
+            """Process voice query through brain."""
+            result = brain.process(query)
+            reply  = result.get("reply", "")
+            if reply:
+                from voice.voice_engine import speak
+                speak(reply)
+
+        global _wake_listener
+        _wake_listener = WakeWordListener(callback=on_wake)
+        _wake_listener.start()
+
+        return jsonify({"status": "listening", "wake_word": "hey astra"})
+    except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@voice_bp.route("/voice/stop", methods=["POST"])
+def stop_wake():
+    """Stop wake word listener."""
+    try:
+        global _wake_listener
+        if _wake_listener:
+            _wake_listener.stop()
+        return jsonify({"status": "stopped"})
+    except Exception:
+        return jsonify({"status": "stopped"})
+
+
+_wake_listener = None

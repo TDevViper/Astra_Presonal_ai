@@ -42,11 +42,13 @@ from websearch.search_agent import WebSearchAgent
 from utils.cleaner import clean_text
 from memory.episodic import store_episode, build_episodic_context
 from core.self_awareness import is_self_query, get_self_response
+from core.proactive import get_proactive_suggestion, get_session_summary
 from personality.system import build_system_prompt
 from utils.polisher import polish_reply
 from utils.limiter import limit_words
 
 from tools.tool_router import detect_tool
+from tools.system_controller import handle_system_command, is_system_command
 from tools.file_reader import read_file, extract_filepath, list_files
 from tools.system_monitor import get_system_info, analyze_performance
 from tools.git_tool import (
@@ -102,9 +104,27 @@ class Brain:
             memory = update_emotion(memory, emotion_label, emotion_score)
             logger.info(f"emotion_detected | label={emotion_label} score={emotion_score:.2f}")
 
+            # ── 1.5 System commands
+            sys_result = handle_system_command(user_input)
+            if sys_result:
+                save_memory(memory)
+                return self._build_reply(
+                    reply=sys_result, emotion=emotion_label,
+                    intent="system_control", agent="system_controller",
+                    confidence=1.0
+                )
+
             # ── 2. Shortcuts ──────────────────────────────────
+            # Bye check BEFORE shortcut lookup
+            bye_words = ["bye", "goodbye", "exit", "quit", "see you", "good night", "cya"]
+            is_bye = any(w in user_input.lower() for w in bye_words)
+
             shortcut = detect_intent(user_input, user_name)
             if shortcut and not vision_mode:
+                if is_bye:
+                    summary = get_session_summary(user_name)
+                    if summary:
+                        shortcut = shortcut + "\n\n📊 " + summary
                 save_memory(memory)
                 return self._build_reply(
                     reply=shortcut, emotion=emotion_label,
@@ -281,6 +301,11 @@ class Brain:
             # Store episode for long-term episodic memory
             store_episode(user_input, reply, intent=query_intent,
                           emotion=emotion_label, user_name=user_name)
+
+            # Proactive suggestion — append if relevant
+            suggestion = get_proactive_suggestion(user_input, memory, user_name)
+            if suggestion:
+                reply = reply + "\n\n" + suggestion
 
             return self._build_reply(
                 reply=reply, emotion=emotion_label,
