@@ -180,6 +180,7 @@ function Message({ msg }) {
         color: C.text, lineHeight: 1.65, whiteSpace: "pre-wrap", wordBreak: "break-word"
       }}>
         {msg.content}
+        {msg.streaming && <span style={{color: "#00ff88", animation: "pulse 0.8s infinite"}}>▋</span>}
       </div>
 
       {!isUser && msg.confidence !== undefined && (
@@ -260,28 +261,77 @@ const fetchMemory = async () => {
     setInput("");
     setMessages(p => [...p, { role: "user", content: text, id: Date.now() }]);
     setLoading(true);
+
+    const streamId = Date.now();
+    let fullReply = "";
+    let meta = {};
+
+    // Add empty assistant message — will fill token by token
+    setMessages(p => [...p, {
+      role: "assistant", content: "", id: streamId,
+      agent: "astra", intent: "", streaming: true
+    }]);
+
     try {
-      const r = await fetch(`${API}/chat`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+      const response = await fetch(`${API}/chat/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text })
       });
-      const data = await r.json();
-      setMessages(p => [...p, {
-        role: "assistant", content: data.reply,
-        agent: data.agent, intent: data.intent, emotion: data.emotion,
-        confidence: data.confidence, confidence_label: data.confidence_label,
-        confidence_emoji: data.confidence_emoji,
-        tool_used: data.tool_used, memory_updated: data.memory_updated,
-        citations: data.citations, id: Date.now()
-      }]);
-      if (speakReplies && data.reply) {
-        fetch(`${API}/voice/say`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: data.reply })
-        });
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n").filter(l => l.startsWith("data: "));
+
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line.slice(6));
+
+            if (data.type === "meta") {
+              meta = data;
+              setMessages(p => p.map(m => m.id === streamId
+                ? { ...m, agent: `ollama/${data.model}`, intent: data.intent,
+                    server: data.server }
+                : m
+              ));
+            }
+
+            if (data.type === "token") {
+              fullReply += data.text;
+              setMessages(p => p.map(m => m.id === streamId
+                ? { ...m, content: fullReply }
+                : m
+              ));
+            }
+
+            if (data.type === "done") {
+              setMessages(p => p.map(m => m.id === streamId
+                ? { ...m, content: data.full, streaming: false,
+                    confidence: data.confidence, confidence_label: data.confidence_label,
+                    confidence_emoji: data.confidence_emoji, emotion: data.emotion, tool_used: data.tool_used, memory_updated: data.memory_updated, agent: data.agent, intent: data.intent }
+                : m
+              ));
+              if (speakReplies && data.full) {
+                fetch(`${API}/voice/say`, {
+                  method: "POST", headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ text: data.full })
+                });
+              }
+              fetchMemory();
+            }
+          } catch {}
+        }
       }
-      if (data.memory_updated) fetchMemory();
-    } catch { addSystem("Connection error — is backend running?"); }
+    } catch {
+      addSystem("Connection error — is backend running?");
+      setMessages(p => p.filter(m => m.id !== streamId));
+    }
     finally { setLoading(false); inputRef.current?.focus(); }
   };
 
