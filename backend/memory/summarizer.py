@@ -46,6 +46,10 @@ Conversation:
 Summary:"""
 
     try:
+        import os
+        from core.model_manager import _check_server
+        if not _check_server(os.environ.get("OLLAMA_HOST", "http://localhost:11434"), timeout=1):
+            os.environ["OLLAMA_HOST"] = "http://localhost:11434"
         response = ollama.chat(
             model=model,
             messages=[{"role": "user", "content": prompt}],

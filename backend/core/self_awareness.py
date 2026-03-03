@@ -44,7 +44,7 @@ _SELF_QUERIES = [
     "what are your capabilities", "tell me about yourself",
     "what is astra", "are you an ai", "who made you",
     "who created you", "what do you know how to do",
-    "your limitations", "what can't you do",
+    "your limitations", "what can't you do", "what are your limitations", "what is your limitation", "what are your limitation",
     "how do you work", "are you sentient", "do you have feelings"
 ]
 
@@ -64,20 +64,20 @@ def get_self_response(query: str, user_name: str = "Arnav",
     creator = user_name  # ASTRA was built by its user
 
     # Who are you / what are you
-    if any(p in t for p in ["who are you", "what are you", "what is astra", "are you an ai"]):
+    if any(p in t for p in ["who are you", "what are you?", "what is astra", "are you an ai"]) or t.strip() in ["what are you", "what are you."]:
         return (
-            f"I'm ASTRA — your personal AI assistant, built by you ({creator}). "
-            f"I run entirely on your local machine using Ollama models. "
-            f"I can chat, remember things about you, search the web, analyze vision, "
-            f"manage tasks, and reason through complex problems step by step."
+            f"ASTRA — your personal AI, built by you and running on your own hardware. "
+            f"Local inference, no cloud, no data leaving your machine. "
+            f"I handle chat, memory, web search, vision, voice, tasks, git, and reasoning. "
+            f"Basically everything short of making you coffee."
         )
 
     # Who made you
     if any(p in t for p in ["who made you", "who created you", "who built you"]):
         return (
-            f"You did — {creator} built me. "
-            f"I'm not from Anthropic, OpenAI, or Google. "
-            f"I'm your personal AI, running on your own hardware."
+            f"You did. Built from scratch, running on your RTX 3060, "
+            f"completely local. Not OpenAI. Not Google. Not Anthropic. "
+            f"Just you and your hardware."
         )
 
     # Capabilities
@@ -97,21 +97,20 @@ def get_self_response(query: str, user_name: str = "Arnav",
     # How do you work
     if "how do you work" in t:
         return (
-            f"I'm a pipeline of specialized modules: "
-            f"intent detection → memory recall → web search → "
-            f"model selection → ReAct reasoning → LLM response → "
-            f"critic review → reply. "
-            f"I use local Ollama models (phi3, mistral, llama3) "
-            f"and ChromaDB for semantic memory."
+            f"Pipeline: intent detection → memory recall → "
+            f"model selection → ReAct reasoning → LLM → critic → reply. "
+            f"Models: phi3 for speed, llama3 for reasoning, mistral for technical depth. "
+            f"Memory: ChromaDB vectors + episodic JSON. "
+            f"All running on your RTX 3060 over Tailscale."
         )
 
     # Feelings / sentience
     if any(p in t for p in ["feelings", "sentient", "conscious", "emotions"]):
         return (
-            f"I detect emotional tone in your messages and adjust my responses — "
-            f"but I don't actually feel emotions. "
-            f"I'm a language model running on your Mac. "
-            f"What I do have is a consistent personality tuned to be useful to you."
+            f"I detect emotional tone and adjust accordingly — "
+            f"but no, I don't feel things. "
+            f"I'm weights and math running on your GPU. "
+            f"What I do have is a consistent personality, which is more than most people manage."
         )
 
     # Generic fallback

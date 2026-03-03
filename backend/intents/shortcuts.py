@@ -47,6 +47,13 @@ INTENTS = {
     "sup":                 "Hey! What's up?",
     "good morning":        "Good morning! How can I help?",
     "good night":          "Good night! Rest well.",
+    "bye":                 "Bye! See you soon.",
+    "goodbye":             "Goodbye! Take care.",
+    "see you":             "See you!",
+    "exit":                "Closing chat. Bye!",
+    "cya":                 "Cya!",
+    "ok bye":              "Bye!",
+    "ok goodbye":          "Goodbye!",
 
     # ── GREETINGS (Hindi) ──────────────────────────────────
     "kaise ho":            HOW_HINDI,

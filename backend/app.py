@@ -13,7 +13,7 @@ from api.execute import execute_bp
 from api.voice import voice_bp
 from api.vision import vision_bp
 from api.multimodal import multimodal_bp
-
+from api.chat_stream import stream_bp
 
 
 class ColoredFormatter(logging.Formatter):
@@ -54,6 +54,7 @@ app.register_blueprint(execute_bp)
 app.register_blueprint(voice_bp)
 app.register_blueprint(vision_bp)
 app.register_blueprint(multimodal_bp)
+app.register_blueprint(stream_bp)
 
 @app.errorhandler(404)
 def not_found(e):
@@ -74,5 +75,15 @@ if __name__ == "__main__":
     print(f"💾 Memory:      {config.enable_memory}")
     print(f"😊 Emotions:    {config.enable_emotions}")
     print("=" * 60 + "\n")
+
+    from voice.speaker import speak
+    from proactive.proactive_engine import get_proactive_engine
+    from proactive.activity_monitor import ActivityMonitor
+
+    proactive = get_proactive_engine(speak_fn=speak)
+    proactive.start()
+
+    monitor = ActivityMonitor(speak_fn=speak, proactive_engine=proactive)
+    monitor.start()
 
     app.run(debug=config.debug, host=config.host, port=config.port)

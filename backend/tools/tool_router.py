@@ -50,3 +50,15 @@ def route_tool(user_text: str):
         return call_api(url)
 
     return None
+
+
+SYSTEM_TRIGGERS = [
+    "open ", "close ", "quit ", "launch ", "play ", "pause", "skip",
+    "next song", "previous song", "volume", "mute", "unmute",
+    "screenshot", "battery", "wifi", "lock screen", "sleep display",
+    "switch to", "running apps", "empty trash"
+]
+
+def is_system_command(text: str) -> bool:
+    t = text.lower()
+    return any(trigger in t for trigger in SYSTEM_TRIGGERS)
