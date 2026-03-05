@@ -209,4 +209,4 @@ def vision_status():
 
     except Exception as e:
         logger.error(f"/vision/status error: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 500 

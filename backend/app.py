@@ -78,12 +78,12 @@ if __name__ == "__main__":
 
     from voice.speaker import speak
     from proactive.proactive_engine import get_proactive_engine
-    from proactive.activity_monitor import ActivityMonitor
+    # from proactive.activity_monitor import ActivityMonitor
 
     proactive = get_proactive_engine(speak_fn=speak)
     proactive.start()
 
-    monitor = ActivityMonitor(speak_fn=speak, proactive_engine=proactive)
-    monitor.start()
+    # monitor = ActivityMonitor(speak_fn=speak, proactive_engine=proactive)
+    #monitor.start()
 
     app.run(debug=config.debug, host=config.host, port=config.port)
