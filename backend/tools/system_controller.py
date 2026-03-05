@@ -295,9 +295,9 @@ def _get_volume() -> int:
 def _set_brightness_keys(level: int) -> str:
     steps = round(level / 100 * 16)
     for _ in range(16):
-        subprocess.run(["osascript", "-e", "tell application "System Events" to key code 107"], capture_output=True)
+        subprocess.run(["osascript", "-e", 'tell application "System Events" to key code 107'], capture_output=True)
     for _ in range(steps):
-        subprocess.run(["osascript", "-e", "tell application "System Events" to key code 113"], capture_output=True)
+        subprocess.run(["osascript", "-e", 'tell application "System Events" to key code 113'], capture_output=True)
     return f"Brightness set to {level}%."
 
 def set_brightness(level: int) -> str:

@@ -49,6 +49,9 @@ from utils.limiter import limit_words
 
 from tools.tool_router import detect_tool
 from tools.system_controller import handle_system_command, is_system_command
+from tools.calendar_tool import handle_calendar_command, morning_briefing_text, reminder_check_text
+from tools.whatsapp_tool import handle_whatsapp_command
+from tools.web_search import handle_search_command
 from tools.file_reader import read_file, extract_filepath, list_files
 from tools.system_monitor import get_system_info, analyze_performance
 from tools.git_tool import (
@@ -103,6 +106,36 @@ class Brain:
             emotion_label, emotion_score = detect_emotion(user_input)
             memory = update_emotion(memory, emotion_label, emotion_score)
             logger.info(f"emotion_detected | label={emotion_label} score={emotion_score:.2f}")
+
+            # ── 1.2 Web search
+            search_result = handle_search_command(user_input)
+            if search_result:
+                save_memory(memory)
+                return self._build_reply(
+                    reply=search_result, emotion=emotion_label,
+                    intent="web_search", agent="web_search_agent",
+                    confidence=1.0
+                )
+
+            # ── 1.3 WhatsApp commands
+            wa_result = handle_whatsapp_command(user_input)
+            if wa_result:
+                save_memory(memory)
+                return self._build_reply(
+                    reply=wa_result, emotion=emotion_label,
+                    intent="whatsapp", agent="whatsapp",
+                    confidence=1.0
+                )
+
+            # ── 1.4 Calendar commands
+            cal_result = handle_calendar_command(user_input)
+            if cal_result:
+                save_memory(memory)
+                return self._build_reply(
+                    reply=cal_result, emotion=emotion_label,
+                    intent="calendar", agent="calendar",
+                    confidence=1.0
+                )
 
             # ── 1.5 System commands
             sys_result = handle_system_command(user_input)

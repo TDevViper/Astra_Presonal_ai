@@ -21,6 +21,7 @@ class ProactiveEngine:
         self._last_break_reminder = datetime.now()
         self._focus_start: Optional[datetime] = None
         self._fired_today: set = set()
+        self._last_spoke: Optional[datetime] = None
         logger.info("🧠 ProactiveEngine initialized")
 
     def start(self):
@@ -82,6 +83,7 @@ class ProactiveEngine:
             self.speak(f"{USER_NAME}, it's past 1 AM. You should get some sleep. I'll be here tomorrow.")
 
         self._check_break_reminder(now)
+        self._check_calendar_reminder(now)
 
         if hour % 3 == 0 and minute < 2:
             key = f"tasks_{hour}"
@@ -91,15 +93,25 @@ class ProactiveEngine:
 
     def _do_morning_briefing(self, now: datetime):
         greeting = _time_greeting(now.hour)
-        tasks = _get_pending_tasks()
-        msg = f"{greeting}, {USER_NAME}! "
-        if tasks:
-            if len(tasks) == 1:
-                msg += f"You have 1 task today: {tasks[0]['title']}. "
+        tasks    = _get_pending_tasks()
+        msg      = f"{greeting}, {USER_NAME}! "
+
+        # Add calendar events
+        try:
+            import sys, os
+            sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            from tools.calendar_tool import get_todays_events
+            events = get_todays_events()
+            if events:
+                msg += f"You have {len(events)} event{'s' if len(events) > 1 else ''} today. First up: {events[0]['title']} at {events[0]['time']}. "
             else:
-                msg += f"You have {len(tasks)} tasks today. Top priority: {tasks[0]['title']}. "
-        else:
-            msg += "Clear task list today. "
+                msg += "Clear calendar today. "
+        except Exception:
+            pass
+
+        if tasks:
+            msg += f"You have {len(tasks)} task{'s' if len(tasks) > 1 else ''} pending. Top priority: {tasks[0]['title']}. "
+
         msg += "Let's make it a great day."
         self.speak(msg)
 
@@ -129,6 +141,20 @@ class ProactiveEngine:
         tasks = _get_pending_tasks(priority="high")
         if tasks:
             self.speak(f"Heads up {USER_NAME} — high priority task waiting: {tasks[0]['title']}.")
+
+    def _check_calendar_reminder(self, now: datetime):
+        try:
+            if self._last_spoke and (now - self._last_spoke).seconds < 10 * 60:
+                return
+            import sys, os
+            sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            from tools.calendar_tool import reminder_check_text
+            reminder = reminder_check_text(USER_NAME)
+            if reminder:
+                self._last_spoke = now
+                self.speak(reminder)
+        except Exception as e:
+            logger.error(f"Calendar reminder error: {e}")
 
 
 def _get_pending_tasks(priority: Optional[str] = None):
@@ -173,19 +199,15 @@ if __name__ == "__main__":
     sys.path.insert(0, "/Users/arnavyadav/Astra/backend")
 
     def speak_blocking(text):
-        """Blocking speak — waits until done before continuing."""
         print(f"🔊 {text}")
         subprocess.run(["say", "-v", "Samantha", "-r", "185", text])
 
-    print("🧠 Testing ProactiveEngine — listen up!")
-
+    print("🧠 Testing ProactiveEngine...")
     engine = ProactiveEngine(speak_fn=speak_blocking)
-
-    speak_blocking("ASTRA proactive engine online. Running all checks now.")
+    engine.speak("ASTRA proactive engine online.")
     engine._do_morning_briefing(datetime.now())
     engine._do_afternoon_checkin()
     engine._last_break_reminder = datetime.now() - timedelta(minutes=91)
     engine._check_break_reminder(datetime.now())
     engine._do_evening_wrapup()
-
     print("✅ All triggers tested")
