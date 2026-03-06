@@ -73,24 +73,21 @@ export default function LiveVision({ onAnalysis }) {
     if (!camActive) { await startCamera(); return; }
 
     try {
-      // Step 1: Listen to voice
-      setTalkState("listening");
-      const listenRes = await fetch(`${API}/talk/listen`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ duration: 5 })
-      });
-      const { text } = await listenRes.json();
-
-      // Step 2: Capture frame at moment of speaking
       const frame = captureFrame();
+      setTalkState("listening");
 
-      // Step 3: Send to ASTRA (vision + voice combined)
-      setTalkState("thinking");
-      const talkRes = await fetch(`${API}/talk`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: frame, text, speak: true })
+      const res = await fetch(`${API}/realtime/talk`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ duration: 5, image: frame })
       });
-      const data = await talkRes.json();
+
+      const data = await res.json();
+
+      if (data.silent || !data.text) {
+        setTalkState("idle");
+        return;
+      }
 
       setTalkState("speaking");
       setLastReply(data.reply || "");
@@ -98,26 +95,25 @@ export default function LiveVision({ onAnalysis }) {
         jarvis_response: data.reply,
         objects_detected: [],
         suggestions: [],
-        visual_context: data.visual_context
+        visual_context: data.reply
       });
 
       const entry = {
-        id: Date.now(),
-        question: text || "(no speech detected)",
-        jarvis: data.reply,
-        objects: [],
+        id:        Date.now(),
+        question:  data.text,
+        jarvis:    data.reply,
+        objects:   [],
         timestamp: new Date().toLocaleTimeString(),
-        source: "talk"
+        source:    data.vision ? "vision+talk" : "talk"
       };
       setHistory(prev => [entry, ...prev].slice(0, 15));
       if (onAnalysis) onAnalysis(entry);
 
-      // Wait for TTS to finish (approximate)
-      const speakDuration = Math.min((data.reply?.length || 0) * 60, 8000);
-      setTimeout(() => setTalkState("idle"), speakDuration);
+      const speakMs = Math.min((data.reply?.length || 0) * 55, 9000);
+      setTimeout(() => setTalkState("idle"), speakMs);
 
     } catch (e) {
-      console.error("Talk error:", e);
+      console.error("Realtime talk error:", e);
       setTalkState("idle");
     }
   };

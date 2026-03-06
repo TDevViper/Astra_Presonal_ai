@@ -3,26 +3,94 @@ import LiveVision from "./components/LiveVision";
 
 const API = "http://127.0.0.1:5050";
 
-const C = {
-  bg: "#080808", surface: "#0f0f0f", surface2: "#141414",
-  border: "#1a1a1a", border2: "#222222",
-  green: "#00ff88", blue: "#0088ff", yellow: "#ffaa00",
-  red: "#ff4444", purple: "#aa44ff", cyan: "#00ddff",
-  dim: "#333333", text: "#e0e0e0", muted: "#555555", faint: "#2a2a2a"
+const agentLabel = (a) => {
+  if (a?.includes("mistral")) return "MISTRAL";
+  if (a?.includes("llama"))   return "LLAMA3";
+  if (a?.includes("phi3"))    return "PHI3";
+  if (a === "web_search_agent") return "WEBSEARCH";
+  if (a === "memory")           return "MEMORY";
+  if (a === "intent_handler")   return "SHORTCUT";
+  if (a === "system_controller") return "SYSCTRL";
+  if (a === "calendar")         return "CALENDAR";
+  if (a === "whatsapp")         return "WHATSAPP";
+  return (a || "ASTRA").toUpperCase();
 };
 
-const confColor = (s) => s >= 0.95 ? C.green : s >= 0.75 ? "#88ff00" : s >= 0.5 ? C.yellow : s >= 0.25 ? C.red : C.dim;
-const confBar = (s, w = 8) => "█".repeat(Math.round(s * w)) + "░".repeat(w - Math.round(s * w));
-const emojiFor = (e) => ({ joy:"😊", sad:"😢", angry:"😠", anxious:"😰", tired:"😴", surprised:"😲", neutral:"😐" }[e] || "😐");
-const agentLabel = (a) => {
-  if (a?.includes("mistral")) return "mistral";
-  if (a?.includes("llama"))   return "llama3";
-  if (a?.includes("phi3"))    return "phi3";
-  if (a === "web_search_agent") return "websearch";
-  if (a === "memory")           return "memory";
-  if (a === "intent_handler")   return "shortcut";
-  return a || "astra";
-};
+const emojiFor = (e) => ({ joy:"😊", sad:"😢", angry:"😠", anxious:"😰", tired:"😴", surprised:"😲", neutral:"·" }[e] || "·");
+
+function HUDCorner({ pos }) {
+  const styles = {
+    tl: { top: 0, left: 0, borderTop: "2px solid #00d4ff", borderLeft: "2px solid #00d4ff" },
+    tr: { top: 0, right: 0, borderTop: "2px solid #00d4ff", borderRight: "2px solid #00d4ff" },
+    bl: { bottom: 0, left: 0, borderBottom: "2px solid #00d4ff", borderLeft: "2px solid #00d4ff" },
+    br: { bottom: 0, right: 0, borderBottom: "2px solid #00d4ff", borderRight: "2px solid #00d4ff" },
+  }[pos];
+  return <div style={{ position: "absolute", width: 12, height: 12, ...styles }} />;
+}
+
+function HUDBox({ children, style, corners = true }) {
+  return (
+    <div style={{ position: "relative", ...style }}>
+      {corners && <>
+        <HUDCorner pos="tl" /><HUDCorner pos="tr" />
+        <HUDCorner pos="bl" /><HUDCorner pos="br" />
+      </>}
+      {children}
+    </div>
+  );
+}
+
+function ScanLine() {
+  return (
+    <div style={{
+      position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+      pointerEvents: "none", zIndex: 9999, overflow: "hidden",
+    }}>
+      <div style={{
+        position: "absolute", left: 0, right: 0, height: 2,
+        background: "linear-gradient(90deg, transparent, rgba(0,212,255,0.15), transparent)",
+        animation: "scanline 8s linear infinite",
+      }} />
+    </div>
+  );
+}
+
+function ArcReactor({ active }) {
+  return (
+    <div style={{ position: "relative", width: 48, height: 48, flexShrink: 0 }}>
+      {/* Outer ring */}
+      <div style={{
+        position: "absolute", inset: 0, borderRadius: "50%",
+        border: "1px solid rgba(0,212,255,0.4)",
+        animation: active ? "spin 8s linear infinite" : "none",
+      }}>
+        {[0,90,180,270].map(deg => (
+          <div key={deg} style={{
+            position: "absolute", width: 4, height: 4, borderRadius: "50%",
+            background: "#00d4ff", top: "50%", left: "50%",
+            transform: `rotate(${deg}deg) translateX(20px) translate(-50%, -50%)`,
+            boxShadow: "0 0 6px #00d4ff",
+          }} />
+        ))}
+      </div>
+      {/* Mid ring */}
+      <div style={{
+        position: "absolute", inset: 8, borderRadius: "50%",
+        border: "1px solid rgba(0,212,255,0.6)",
+        animation: active ? "spin 4s linear infinite reverse" : "none",
+      }} />
+      {/* Core */}
+      <div style={{
+        position: "absolute", inset: 16, borderRadius: "50%",
+        background: active
+          ? "radial-gradient(circle, #ffffff 0%, #00d4ff 40%, #0066ff 100%)"
+          : "radial-gradient(circle, #1a3a4a 0%, #0a1a2a 100%)",
+        boxShadow: active ? "0 0 20px rgba(0,212,255,0.8), 0 0 40px rgba(0,100,255,0.4)" : "none",
+        transition: "all 0.5s ease",
+      }} />
+    </div>
+  );
+}
 
 function VoiceButton({ onTranscript }) {
   const [state, setState] = useState("idle");
@@ -36,113 +104,197 @@ function VoiceButton({ onTranscript }) {
       });
       const d = await r.json();
       if (d.text?.trim()) onTranscript(d.text.trim());
-     } catch (err) {
+    } catch (err) {
       console.error("Voice listen failed:", err);
     } finally { setState("idle"); }
   };
+
   return (
     <button onClick={handle} disabled={state !== "idle"} style={{
-      background: "transparent",
-      border: `1px solid ${state === "listening" ? C.red : C.muted}`,
-      borderRadius: 3, color: state === "listening" ? C.red : C.muted,
-      fontFamily: "monospace", fontSize: 11, padding: "5px 10px",
-      cursor: "pointer", letterSpacing: 1, transition: "all 0.2s",
-      animation: state === "listening" ? "pulse 0.8s infinite" : "none"
+      position: "relative", background: "transparent", border: "none",
+      cursor: state === "idle" ? "pointer" : "default", padding: 0,
     }}>
-      {state === "listening" ? "● REC" : "🎤"}
+      <div style={{
+        width: 40, height: 40, borderRadius: "50%",
+        border: `2px solid ${state === "listening" ? "#ff4444" : "rgba(0,212,255,0.5)"}`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        background: state === "listening" ? "rgba(255,68,68,0.1)" : "rgba(0,212,255,0.05)",
+        boxShadow: state === "listening" ? "0 0 20px rgba(255,68,68,0.4)" : "0 0 10px rgba(0,212,255,0.2)",
+        animation: state === "listening" ? "voicePulse 0.8s ease-in-out infinite" : "none",
+        transition: "all 0.3s ease",
+      }}>
+        <span style={{ fontSize: 16 }}>{state === "listening" ? "●" : "🎤"}</span>
+      </div>
+      {state === "listening" && (
+        <div style={{
+          position: "absolute", inset: -4, borderRadius: "50%",
+          border: "1px solid rgba(255,68,68,0.3)",
+          animation: "ripple 1s ease-out infinite",
+        }} />
+      )}
     </button>
   );
 }
 
-function MemoryPanel({ memory, models, currentModel, onSwitchModel }) {
-  const prefs     = memory?.preferences || {};
-  const facts     = memory?.user_facts || [];
-  const emotions  = memory?.emotional_patterns?.history?.slice(-5).reverse() || [];
-  const summaries = memory?.conversation_summary || [];
+function StatusBar({ status, model, msgCount }) {
+  const [time, setTime] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   return (
     <div style={{
-      width: 210, minWidth: 210, background: C.surface,
-      borderRight: `1px solid ${C.border}`, padding: "16px 12px",
-      fontFamily: "monospace", fontSize: 12, overflowY: "auto",
-      display: "flex", flexDirection: "column", gap: 18
+      display: "flex", gap: 20, alignItems: "center",
+      fontFamily: "'Courier New', monospace", fontSize: 10,
+      color: "rgba(0,212,255,0.6)", letterSpacing: 1,
     }}>
-      <div style={{ color: C.green, fontWeight: "bold", fontSize: 13, letterSpacing: 3 }}>◈ MEMORY</div>
+      <span>{time.toLocaleTimeString("en-US", { hour12: false })}</span>
+      <span style={{ color: "rgba(0,212,255,0.3)" }}>|</span>
+      <span style={{ color: status === "online" ? "#00ff88" : "#ff4444" }}>
+        {status === "online" ? "◉ ONLINE" : "◎ OFFLINE"}
+      </span>
+      <span style={{ color: "rgba(0,212,255,0.3)" }}>|</span>
+      <span>{model?.split(":")[0]?.toUpperCase()}</span>
+      <span style={{ color: "rgba(0,212,255,0.3)" }}>|</span>
+      <span>{msgCount} MSG</span>
+    </div>
+  );
+}
 
-      <Section label="USER">
-        <Row icon="👤" val={prefs.name || "Arnav"} />
-        {prefs.location && <Row icon="📍" val={prefs.location} />}
-      </Section>
+function MemoryPanel({ memory, models, currentModel, onSwitchModel }) {
+  const prefs    = memory?.preferences || {};
+  const facts    = memory?.user_facts || [];
+  const emotions = memory?.emotional_patterns?.history?.slice(-3).reverse() || [];
 
-      {prefs.goals?.length > 0 && (
-        <Section label="GOALS">
-          {prefs.goals.slice(-2).map((g, i) => <Row key={i} icon="🎯" val={g} />)}
-        </Section>
-      )}
+  return (
+    <div style={{
+      width: 220, minWidth: 220, height: "100vh",
+      background: "linear-gradient(180deg, rgba(0,10,20,0.98) 0%, rgba(0,5,15,0.99) 100%)",
+      borderRight: "1px solid rgba(0,212,255,0.15)",
+      display: "flex", flexDirection: "column",
+      fontFamily: "'Courier New', monospace", fontSize: 11,
+      overflow: "hidden", position: "relative",
+    }}>
+      {/* Top glow */}
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0, height: 1,
+        background: "linear-gradient(90deg, transparent, #00d4ff, transparent)",
+      }} />
 
-      {emotions.length > 0 && (
-        <Section label="EMOTIONS">
-          {emotions.map((e, i) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between", marginBottom: 3, color: C.text, opacity: 1 - i * 0.18 }}>
-              <span>{emojiFor(e.label)} {e.label}</span>
-              <span style={{ color: C.muted }}>{e.score?.toFixed(2)}</span>
+      {/* Header */}
+      <div style={{ padding: "20px 16px 14px", borderBottom: "1px solid rgba(0,212,255,0.1)" }}>
+        <div style={{
+          fontSize: 9, letterSpacing: 4, color: "rgba(0,212,255,0.5)",
+          marginBottom: 4
+        }}>STARK INDUSTRIES</div>
+        <div style={{
+          fontSize: 13, letterSpacing: 3, color: "#00d4ff",
+          fontWeight: "bold", textShadow: "0 0 10px rgba(0,212,255,0.5)"
+        }}>◈ MEMORY CORE</div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px", display: "flex", flexDirection: "column", gap: 16 }}>
+
+        {/* User */}
+        <MiniSection label="OPERATOR">
+          <DataRow label="ID" val={prefs.name || "ARNAV"} highlight />
+          {prefs.location && <DataRow label="LOC" val={prefs.location} />}
+        </MiniSection>
+
+        {/* Emotions */}
+        {emotions.length > 0 && (
+          <MiniSection label="AFFECT SCAN">
+            {emotions.map((e, i) => (
+              <div key={i} style={{
+                display: "flex", justifyContent: "space-between",
+                color: `rgba(0,212,255,${1 - i * 0.25})`,
+                marginBottom: 3, fontSize: 10,
+              }}>
+                <span>{emojiFor(e.label)} {e.label?.toUpperCase()}</span>
+                <span style={{ color: "rgba(0,212,255,0.4)" }}>{(e.score * 100).toFixed(0)}%</span>
+              </div>
+            ))}
+          </MiniSection>
+        )}
+
+        {/* Facts */}
+        {facts.length > 0 && (
+          <MiniSection label={`INTEL (${facts.length})`}>
+            {facts.slice(-4).map((f, i) => (
+              <div key={i} style={{
+                color: "rgba(0,212,255,0.4)", fontSize: 9,
+                marginBottom: 4, lineHeight: 1.5,
+                borderLeft: "1px solid rgba(0,212,255,0.2)",
+                paddingLeft: 6,
+              }}>
+                {f.fact?.slice(0, 45)}
+              </div>
+            ))}
+          </MiniSection>
+        )}
+
+        {/* Models */}
+        <MiniSection label="NEURAL NET">
+          {models.map(m => (
+            <div key={m} onClick={() => onSwitchModel(m)} style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "5px 0", cursor: "pointer",
+              borderBottom: "1px solid rgba(0,212,255,0.06)",
+              color: currentModel === m ? "#00d4ff" : "rgba(0,212,255,0.3)",
+              transition: "color 0.2s",
+            }}>
+              <div style={{
+                width: 5, height: 5, borderRadius: "50%",
+                background: currentModel === m ? "#00d4ff" : "transparent",
+                border: "1px solid rgba(0,212,255,0.4)",
+                boxShadow: currentModel === m ? "0 0 6px #00d4ff" : "none",
+                flexShrink: 0,
+              }} />
+              <span style={{ fontSize: 10, letterSpacing: 1 }}>{m.split(":")[0].toUpperCase()}</span>
+              {currentModel === m && (
+                <span style={{ marginLeft: "auto", fontSize: 8, color: "#00ff88", letterSpacing: 1 }}>ACTIVE</span>
+              )}
             </div>
           ))}
-        </Section>
-      )}
+        </MiniSection>
+      </div>
 
-      {facts.length > 0 && (
-        <Section label={`FACTS (${facts.length})`}>
-          {facts.slice(-3).map((f, i) => (
-            <div key={i} style={{ color: C.muted, fontSize: 10, marginBottom: 3, lineHeight: 1.4 }}>
-              · {f.fact?.slice(0, 50)}
-            </div>
-          ))}
-        </Section>
-      )}
-
-      {summaries.length > 0 && (
-        <Section label="CONTEXT">
-          {summaries.slice(-2).map((s, i) => (
-            <div key={i} style={{ color: C.muted, marginBottom: 6, lineHeight: 1.4, fontSize: 10 }}>
-              📋 {s.summary?.slice(0, 70)}...
-            </div>
-          ))}
-        </Section>
-      )}
-
-      <div style={{ marginTop: "auto" }}>
-        <div style={{ color: C.muted, marginBottom: 8, fontSize: 10, letterSpacing: 1 }}>MODEL</div>
-        {models.map(m => (
-          <div key={m} onClick={() => onSwitchModel(m)} style={{
-            display: "flex", alignItems: "center", gap: 7, padding: "5px 0",
-            cursor: "pointer", color: currentModel === m ? C.green : C.muted,
-            transition: "color 0.15s", borderBottom: `1px solid ${C.faint}`
-          }}>
-            <span style={{ fontSize: 7 }}>{currentModel === m ? "●" : "○"}</span>
-            <span style={{ fontSize: 11 }}>{m.split(":")[0]}</span>
-            {currentModel === m && <span style={{ fontSize: 9, color: C.green, marginLeft: "auto" }}>active</span>}
-          </div>
-        ))}
+      {/* Bottom hex pattern */}
+      <div style={{
+        padding: "12px 16px",
+        borderTop: "1px solid rgba(0,212,255,0.1)",
+        fontSize: 8, color: "rgba(0,212,255,0.2)", letterSpacing: 2,
+        textAlign: "center",
+      }}>
+        ASTRA · v3.0 · CLASSIFIED
       </div>
     </div>
   );
 }
 
-function Section({ label, children }) {
+function MiniSection({ label, children }) {
   return (
     <div>
-      <div style={{ color: C.muted, marginBottom: 7, fontSize: 9, letterSpacing: 2, borderBottom: `1px solid ${C.faint}`, paddingBottom: 4 }}>{label}</div>
+      <div style={{
+        fontSize: 8, letterSpacing: 3, color: "rgba(0,212,255,0.35)",
+        marginBottom: 8, paddingBottom: 4,
+        borderBottom: "1px solid rgba(0,212,255,0.08)",
+      }}>{label}</div>
       {children}
     </div>
   );
 }
 
-function Row({ icon, val }) {
+function DataRow({ label, val, highlight }) {
   return (
-    <div style={{ display: "flex", gap: 6, marginBottom: 4, color: C.text, alignItems: "flex-start" }}>
-      <span style={{ flexShrink: 0, fontSize: 11 }}>{icon}</span>
-      <span style={{ wordBreak: "break-word", lineHeight: 1.4, fontSize: 11 }}>{String(val)}</span>
+    <div style={{ display: "flex", gap: 8, marginBottom: 4, alignItems: "flex-start" }}>
+      <span style={{ color: "rgba(0,212,255,0.35)", fontSize: 9, flexShrink: 0, minWidth: 28 }}>{label}</span>
+      <span style={{
+        color: highlight ? "#00d4ff" : "rgba(0,212,255,0.6)",
+        fontSize: 10, wordBreak: "break-word", lineHeight: 1.4,
+        textShadow: highlight ? "0 0 8px rgba(0,212,255,0.4)" : "none",
+      }}>{String(val)}</span>
     </div>
   );
 }
@@ -152,62 +304,143 @@ function Message({ msg }) {
   const isSystem = msg.role === "system";
 
   if (isSystem) return (
-    <div style={{ color: C.dim, fontFamily: "monospace", fontSize: 10, padding: "6px 0", textAlign: "center", letterSpacing: 1 }}>
-      ── {msg.content} ──
+    <div style={{
+      textAlign: "center", padding: "4px 0", margin: "4px 0",
+      fontSize: 9, letterSpacing: 2,
+      color: "rgba(0,212,255,0.25)",
+      fontFamily: "'Courier New', monospace",
+    }}>
+      ─── {msg.content} ───
     </div>
   );
 
   return (
-    <div style={{ marginBottom: 18, display: "flex", flexDirection: "column", alignItems: isUser ? "flex-end" : "flex-start" }}>
-      <div style={{ fontSize: 10, color: C.muted, marginBottom: 5, fontFamily: "monospace", display: "flex", gap: 8 }}>
+    <div style={{
+      marginBottom: 20,
+      display: "flex", flexDirection: "column",
+      alignItems: isUser ? "flex-end" : "flex-start",
+      animation: "fadeSlideIn 0.3s ease-out",
+    }}>
+      {/* Label */}
+      <div style={{
+        fontSize: 9, letterSpacing: 2, marginBottom: 6,
+        fontFamily: "'Courier New', monospace",
+        display: "flex", alignItems: "center", gap: 8,
+        color: isUser ? "rgba(0,136,255,0.6)" : "rgba(0,212,255,0.5)",
+      }}>
         {isUser ? (
-          <span style={{ color: C.blue, letterSpacing: 1 }}>YOU</span>
+          <span>OPERATOR</span>
         ) : (
           <>
-            <span style={{ color: C.green, letterSpacing: 1 }}>ASTRA</span>
-            <span style={{ color: C.dim }}>·</span>
+            <span style={{ color: "#00d4ff" }}>ASTRA</span>
+            <span style={{ color: "rgba(0,212,255,0.2)" }}>◆</span>
             <span>{agentLabel(msg.agent)}</span>
-            {msg.intent && <><span style={{ color: C.dim }}>·</span><span style={{ color: C.dim }}>{msg.intent}</span></>}
+            {msg.intent && (
+              <>
+                <span style={{ color: "rgba(0,212,255,0.2)" }}>◆</span>
+                <span style={{ color: "rgba(0,212,255,0.3)" }}>{msg.intent?.toUpperCase()}</span>
+              </>
+            )}
           </>
         )}
       </div>
 
-      <div style={{
-        maxWidth: "78%", padding: "10px 14px",
-        background: isUser ? "#0a1628" : C.surface,
-        border: `1px solid ${isUser ? "#003388" : C.border2}`,
-        borderRadius: 3, fontFamily: "monospace", fontSize: 13,
-        color: C.text, lineHeight: 1.65, whiteSpace: "pre-wrap", wordBreak: "break-word"
-      }}>
-        {msg.content}
-        {msg.streaming && <span style={{color: "#00ff88", animation: "pulse 0.8s infinite"}}>▋</span>}
-      </div>
+      {/* Bubble */}
+      <HUDBox corners={!isUser} style={{ maxWidth: "75%" }}>
+        <div style={{
+          padding: "12px 16px",
+          background: isUser
+            ? "linear-gradient(135deg, rgba(0,68,136,0.3) 0%, rgba(0,34,80,0.4) 100%)"
+            : "linear-gradient(135deg, rgba(0,20,40,0.8) 0%, rgba(0,10,25,0.9) 100%)",
+          border: `1px solid ${isUser ? "rgba(0,136,255,0.3)" : "rgba(0,212,255,0.15)"}`,
+          fontFamily: "'Courier New', monospace", fontSize: 13,
+          color: isUser ? "rgba(180,220,255,0.9)" : "rgba(200,240,255,0.85)",
+          lineHeight: 1.7, whiteSpace: "pre-wrap", wordBreak: "break-word",
+          boxShadow: isUser
+            ? "inset 0 0 30px rgba(0,68,136,0.1)"
+            : "inset 0 0 30px rgba(0,212,255,0.03)",
+        }}>
+          {msg.content}
+          {msg.streaming && (
+            <span style={{
+              display: "inline-block", width: 8, height: 14,
+              background: "#00d4ff", marginLeft: 2, verticalAlign: "middle",
+              animation: "blink 0.7s step-end infinite",
+            }} />
+          )}
+        </div>
+      </HUDBox>
 
+      {/* Meta */}
       {!isUser && msg.confidence !== undefined && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 6, fontSize: 10, fontFamily: "monospace", color: C.muted }}>
-          <span style={{ color: confColor(msg.confidence) }}>{confBar(msg.confidence)} {msg.confidence?.toFixed(2)}</span>
-          <span>{msg.confidence_emoji} {msg.confidence_label}</span>
-          {msg.emotion && msg.emotion !== "neutral" && <span>{emojiFor(msg.emotion)} {msg.emotion}</span>}
-          {msg.tool_used      && <span style={{ color: C.cyan }}>⚡ tool</span>}
-          {msg.memory_updated && <span style={{ color: C.yellow }}>💾 saved</span>}
+        <div style={{
+          display: "flex", gap: 12, marginTop: 6, flexWrap: "wrap",
+          fontSize: 9, fontFamily: "'Courier New', monospace",
+          color: "rgba(0,212,255,0.3)", letterSpacing: 1,
+        }}>
+          <ConfBar value={msg.confidence} />
+          {msg.emotion && msg.emotion !== "neutral" && (
+            <span>{emojiFor(msg.emotion)} {msg.emotion?.toUpperCase()}</span>
+          )}
+          {msg.tool_used && <span style={{ color: "#00ff88" }}>⚡ TOOL</span>}
+          {msg.memory_updated && <span style={{ color: "#ffaa00" }}>◈ SAVED</span>}
         </div>
       )}
 
       {msg.citations?.length > 0 && (
-        <div style={{ marginTop: 6, fontSize: 10, fontFamily: "monospace", maxWidth: "78%" }}>
+        <div style={{ marginTop: 6, maxWidth: "75%", fontFamily: "'Courier New', monospace" }}>
           {msg.citations.slice(0, 3).map(c => (
-            <div key={c.index} style={{ color: C.muted, marginBottom: 3 }}>
-              <span style={{ color: C.blue }}>[{c.index}]</span>{" "}
-              <a href={c.url} target="_blank" rel="noreferrer"
-                style={{ color: C.muted, textDecoration: "none" }}
-                onMouseOver={e => e.target.style.color = C.text}
-                onMouseOut={e => e.target.style.color = C.muted}>
-                {c.title?.slice(0, 65)}
-              </a>
+            <div key={c.index} style={{ fontSize: 9, marginBottom: 3, color: "rgba(0,212,255,0.3)" }}>
+              <span style={{ color: "rgba(0,136,255,0.6)" }}>[{c.index}]</span>{" "}
+              <a href={c.url} target="_blank" rel="noreferrer" style={{
+                color: "rgba(0,212,255,0.3)", textDecoration: "none",
+              }}>{c.title?.slice(0, 60)}</a>
             </div>
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function ConfBar({ value }) {
+  const segments = 10;
+  const filled   = Math.round(value * segments);
+  const color    = value >= 0.9 ? "#00ff88" : value >= 0.6 ? "#00d4ff" : value >= 0.3 ? "#ffaa00" : "#ff4444";
+  return (
+    <span style={{ display: "flex", gap: 1, alignItems: "center" }}>
+      {Array.from({ length: segments }, (_, i) => (
+        <span key={i} style={{
+          display: "inline-block", width: 3, height: 8,
+          background: i < filled ? color : "rgba(0,212,255,0.1)",
+          boxShadow: i < filled ? `0 0 4px ${color}` : "none",
+        }} />
+      ))}
+      <span style={{ marginLeft: 4, color }}>{(value * 100).toFixed(0)}%</span>
+    </span>
+  );
+}
+
+function ThinkingIndicator() {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 12, padding: "8px 0",
+      fontFamily: "'Courier New', monospace", fontSize: 11,
+      color: "rgba(0,212,255,0.6)", letterSpacing: 2,
+    }}>
+      <ArcReactor active={true} />
+      <div>
+        <div style={{ marginBottom: 4 }}>ASTRA PROCESSING</div>
+        <div style={{ display: "flex", gap: 4 }}>
+          {[0,1,2,3,4].map(i => (
+            <div key={i} style={{
+              width: 3, height: 12, background: "#00d4ff",
+              boxShadow: "0 0 6px #00d4ff",
+              animation: `waveBar 1s ease-in-out ${i * 0.1}s infinite`,
+            }} />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -220,7 +453,7 @@ export default function App() {
   const [memory, setMemory]         = useState({});
   const [models]                    = useState(["phi3:mini", "mistral:latest", "llama3.2:3b"]);
   const [currentModel, setCurrentModel] = useState("phi3:mini");
-  const [status, setStatus]         = useState("connecting...");
+  const [status, setStatus]         = useState("connecting");
   const [speakReplies, setSpeakReplies] = useState(false);
   const [wakeActive, setWakeActive] = useState(false);
   const endRef   = useRef(null);
@@ -236,23 +469,20 @@ export default function App() {
         const d = await r.json();
         setStatus("online");
         setCurrentModel(d.model || "phi3:mini");
-        addSystem("ASTRA ENGINE ONLINE");
+        addSystem("ASTRA NEURAL CORE ONLINE · ALL SYSTEMS NOMINAL");
       }
     } catch {
       setStatus("offline");
-      addSystem("⚠️ Backend offline — run: python app.py");
+      addSystem("BACKEND OFFLINE — RUN: python app.py");
     }
   };
 
-  // ✅ FIXED
-const fetchMemory = async () => {
-  try {
-    const r = await fetch(`${API}/memory`);
-    if (r.ok) setMemory(await r.json());
-  } catch (err) {
-    console.error("Failed to fetch memory:", err);
-  }
-};
+  const fetchMemory = async () => {
+    try {
+      const r = await fetch(`${API}/memory`);
+      if (r.ok) setMemory(await r.json());
+    } catch {}
+  };
 
   const addSystem = (text) => setMessages(p => [...p, { role: "system", content: text, id: Date.now() }]);
 
@@ -262,11 +492,7 @@ const fetchMemory = async () => {
     setMessages(p => [...p, { role: "user", content: text, id: Date.now() }]);
     setLoading(true);
 
-    const streamId = Date.now();
-    let fullReply = "";
-    let meta = {};
-
-    // Add empty assistant message — will fill token by token
+    const streamId = Date.now() + 99999;
     setMessages(p => [...p, {
       role: "assistant", content: "", id: streamId,
       agent: "astra", intent: "", streaming: true
@@ -279,60 +505,51 @@ const fetchMemory = async () => {
         body: JSON.stringify({ message: text })
       });
 
-      const reader = response.body.getReader();
+      const reader  = response.body.getReader();
       const decoder = new TextDecoder();
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
         const chunk = decoder.decode(value);
         const lines = chunk.split("\n").filter(l => l.startsWith("data: "));
-
         for (const line of lines) {
           try {
             const data = JSON.parse(line.slice(6));
-
             if (data.type === "meta") {
-              meta = data;
               setMessages(p => p.map(m => m.id === streamId
-                ? { ...m, agent: `ollama/${data.model}`, intent: data.intent,
-                    server: data.server }
-                : m
-              ));
+                ? { ...m, agent: data.model, intent: data.intent } : m));
             }
-
             if (data.type === "token") {
-              fullReply += data.text;
               setMessages(p => p.map(m => m.id === streamId
-                ? { ...m, content: fullReply }
-                : m
-              ));
+                ? { ...m, content: m.content + data.text } : m));
             }
-
             if (data.type === "done") {
-              setMessages(p => p.map(m => m.id === streamId
-                ? { ...m, content: data.full, streaming: false,
-                    confidence: data.confidence, confidence_label: data.confidence_label,
-                    confidence_emoji: data.confidence_emoji, emotion: data.emotion, tool_used: data.tool_used, memory_updated: data.memory_updated, agent: data.agent, intent: data.intent }
-                : m
-              ));
+              setMessages(p => p.map(m => m.id === streamId ? {
+                ...m, streaming: false,
+                confidence: data.confidence, confidence_label: data.confidence_label,
+                confidence_emoji: data.confidence_emoji,
+                emotion: data.emotion, tool_used: data.tool_used,
+                memory_updated: data.memory_updated, agent: data.agent, intent: data.intent,
+              } : m));
               if (speakReplies && data.full) {
                 fetch(`${API}/voice/say`, {
                   method: "POST", headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ text: data.full })
                 });
               }
-              fetchMemory();
+              if (data.memory_updated) fetchMemory();
             }
           } catch {}
         }
       }
     } catch {
-      addSystem("Connection error — is backend running?");
+      addSystem("CONNECTION ERROR — IS BACKEND RUNNING?");
       setMessages(p => p.filter(m => m.id !== streamId));
+    } finally {
+      setLoading(false);
+      inputRef.current?.focus();
     }
-    finally { setLoading(false); inputRef.current?.focus(); }
   };
 
   const switchModel = async (model) => {
@@ -342,14 +559,14 @@ const fetchMemory = async () => {
         body: JSON.stringify({ model })
       });
       setCurrentModel(model);
-      addSystem(`switched to ${model}`);
+      addSystem(`NEURAL NET SWITCHED → ${model.toUpperCase()}`);
     } catch {}
   };
 
   const clearMemory = async () => {
     await fetch(`${API}/memory`, { method: "DELETE" });
     setMemory({});
-    addSystem("memory cleared");
+    addSystem("MEMORY CORE WIPED");
   };
 
   const toggleWake = async () => {
@@ -365,46 +582,68 @@ const fetchMemory = async () => {
     }
   };
 
+  const msgCount = messages.filter(m => m.role !== "system").length;
+
   return (
-    <div style={{ display: "flex", height: "100vh", background: C.bg, color: C.text, fontFamily: "monospace", overflow: "hidden" }}>
+    <div style={{
+      display: "flex", height: "100vh", overflow: "hidden",
+      background: "#00040a",
+      fontFamily: "'Courier New', monospace",
+    }}>
+      <ScanLine />
+
+      {/* Background grid */}
+      <div style={{
+        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
+        backgroundImage: `
+          linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)
+        `,
+        backgroundSize: "40px 40px",
+      }} />
 
       <MemoryPanel memory={memory} models={models} currentModel={currentModel} onSwitchModel={switchModel} />
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative", zIndex: 1 }}>
 
         {/* Header */}
         <div style={{
-          padding: "10px 20px", borderBottom: `1px solid ${C.border}`,
+          padding: "12px 24px",
+          borderBottom: "1px solid rgba(0,212,255,0.12)",
+          background: "linear-gradient(90deg, rgba(0,10,20,0.95) 0%, rgba(0,5,15,0.98) 100%)",
           display: "flex", justifyContent: "space-between", alignItems: "center",
-          background: C.surface, flexShrink: 0
+          flexShrink: 0, position: "relative",
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ color: C.green, fontSize: 17, fontWeight: "bold", letterSpacing: 4 }}>ASTRA</span>
-            <span style={{ color: C.dim, fontSize: 10 }}>v3.0</span>
+          {/* Bottom border glow */}
+          <div style={{
+            position: "absolute", bottom: 0, left: 0, right: 0, height: 1,
+            background: "linear-gradient(90deg, transparent, rgba(0,212,255,0.4), transparent)",
+          }} />
 
-            <div style={{
-              fontSize: 10, padding: "2px 8px",
-              border: `1px solid ${status === "online" ? C.green : C.red}`,
-              color: status === "online" ? C.green : C.red,
-              borderRadius: 2, display: "flex", alignItems: "center", gap: 5
-            }}>
-              <span style={{
-                display: "inline-block", width: 5, height: 5, borderRadius: "50%",
-                background: status === "online" ? C.green : C.red,
-                animation: status === "online" ? "pulse 2s infinite" : "none"
-              }} />
-              {status === "online" ? "LIVE" : "OFFLINE"}
+          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <ArcReactor active={status === "online"} />
+
+            <div>
+              <div style={{
+                fontSize: 20, fontWeight: "bold", letterSpacing: 6,
+                color: "#00d4ff",
+                textShadow: "0 0 20px rgba(0,212,255,0.6), 0 0 40px rgba(0,212,255,0.2)",
+              }}>ASTRA</div>
+              <div style={{ fontSize: 8, letterSpacing: 4, color: "rgba(0,212,255,0.4)", marginTop: 1 }}>
+                ADVANCED SYSTEM FOR TACTICAL REASONING & AUTOMATION
+              </div>
             </div>
 
             {/* Tabs */}
-            <div style={{ display: "flex", gap: 2, marginLeft: 4 }}>
-              {[["chat", "◈ CHAT"], ["vision", "◎ VISION"]].map(([t, label]) => (
+            <div style={{ display: "flex", gap: 4, marginLeft: 16 }}>
+              {[["chat", "◈ INTERFACE"], ["vision", "◎ VISION"]].map(([t, label]) => (
                 <button key={t} onClick={() => setTab(t)} style={{
-                  background: tab === t ? `${C.green}15` : "transparent",
-                  border: `1px solid ${tab === t ? C.green : C.dim}`,
-                  borderRadius: 3, color: tab === t ? C.green : C.muted,
-                  fontFamily: "monospace", fontSize: 10, padding: "3px 10px",
-                  cursor: "pointer", letterSpacing: 1, transition: "all 0.15s"
+                  background: tab === t ? "rgba(0,212,255,0.1)" : "transparent",
+                  border: `1px solid ${tab === t ? "rgba(0,212,255,0.5)" : "rgba(0,212,255,0.15)"}`,
+                  color: tab === t ? "#00d4ff" : "rgba(0,212,255,0.3)",
+                  fontFamily: "'Courier New', monospace", fontSize: 10, padding: "4px 12px",
+                  cursor: "pointer", letterSpacing: 2, transition: "all 0.2s",
+                  boxShadow: tab === t ? "0 0 10px rgba(0,212,255,0.15)" : "none",
                 }}>
                   {label}
                 </button>
@@ -412,88 +651,164 @@ const fetchMemory = async () => {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <span style={{ fontSize: 10, color: C.blue }}>[{currentModel.split(":")[0]}]</span>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <StatusBar status={status} model={currentModel} msgCount={msgCount} />
+
+            <div style={{ width: 1, height: 20, background: "rgba(0,212,255,0.15)" }} />
+
+            {/* Wake word */}
             <button onClick={toggleWake} style={{
-              background: wakeActive ? `${C.purple}22` : "transparent",
-              border: `1px solid ${wakeActive ? C.purple : C.dim}`,
-              borderRadius: 3, color: wakeActive ? C.purple : C.muted,
-              fontFamily: "monospace", fontSize: 10, padding: "3px 9px",
-              cursor: "pointer", letterSpacing: 1
+              background: wakeActive ? "rgba(0,212,255,0.1)" : "transparent",
+              border: `1px solid ${wakeActive ? "rgba(0,212,255,0.5)" : "rgba(0,212,255,0.15)"}`,
+              color: wakeActive ? "#00d4ff" : "rgba(0,212,255,0.3)",
+              fontFamily: "'Courier New', monospace", fontSize: 9,
+              padding: "4px 10px", cursor: "pointer", letterSpacing: 2,
+              boxShadow: wakeActive ? "0 0 10px rgba(0,212,255,0.2)" : "none",
+              transition: "all 0.2s",
             }}>
-              {wakeActive ? "◈ WAKE" : "◯ WAKE"}
+              {wakeActive ? "◉ WAKE" : "◎ WAKE"}
             </button>
-            <span onClick={clearMemory}
-              style={{ color: C.muted, cursor: "pointer", fontSize: 11 }}
-              onMouseOver={e => e.target.style.color = C.red}
-              onMouseOut={e => e.target.style.color = C.muted}>
-              clear
-            </span>
+
+            {/* Speak toggle */}
+            <button onClick={() => setSpeakReplies(p => !p)} style={{
+              background: speakReplies ? "rgba(0,255,136,0.08)" : "transparent",
+              border: `1px solid ${speakReplies ? "rgba(0,255,136,0.4)" : "rgba(0,212,255,0.15)"}`,
+              color: speakReplies ? "#00ff88" : "rgba(0,212,255,0.3)",
+              fontFamily: "'Courier New', monospace", fontSize: 9,
+              padding: "4px 10px", cursor: "pointer", letterSpacing: 2,
+              transition: "all 0.2s",
+            }}>
+              {speakReplies ? "◉ VOICE" : "◎ VOICE"}
+            </button>
+
+            {/* Clear */}
+            <button onClick={clearMemory} style={{
+              background: "transparent",
+              border: "1px solid rgba(255,68,68,0.2)",
+              color: "rgba(255,68,68,0.4)",
+              fontFamily: "'Courier New', monospace", fontSize: 9,
+              padding: "4px 10px", cursor: "pointer", letterSpacing: 2,
+              transition: "all 0.2s",
+            }}
+              onMouseOver={e => e.currentTarget.style.borderColor = "rgba(255,68,68,0.6)"}
+              onMouseOut={e => e.currentTarget.style.borderColor = "rgba(255,68,68,0.2)"}
+            >
+              ✕ WIPE
+            </button>
           </div>
         </div>
 
         {/* Content */}
         {tab === "vision" ? (
           <div style={{ flex: 1, overflow: "hidden" }}>
-            <LiveVision onAnalysis={(entry) => { if (entry.question) addSystem(`👁️ ${entry.jarvis}`); }} />
+            <LiveVision onAnalysis={(entry) => { if (entry.question) addSystem(`◎ ${entry.jarvis}`); }} />
           </div>
         ) : (
           <>
-            <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px" }}>
+            {/* Messages */}
+            <div style={{
+              flex: 1, overflowY: "auto", padding: "28px 32px",
+              background: "transparent",
+            }}>
               {messages.length === 0 && (
-                <div style={{ textAlign: "center", marginTop: 80, color: C.muted }}>
-                  <div style={{ fontSize: 36, marginBottom: 14, color: C.green }}>◈</div>
-                  <div style={{ fontSize: 14, color: C.green, letterSpacing: 3, marginBottom: 8 }}>ASTRA ENGINE READY</div>
-                  <div style={{ fontSize: 11, color: C.dim }}>chat · voice · vision · memory · web search</div>
-                  <div style={{ fontSize: 11, marginTop: 20, color: C.dim, lineHeight: 2 }}>
-                    try: "search latest AI news"<br />
-                    switch to ◎ VISION to see what ASTRA sees
+                <div style={{ textAlign: "center", marginTop: "15vh" }}>
+                  <div style={{
+                    fontSize: 60, marginBottom: 20,
+                    filter: "drop-shadow(0 0 30px rgba(0,212,255,0.4))",
+                  }}>◈</div>
+                  <div style={{
+                    fontSize: 18, letterSpacing: 8, color: "#00d4ff",
+                    marginBottom: 8, fontWeight: "bold",
+                    textShadow: "0 0 20px rgba(0,212,255,0.4)",
+                  }}>ASTRA ONLINE</div>
+                  <div style={{ fontSize: 10, letterSpacing: 3, color: "rgba(0,212,255,0.3)", marginBottom: 32 }}>
+                    ADVANCED PERSONAL AI · ALL SYSTEMS READY
+                  </div>
+                  <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+                    {[
+                      "what's playing",
+                      "open spotify",
+                      "my schedule today",
+                      "message mom I'm home",
+                      "volume up",
+                      "battery status",
+                    ].map(cmd => (
+                      <button key={cmd} onClick={() => sendMessage(cmd)} style={{
+                        background: "rgba(0,212,255,0.05)",
+                        border: "1px solid rgba(0,212,255,0.2)",
+                        color: "rgba(0,212,255,0.5)",
+                        fontFamily: "'Courier New', monospace", fontSize: 10,
+                        padding: "6px 14px", cursor: "pointer", letterSpacing: 1,
+                        transition: "all 0.2s",
+                      }}
+                        onMouseOver={e => { e.currentTarget.style.background = "rgba(0,212,255,0.1)"; e.currentTarget.style.color = "#00d4ff"; }}
+                        onMouseOut={e => { e.currentTarget.style.background = "rgba(0,212,255,0.05)"; e.currentTarget.style.color = "rgba(0,212,255,0.5)"; }}
+                      >
+                        {cmd}
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
+
               {messages.map(msg => <Message key={msg.id} msg={msg} />)}
-              {loading && <div style={{ fontFamily: "monospace", fontSize: 12, color: C.green }}>ASTRA ▋</div>}
+              {loading && <ThinkingIndicator />}
               <div ref={endRef} />
             </div>
 
-            <div style={{ padding: "12px 24px 20px", borderTop: `1px solid ${C.border}`, background: C.surface, flexShrink: 0 }}>
-              <div style={{ display: "flex", gap: 8, marginBottom: 10, alignItems: "center" }}>
-                <VoiceButton onTranscript={sendMessage} />
-                <button onClick={() => setSpeakReplies(p => !p)} style={{
-                  background: speakReplies ? `${C.purple}22` : "transparent",
-                  border: `1px solid ${speakReplies ? C.purple : C.dim}`,
-                  borderRadius: 3, color: speakReplies ? C.purple : C.muted,
-                  fontFamily: "monospace", fontSize: 10, padding: "4px 10px",
-                  cursor: "pointer", letterSpacing: 1
-                }}>
-                  {speakReplies ? "🔊 SPEAK ON" : "🔇 SPEAK"}
-                </button>
-                <span style={{ marginLeft: "auto", fontSize: 10, color: C.dim }}>
-                  {messages.filter(m => m.role !== "system").length} msgs
-                </span>
-              </div>
-
+            {/* Input bar */}
+            <div style={{
+              padding: "16px 32px 24px",
+              borderTop: "1px solid rgba(0,212,255,0.1)",
+              background: "linear-gradient(0deg, rgba(0,4,12,0.98) 0%, rgba(0,8,20,0.95) 100%)",
+              flexShrink: 0, position: "relative",
+            }}>
               <div style={{
-                display: "flex", alignItems: "center", gap: 10,
-                border: `1px solid ${loading ? C.dim : C.green}`,
-                borderRadius: 3, padding: "8px 12px",
-                background: C.surface2, transition: "border-color 0.2s"
-              }}>
-                <span style={{ color: C.green, fontSize: 14 }}>›</span>
-                <input ref={inputRef} value={input}
-                  onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                  placeholder="type a message..." disabled={loading}
-                  style={{
-                    flex: 1, background: "transparent", border: "none",
-                    outline: "none", color: C.text, fontFamily: "monospace",
-                    fontSize: 13, caretColor: C.green
-                  }}
-                />
-                <span style={{ color: C.muted, fontSize: 10, letterSpacing: 1 }}>
-                  {loading ? "thinking..." : "enter ↵"}
-                </span>
-              </div>
+                position: "absolute", top: 0, left: 0, right: 0, height: 1,
+                background: "linear-gradient(90deg, transparent, rgba(0,212,255,0.3), transparent)",
+              }} />
+
+              <HUDBox style={{ position: "relative" }}>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 14,
+                  padding: "12px 16px",
+                  background: "rgba(0,12,25,0.8)",
+                  border: `1px solid ${loading ? "rgba(0,212,255,0.1)" : "rgba(0,212,255,0.3)"}`,
+                  boxShadow: loading ? "none" : "0 0 20px rgba(0,212,255,0.05)",
+                  transition: "all 0.3s",
+                }}>
+                  <VoiceButton onTranscript={sendMessage} />
+
+                  <div style={{
+                    width: 1, height: 24,
+                    background: "rgba(0,212,255,0.2)",
+                  }} />
+
+                  <span style={{ color: "rgba(0,212,255,0.4)", fontSize: 14 }}>›</span>
+
+                  <input
+                    ref={inputRef}
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
+                    placeholder="ENTER COMMAND..."
+                    disabled={loading}
+                    style={{
+                      flex: 1, background: "transparent", border: "none",
+                      outline: "none", color: "rgba(200,240,255,0.85)",
+                      fontFamily: "'Courier New', monospace", fontSize: 13,
+                      caretColor: "#00d4ff", letterSpacing: 1,
+                    }}
+                  />
+
+                  <span style={{
+                    fontSize: 9, color: "rgba(0,212,255,0.25)",
+                    letterSpacing: 2, flexShrink: 0,
+                  }}>
+                    {loading ? "PROCESSING..." : "ENTER ↵"}
+                  </span>
+                </div>
+              </HUDBox>
             </div>
           </>
         )}
@@ -501,12 +816,46 @@ const fetchMemory = async () => {
 
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        ::-webkit-scrollbar { width: 3px; }
-        ::-webkit-scrollbar-track { background: ${C.bg}; }
-        ::-webkit-scrollbar-thumb { background: ${C.border2}; border-radius: 2px; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-        input::placeholder { color: ${C.dim}; }
-        button:hover { opacity: 0.85; }
+
+        ::-webkit-scrollbar { width: 2px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 1px; }
+
+        input::placeholder { color: rgba(0,212,255,0.2); letter-spacing: 2px; }
+        button { outline: none; }
+
+        @keyframes scanline {
+          0%   { transform: translateY(-100vh); }
+          100% { transform: translateY(100vh); }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+          0%,100% { opacity: 1; }
+          50%      { opacity: 0.3; }
+        }
+        @keyframes voicePulse {
+          0%,100% { box-shadow: 0 0 20px rgba(255,68,68,0.4); }
+          50%      { box-shadow: 0 0 40px rgba(255,68,68,0.7); }
+        }
+        @keyframes ripple {
+          0%   { transform: scale(1); opacity: 0.6; }
+          100% { transform: scale(1.8); opacity: 0; }
+        }
+        @keyframes blink {
+          0%,100% { opacity: 1; }
+          50%      { opacity: 0; }
+        }
+        @keyframes fadeSlideIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes waveBar {
+          0%,100% { transform: scaleY(0.4); opacity: 0.4; }
+          50%      { transform: scaleY(1); opacity: 1; }
+        }
       `}</style>
     </div>
   );
