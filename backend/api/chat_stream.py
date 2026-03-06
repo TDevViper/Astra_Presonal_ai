@@ -1,6 +1,6 @@
 import json
 from flask import Blueprint, Response, request, stream_with_context
-from core.brain import brain
+from core.orchestrator import orchestrator
 
 stream_bp = Blueprint("stream", __name__)
 
@@ -19,21 +19,18 @@ def chat_stream():
         )
 
     def generate():
-        result = brain.process(message)
+        result = orchestrator.run(message)
         reply  = result.get("reply", "")
         agent  = result.get("agent", "astra")
         intent = result.get("intent", "")
 
-        # Send meta first
         yield f"data: {json.dumps({'type': 'meta', 'model': agent, 'intent': intent})}\n\n"
 
-        # Stream word by word
         words = reply.split()
         for word in words:
             yield f"data: {json.dumps({'type': 'token', 'text': word + ' '})}\n\n"
 
-        # Final done event with full metadata
-        yield f"data: {json.dumps({'type': 'done', 'full': reply, 'agent': agent, 'intent': intent, 'emotion': result.get('emotion', 'neutral'), 'confidence': result.get('confidence', 0.8), 'confidence_label': result.get('confidence_label', 'MEDIUM'), 'confidence_emoji': result.get('confidence_emoji', '🟡'), 'tool_used': result.get('tool_used', False), 'memory_updated': result.get('memory_updated', False)})}\n\n"
+        yield f"data: {json.dumps({'type': 'done', 'full': reply, 'agent': agent, 'intent': intent, 'emotion': result.get('emotion', 'neutral'), 'confidence': result.get('confidence', 0.9), 'confidence_label': 'HIGH', 'confidence_emoji': '🟢', 'tool_used': False, 'memory_updated': False})}\n\n"
 
     return Response(
         stream_with_context(generate()),
