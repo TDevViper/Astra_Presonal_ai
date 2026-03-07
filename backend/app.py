@@ -15,6 +15,7 @@ from api.vision import vision_bp
 from api.multimodal import multimodal_bp
 from api.chat_stream import stream_bp
 from api.realtime import realtime_bp
+from api.health import health_bp
 
 
 class ColoredFormatter(logging.Formatter):
@@ -35,6 +36,7 @@ class ColoredFormatter(logging.Formatter):
 
     def format(self, record):
         return logging.Formatter(self.FORMATS.get(record.levelno)).format(record)
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -57,6 +59,8 @@ app.register_blueprint(vision_bp)
 app.register_blueprint(multimodal_bp)
 app.register_blueprint(stream_bp)
 app.register_blueprint(realtime_bp)
+app.register_blueprint(health_bp)
+
 
 @app.errorhandler(404)
 def not_found(e):

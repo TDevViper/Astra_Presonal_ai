@@ -26,11 +26,22 @@ def chat_stream():
 
         yield f"data: {json.dumps({'type': 'meta', 'model': agent, 'intent': intent})}\n\n"
 
-        words = reply.split()
-        for word in words:
+        for word in reply.split():
             yield f"data: {json.dumps({'type': 'token', 'text': word + ' '})}\n\n"
 
-        yield f"data: {json.dumps({'type': 'done', 'full': reply, 'agent': agent, 'intent': intent, 'emotion': result.get('emotion', 'neutral'), 'confidence': result.get('confidence', 0.9), 'confidence_label': 'HIGH', 'confidence_emoji': '🟢', 'tool_used': False, 'memory_updated': False})}\n\n"
+        done_payload = {
+            "type":             "done",
+            "full":             reply,
+            "agent":            agent,
+            "intent":           intent,
+            "emotion":          result.get("emotion", "neutral"),
+            "confidence":       result.get("confidence", 0.6),
+            "confidence_label": result.get("confidence_label", "MEDIUM"),
+            "confidence_emoji": result.get("confidence_emoji", "🟡"),
+            "tool_used":        result.get("tool_used", False),
+            "memory_updated":   result.get("memory_updated", False),
+        }
+        yield f"data: {json.dumps(done_payload)}\n\n"
 
     return Response(
         stream_with_context(generate()),
