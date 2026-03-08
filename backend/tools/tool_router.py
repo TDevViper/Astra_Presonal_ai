@@ -6,10 +6,9 @@
 from .file_reader import read_file
 from .api_caller  import call_api
 
-TOOLS            = ["file_reader", "system_monitor", "task_manager", "git", "python_sandbox"]
+TOOLS             = ["file_reader", "system_monitor", "task_manager", "git", "python_sandbox"]
 APPROVAL_REQUIRED = ["git", "python_sandbox"]
 
-# Wide semantic triggers — catch natural language variations
 FILE_TRIGGERS = [
     "read ", "open file", "show file", "read file",
     "cat ", "view file", "load file", "contents of"
@@ -39,7 +38,6 @@ PYTHON_TRIGGERS = [
     "run script", "python script"
 ]
 
-# System CONTROL — apps, volume, screen
 SYSTEM_CONTROL_TRIGGERS = [
     "open app", "close app", "quit app", "launch app",
     "play music", "pause music", "skip song",
@@ -49,10 +47,19 @@ SYSTEM_CONTROL_TRIGGERS = [
     "sleep display", "empty trash"
 ]
 
+SCREEN_TRIGGERS = [
+    "what's on my screen", "whats on my screen",
+    "what am i working on", "look at my screen",
+    "read my screen", "what does my screen show",
+    "screen analysis", "analyze my screen"
+]
+
 
 def detect_tool(user_input: str) -> str | None:
     text = user_input.lower()
 
+    if any(t in text for t in SCREEN_TRIGGERS):
+        return "screen_watcher"
     if any(t in text for t in PYTHON_TRIGGERS):
         return "python_sandbox"
     if any(t in text for t in GIT_TRIGGERS):

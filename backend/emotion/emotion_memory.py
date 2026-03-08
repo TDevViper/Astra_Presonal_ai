@@ -94,3 +94,53 @@ def get_dominant_emotion(memory: Dict) -> str:
     dominant = max(stats.items(), key=lambda x: x[1]["count"])
     return dominant[0]
 
+
+
+# ── Cross-session persistent emotion tracking ─────────────────
+import json as _json
+import os as _os
+from datetime import datetime as _dt
+from collections import Counter as _Counter
+
+_BACKEND_DIR2        = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+EMOTION_HISTORY_FILE = _os.path.join(_BACKEND_DIR2, "memory", "data", "emotion_history.json")
+
+
+def log_emotion_persistent(emotion: str, context: str, user_name: str = "Arnav"):
+    history = _load_emotion_history()
+    history.append({
+        "timestamp": _dt.now().isoformat(),
+        "emotion":   emotion,
+        "context":   context[:100],
+        "user":      user_name
+    })
+    _save_emotion_history(history[-200:])
+
+
+def get_emotional_trend(last_n: int = 50) -> str:
+    history = _load_emotion_history()
+    if not history:
+        return "No emotional history yet."
+    counts = _Counter(e["emotion"] for e in history[-last_n:])
+    top    = counts.most_common(3)
+    return "Emotional pattern: " + ", ".join(f"{e}({c}x)" for e, c in top)
+
+
+def inject_emotional_context(system_prompt: str) -> str:
+    return system_prompt + f"\nEmotional context: {get_emotional_trend()}"
+
+
+def _load_emotion_history():
+    if not _os.path.exists(EMOTION_HISTORY_FILE):
+        return []
+    try:
+        with open(EMOTION_HISTORY_FILE) as f:
+            return _json.load(f)
+    except Exception:
+        return []
+
+
+def _save_emotion_history(history):
+    _os.makedirs(_os.path.dirname(EMOTION_HISTORY_FILE), exist_ok=True)
+    with open(EMOTION_HISTORY_FILE, "w") as f:
+        _json.dump(history, f, indent=2)

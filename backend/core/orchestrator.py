@@ -7,6 +7,10 @@ from typing import Dict, List, Optional, Tuple
 
 from utils.logger import agent_logger, chat_logger, system_logger, log_event
 from utils.timeout import timeout
+try:
+    from core.self_improve import log_response as _log_self
+except Exception:
+    _log_self = lambda *a, **k: None
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +81,7 @@ TOOL_TRIGGERS = {
     "system":     ["volume up", "volume down", "open app", "close app",
                    "take screenshot", "lock screen"],
     "git":        ["git status", "git log", "git commit", "git diff"],
-    "tasks":      ["add task", "my tasks", "show tasks", "complete task"],
+    "tasks":      ["add task", "my tasks", "show tasks", "complete task", "pending task", "see task", "list task", "view task", "my pending", "what are my tasks", "show me my tasks"],
     "files":      ["read file", "open file", "show file"],
     "python":     ["```python", "run python", "execute python", "run this code"],
 }

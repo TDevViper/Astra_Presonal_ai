@@ -88,6 +88,6 @@ if __name__ == "__main__":
     from proactive.proactive_engine import get_proactive_engine
 
     proactive = get_proactive_engine(speak_fn=speak)
-    # proactive.start()  # disabled — too noisy
+    proactive.start()  
 
     app.run(debug=config.debug, host=config.host, port=config.port)

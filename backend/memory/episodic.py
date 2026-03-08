@@ -52,6 +52,11 @@ def store_episode(user_msg: str, astra_reply: str,
     })
     _save_episodes(episodes)
     logger.debug(f"📼 Episode stored: {user_msg[:40]}")
+    try:
+        from knowledge.entity_extractor import extract_and_store
+        extract_and_store(user_msg + " " + astra_reply, user_name=user_name)
+    except Exception:
+        pass
 
 
 def recall_episodes(query: str, top_k: int = 3) -> List[Dict]:
