@@ -52,3 +52,10 @@ backend/data/
 backend/memory/data/
 memory.json
 *.sqlite3
+# Kokoro TTS model files
+backend/kokoro-v1_0.pth
+backend/voices/
+backend/kokoro-v0_19.onnx
+backend/voices.bin
+kokoro-v0_19.onnx
+voices.bin
