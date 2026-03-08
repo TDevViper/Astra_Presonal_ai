@@ -1,7 +1,7 @@
 // LiveVision.jsx — WebRTC + Voice + Vision combined
 import { useState, useEffect, useRef, useCallback } from "react";
 
-const API = "http://127.0.0.1:5050";
+import API from "../config";
 
 const C = {
   bg: "#080808", surface: "#0f0f0f", surface2: "#141414",

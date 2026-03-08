@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import LiveVision from "./components/LiveVision";
 
-const API = "http://127.0.0.1:5001";
+import API from "./config";
 
 const agentLabel = (a) => {
   if (a?.includes("mistral")) return "MISTRAL";
