@@ -50,7 +50,7 @@ class ProactiveEngine:
     def end_focus_session(self):
         if self._focus_start:
             elapsed = (datetime.now() - self._focus_start).seconds // 60
-            self.speak(f"Focus session ended. You worked for {elapsed} minutes. Great job, {USER_NAME}!")
+            pass  # disabled
         self._focus_start = None
 
     def _loop(self):
@@ -127,7 +127,7 @@ class ProactiveEngine:
         if tasks:
             msg = f"Hey {USER_NAME}, afternoon check-in. {len(tasks)} task{'s' if len(tasks) > 1 else ''} still pending. Keep going."
         else:
-            msg = f"Hey {USER_NAME}, task list is clear. Nice work today."
+            msg = ""  # disabled
         self.speak(msg)
 
     def _do_evening_wrapup(self):
