@@ -241,7 +241,8 @@ class Brain:
                 )
 
             # ── 5. Web search ─────────────────────────────────
-            if self.capabilities.is_enabled("web_search") and needs_web_search(user_input):
+            _local_query = any(w in user_input.lower() for w in ["my project", "my code", "in the project", "my file", "my folder", "where is", "which file", "codebase"])
+            if self.capabilities.is_enabled("web_search") and needs_web_search(user_input) and not _local_query:
                 self.search_agent.model = self.model_manager.select_model(user_input, "research")
                 result = self.search_agent.run(user_input, user_name)
 
@@ -270,6 +271,15 @@ class Brain:
             semantic_ctx, sem_confidence_boost = build_semantic_context(
                 user_input, user_name=user_name
             )
+            # RAG — inject relevant chunks from personal knowledge base
+            try:
+                from rag.rag_engine import query_rag, should_use_rag
+                if should_use_rag(user_input):
+                    rag_ctx = query_rag(user_input, top_k=3)
+                    if rag_ctx:
+                        semantic_ctx = semantic_ctx + "\n\nFROM YOUR FILES:\n" + rag_ctx if semantic_ctx else "FROM YOUR FILES:\n" + rag_ctx
+            except Exception as _rag_err:
+                pass
             # Episodic context — past conversations
             episodic_ctx = build_episodic_context(user_input, user_name)
 
