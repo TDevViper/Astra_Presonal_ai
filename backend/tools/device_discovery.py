@@ -1,39 +1,25 @@
-import socket
-import subprocess
-import logging
-
-logger = logging.getLogger(__name__)
-
+import socket, threading, subprocess, asyncio
+from zeroconf import Zeroconf, ServiceBrowser
+from bleak import BleakScanner
 
 class DeviceDiscovery:
     def __init__(self):
         self.devices = {}
+        self.zc = Zeroconf()
 
     def scan_mdns(self):
-        try:
-            from zeroconf import Zeroconf, ServiceBrowser
-            import time
-            self.zc = Zeroconf()
-            ServiceBrowser(
-                self.zc,
-                ["_http._tcp.local.", "_hap._tcp.local.",
-                 "_googlecast._tcp.local.", "_airplay._tcp.local."],
-                handlers=[self._on_service_found]
-            )
-            time.sleep(3)
-        except ImportError:
-            logger.warning("zeroconf not installed: pip install zeroconf")
-        except Exception as e:
-            logger.error(f"mDNS scan error: {e}")
+        ServiceBrowser(
+            self.zc,
+            ["_http._tcp.local.", "_hap._tcp.local.",
+             "_googlecast._tcp.local.", "_airplay._tcp.local."],
+            handlers=[self._on_service_found]
+        )
 
     def _on_service_found(self, zeroconf, type, name, state_change):
-        try:
-            info = zeroconf.get_service_info(type, name)
-            if info and info.addresses:
-                ip = socket.inet_ntoa(info.addresses[0])
-                self.devices[name] = {"ip": ip, "type": type, "protocol": "mdns"}
-        except Exception:
-            pass
+        info = zeroconf.get_service_info(type, name)
+        if info and info.addresses:
+            ip = socket.inet_ntoa(info.addresses[0])
+            self.devices[name] = {"ip": ip, "type": type, "protocol": "mdns"}
 
     def scan_network(self):
         try:
@@ -43,27 +29,29 @@ class DeviceDiscovery:
                     parts = line.split()
                     if len(parts) >= 2:
                         name = parts[0]
-                        ip = parts[1].strip("()")
+                        ip   = parts[1].strip("()")
                         self.devices[name] = {"ip": ip, "protocol": "arp"}
         except Exception as e:
-            logger.error(f"Network scan error: {e}")
+            print(f"[DeviceDiscovery] scan_network error: {e}")
+        return self.devices
 
-    async def scan_bluetooth(self):
+    async def _scan_bluetooth_async(self):
         try:
-            from bleak import BleakScanner
             devices = await BleakScanner.discover()
             for d in devices:
                 if d.name:
                     self.devices[d.name] = {"address": d.address, "protocol": "bluetooth"}
-        except ImportError:
-            logger.warning("bleak not installed: pip install bleak")
         except Exception as e:
-            logger.error(f"Bluetooth scan error: {e}")
-
-    def get_all_devices(self):
-        return self.devices
+            print(f"[DeviceDiscovery] bluetooth error: {e}")
 
     def scan_all(self):
         self.scan_network()
         self.scan_mdns()
+        threading.Thread(
+            target=lambda: asyncio.run(self._scan_bluetooth_async()),
+            daemon=True
+        ).start()
+        return self.devices
+
+    def get_all_devices(self):
         return self.devices

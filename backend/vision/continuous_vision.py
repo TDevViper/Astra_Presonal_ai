@@ -1,25 +1,16 @@
-import threading
-import time
-import logging
-
-logger = logging.getLogger(__name__)
-
+import threading, time
 
 class ContinuousVision:
-    def __init__(self, broadcast_fn, interval: int = 8):
-        self.broadcast      = broadcast_fn
-        self.interval       = interval
-        self.last_desc      = ""
-        self.running        = False
-        self._latest_frame  = None
-
-    def set_frame(self, frame_b64: str):
-        self._latest_frame = frame_b64
+    def __init__(self, broadcast_fn, get_frame_fn, interval=8):
+        self.broadcast  = broadcast_fn
+        self.get_frame  = get_frame_fn
+        self.interval   = interval
+        self.last_desc  = ""
+        self.running    = False
 
     def start(self):
         self.running = True
         threading.Thread(target=self._loop, daemon=True).start()
-        logger.info("👁️ ContinuousVision started")
 
     def stop(self):
         self.running = False
@@ -27,19 +18,15 @@ class ContinuousVision:
     def _loop(self):
         while self.running:
             try:
-                if self._latest_frame:
-                    from vision.analyzer import analyze
-                    result = analyze(
-                        self._latest_frame,
-                        mode="camera",
-                        user_context="Describe only what changed. One sentence."
-                    )
-                    desc = result.get("jarvis_response", "") or result.get("summary", "")
-                    if desc and self._is_significant_change(desc):
-                        self.broadcast(f"👁️ {desc}")
+                frame = self.get_frame()
+                if frame:
+                    from vision.llava_analyzer import analyze_image
+                    desc = analyze_image(frame, "Describe only what changed. One sentence.")
+                    if self._is_significant_change(desc):
+                        self.broadcast(f"👁️ I see: {desc}")
                         self.last_desc = desc
-            except Exception as e:
-                logger.error(f"ContinuousVision error: {e}")
+            except Exception:
+                pass
             time.sleep(self.interval)
 
     def _is_significant_change(self, new_desc: str) -> bool:

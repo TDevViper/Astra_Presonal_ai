@@ -57,6 +57,18 @@ export default function LiveVision({ onAnalysis }) {
   useEffect(() => () => { stopCamera(); clearInterval(intervalRef.current); }, []);
 
   // ── Capture frame ─────────────────────────────────────────
+  
+  // ── Push frame to backend buffer for continuous vision ──────────────
+  const pushFrameToBuffer = async (b64) => {
+    try {
+      await fetch('/api/frame', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ frame: b64 })
+      });
+    } catch (e) { /* silent */ }
+  };
+
   const captureFrame = useCallback(() => {
     const video = videoRef.current, canvas = canvasRef.current;
     if (!video || !canvas) return null;
@@ -74,6 +86,7 @@ export default function LiveVision({ onAnalysis }) {
 
     try {
       const frame = captureFrame();
+      pushFrameToBuffer(frame);
       setTalkState("listening");
 
       const res = await fetch(`${API}/realtime/talk`, {
@@ -183,6 +196,7 @@ export default function LiveVision({ onAnalysis }) {
     setQuestion("");
     if (camActive) {
       const frame = captureFrame();
+      pushFrameToBuffer(frame);
       fetch(`${API}/talk`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: frame, text: q, speak: true })

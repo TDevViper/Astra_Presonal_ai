@@ -1,9 +1,25 @@
+from api.ws_stream import sock, broadcast
+from vision.continuous_vision import ContinuousVision
+from vision.frame_buffer import FrameBuffer
+
 import logging
 from flask import Flask, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 
 load_dotenv()
+# ── Frame buffer + continuous vision ────────────────────────────────────
+from vision.frame_buffer import FrameBuffer
+from vision.continuous_vision import ContinuousVision
+from api.ws_stream import broadcast
+_frame_buffer = FrameBuffer(maxlen=10)
+_continuous_vision = ContinuousVision(
+    broadcast_fn = broadcast,
+    get_frame_fn = _frame_buffer.latest,
+    interval     = 8
+)
+_continuous_vision.start()
+
 
 from config import config
 from api.chat import chat_bp
@@ -49,6 +65,7 @@ handler.setFormatter(ColoredFormatter())
 logger.addHandler(handler)
 
 app = Flask(__name__)
+sock.init_app(app)
 CORS(app)
 
 app.register_blueprint(chat_bp)
@@ -63,6 +80,16 @@ app.register_blueprint(realtime_bp)
 app.register_blueprint(health_bp)
 app.register_blueprint(knowledge_bp)
 
+
+
+@app.route("/api/frame", methods=["POST"])
+def receive_frame():
+    from flask import request
+    data  = request.get_json()
+    frame = data.get("frame")
+    if frame:
+        _frame_buffer.add(frame)
+    return {"ok": True}
 
 @app.errorhandler(404)
 def not_found(e):

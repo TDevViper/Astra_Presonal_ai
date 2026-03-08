@@ -1,12 +1,9 @@
 from collections import deque
+import base64, numpy as np, cv2
 from datetime import datetime
-import logging
-
-logger = logging.getLogger(__name__)
-
 
 class FrameBuffer:
-    def __init__(self, maxlen: int = 10):
+    def __init__(self, maxlen=10):
         self.frames     = deque(maxlen=maxlen)
         self.timestamps = deque(maxlen=maxlen)
 
@@ -14,29 +11,25 @@ class FrameBuffer:
         self.frames.append(frame_b64)
         self.timestamps.append(datetime.now().isoformat())
 
+    def latest(self):
+        return self.frames[-1] if self.frames else None
+
     def get_context_prompt(self) -> str:
         n = len(self.frames)
-        return (
-            f"You have seen {n} frames over the last {n * 8} seconds. "
-            "Describe what changed since the first frame."
-        )
+        return f"You have seen {n} recent frames over the last {n * 8} seconds. Describe what changed."
 
     def detect_motion(self) -> bool:
         if len(self.frames) < 2:
             return False
         try:
-            import cv2, numpy as np, base64
-
-            def decode(b64):
-                data = base64.b64decode(b64)
-                arr  = np.frombuffer(data, dtype=np.uint8)
-                return cv2.imdecode(arr, cv2.IMREAD_GRAYSCALE)
-
-            diff = cv2.absdiff(decode(self.frames[-2]), decode(self.frames[-1]))
+            f1   = self._decode(self.frames[-2])
+            f2   = self._decode(self.frames[-1])
+            diff = cv2.absdiff(f1, f2)
             return float(diff.mean()) > 15
-        except Exception as e:
-            logger.warning(f"Motion detection failed: {e}")
+        except Exception:
             return False
 
-    def latest(self):
-        return self.frames[-1] if self.frames else None
+    def _decode(self, b64: str) -> np.ndarray:
+        data = base64.b64decode(b64)
+        arr  = np.frombuffer(data, dtype=np.uint8)
+        return cv2.imdecode(arr, cv2.IMREAD_GRAYSCALE)

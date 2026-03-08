@@ -1,44 +1,40 @@
-import json
-import os
-import logging
+import json, os
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict
 
-logger = logging.getLogger(__name__)
+LOG_FILE = "backend/memory/data/response_log.json"
 
-_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LOG_FILE     = os.path.join(_BACKEND_DIR, "memory", "data", "response_log.json")
-
-
-def _classify_intent(text: str) -> str:
-    t = text.lower()
-    if any(w in t for w in ["weather", "temperature", "forecast"]): return "weather"
-    if any(w in t for w in ["task", "todo", "remind"]):             return "tasks"
-    if any(w in t for w in ["turn on", "turn off", "light"]):       return "device"
-    if any(w in t for w in ["search", "find", "what is", "news"]):  return "search"
-    if any(w in t for w in ["code", "function", "class", "bug"]):   return "code"
+def classify_intent(text: str) -> str:
+    text = text.lower()
+    if any(w in text for w in ["turn on", "turn off", "light", "lock"]):  return "smart_home"
+    if any(w in text for w in ["weather", "news", "search"]):             return "search"
+    if any(w in text for w in ["code", "python", "debug", "error"]):      return "coding"
+    if any(w in text for w in ["remember", "memory", "recall"]):          return "memory"
+    if any(w in text for w in ["camera", "screen", "see"]):               return "vision"
     return "general"
 
-
 class SelfImprovementEngine:
+    def __init__(self):
+        os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
 
     def log_response(self, user_input: str, response: str,
-                     confidence: float, user_rating: Optional[int] = None):
+                     confidence: float, user_rating: int = None):
         entry = {
             "ts":         datetime.now().isoformat(),
             "input":      user_input[:200],
             "response":   response[:400],
             "confidence": confidence,
             "rating":     user_rating,
-            "intent":     _classify_intent(user_input)
+            "intent":     classify_intent(user_input)
         }
         logs = self._load()
         logs.append(entry)
-        self._save(logs[-1000:])
+        with open(LOG_FILE, "w") as f:
+            json.dump(logs[-1000:], f, indent=2)
 
-    def analyze_weak_spots(self) -> Dict[str, float]:
+    def analyze_weak_spots(self) -> Dict:
         logs      = self._load()
-        by_intent: Dict[str, list] = {}
+        by_intent = {}
         for log in logs:
             intent = log.get("intent", "general")
             by_intent.setdefault(intent, []).append(log["confidence"])
@@ -47,15 +43,35 @@ class SelfImprovementEngine:
             for intent, scores in by_intent.items()
         }
 
-    def get_report(self) -> str:
-        weak = self.analyze_weak_spots()
-        if not weak:
+    def generate_report(self) -> str:
+        spots = self.analyze_weak_spots()
+        if not spots:
             return "No response data yet."
-        lines = ["📊 Self-Improvement Report:"]
-        for intent, avg in sorted(weak.items(), key=lambda x: x[1]):
-            bar = "🟢" if avg >= 0.85 else "🟡" if avg >= 0.6 else "🔴"
-            lines.append(f"  {bar} {intent}: {avg:.0%} avg confidence")
+        lines = ["📊 Astra Self-Improvement Report", ""]
+        for intent, avg in sorted(spots.items(), key=lambda x: x[1]):
+            bar = "🔴" if avg < 0.6 else ("🟡" if avg < 0.8 else "🟢")
+            lines.append(f"{bar} {intent}: avg confidence {avg}")
         return "\n".join(lines)
+
+    def auto_refine_prompts(self):
+        import ollama
+        weak   = {k: v for k, v in self.analyze_weak_spots().items() if v < 0.7}
+        client = ollama.Client()
+        for intent, avg_conf in weak.items():
+            examples = self._get_weak_examples(intent)
+            prompt   = (
+                f"These '{intent}' responses had low confidence ({avg_conf}).\n"
+                f"Suggest a better system prompt for this intent type.\n"
+                f"Examples: {examples}\nReturn: improved system prompt only."
+            )
+            response = client.chat(model="mistral",
+                                   messages=[{"role": "user", "content": prompt}])
+            with open(f"backend/memory/data/refined_prompt_{intent}.txt", "w") as f:
+                f.write(response["message"]["content"])
+
+    def _get_weak_examples(self, intent: str, limit=5):
+        return [l for l in self._load()
+                if l.get("intent") == intent and l["confidence"] < 0.7][-limit:]
 
     def _load(self):
         if not os.path.exists(LOG_FILE):
@@ -65,17 +81,3 @@ class SelfImprovementEngine:
                 return json.load(f)
         except Exception:
             return []
-
-    def _save(self, logs):
-        os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
-        with open(LOG_FILE, "w") as f:
-            json.dump(logs, f, indent=2)
-
-
-_engine = SelfImprovementEngine()
-
-def log_response(user_input, response, confidence, rating=None):
-    _engine.log_response(user_input, response, confidence, rating)
-
-def get_report():
-    return _engine.get_report()

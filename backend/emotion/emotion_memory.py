@@ -144,3 +144,45 @@ def _save_emotion_history(history):
     _os.makedirs(_os.path.dirname(EMOTION_HISTORY_FILE), exist_ok=True)
     with open(EMOTION_HISTORY_FILE, "w") as f:
         _json.dump(history, f, indent=2)
+
+# ── Persistent cross-session emotion tracking (appended by upgrade) ────
+import json as _json, os as _os
+from datetime import datetime as _dt
+from collections import Counter as _Counter
+
+_EMOTION_FILE = "backend/memory/data/emotion_history.json"
+
+def log_emotion_persistent(emotion: str, context: str, user_name: str = "Arnav"):
+    history = _load_emotion_history()
+    history.append({
+        "timestamp": _dt.now().isoformat(),
+        "emotion":   emotion,
+        "context":   context[:100],
+        "user":      user_name
+    })
+    _save_emotion_history(history[-200:])
+
+def get_emotional_trend(days: int = 7) -> str:
+    history  = _load_emotion_history()
+    recent   = history[-50:]
+    emotions = [e["emotion"] for e in recent]
+    counts   = _Counter(emotions)
+    top      = counts.most_common(3)
+    return "Emotional pattern: " + ", ".join([f"{e}({c}x)" for e, c in top])
+
+def inject_emotional_context(system_prompt: str) -> str:
+    return system_prompt + f"\nEmotional context: {get_emotional_trend()}"
+
+def _load_emotion_history():
+    _os.makedirs(_os.path.dirname(_EMOTION_FILE), exist_ok=True)
+    if not _os.path.exists(_EMOTION_FILE):
+        return []
+    try:
+        with open(_EMOTION_FILE) as f:
+            return _json.load(f)
+    except Exception:
+        return []
+
+def _save_emotion_history(history):
+    with open(_EMOTION_FILE, "w") as f:
+        _json.dump(history, f, indent=2)

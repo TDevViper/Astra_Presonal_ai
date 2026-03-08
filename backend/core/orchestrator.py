@@ -1,3 +1,6 @@
+from core.self_improve import SelfImprovementEngine
+_self_improve = SelfImprovementEngine()
+
 import logging
 import time
 import os
@@ -7,6 +10,20 @@ from typing import Dict, List, Optional, Tuple
 
 from utils.logger import agent_logger, chat_logger, system_logger, log_event
 from utils.timeout import timeout
+
+TASK_VIEW_TRIGGERS = [
+    "pending task", "see tasks", "view tasks", "what are my tasks",
+    "show tasks", "list tasks", "my tasks"
+]
+
+DEVICE_TRIGGERS = [
+    "turn on", "turn off", "switch on", "switch off",
+    "dim", "brighten", "set brightness", "set color",
+    "lock", "unlock", "scan devices", "what devices",
+    "show devices", "connect to", "camera feed", "thermostat",
+    "fan", "ac", "air conditioner", "robot vacuum"
+]
+
 try:
     from core.self_improve import log_response as _log_self
 except Exception:
