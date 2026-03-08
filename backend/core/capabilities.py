@@ -15,6 +15,10 @@ class CapabilityManager:
             "python_exec":  True,
             "memory_read":  True,
             "memory_write": True,
+            "task_manager":  True,
+            "notes":         True,
+            "git":           True,
+            "python_exec":   True,
         }
     
     def is_enabled(self, capability: str) -> bool:
