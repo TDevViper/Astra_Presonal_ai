@@ -20,9 +20,9 @@ class ModelConfig:
 
 @dataclass
 class AppConfig:
-    host: str = os.getenv("FLASK_HOST", "127.0.0.1")
-    port: int = int(os.getenv("FLASK_PORT", "5050"))
-    debug: bool = os.getenv("FLASK_DEBUG", "True").lower() == "true"
+    host: str = os.getenv("FLASK_HOST", "0.0.0.0")
+    port: int = int(os.getenv("FLASK_PORT", "5001"))
+    debug: bool = os.getenv("FLASK_DEBUG", "False").lower() == "true"
     memory_file: str = os.path.join(BASE_DIR, "memory", "data", "memory.json")
     max_facts: int = 50
     enable_web_search: bool = os.getenv("ENABLE_WEB_SEARCH", "False").lower() == "true"
