@@ -10,12 +10,19 @@ CHECK_INTERVAL = 60
 BREAK_INTERVAL = 90 * 60
 MORNING_HOUR   = 9
 EVENING_HOUR   = 21
-USER_NAME      = "Arnav"
+USER_NAME = "User"  # overridden at runtime from memory
 
 
 class ProactiveEngine:
     def __init__(self, speak_fn: Callable[[str], None]):
         self.speak = speak_fn
+        try:
+            import json
+            _m = json.load(open("memory.json"))
+            global USER_NAME
+            USER_NAME = _m.get("preferences", {}).get("name", "User")
+        except Exception:
+            pass
         self._running = False
         self._thread: Optional[threading.Thread] = None
         self._last_break_reminder = datetime.now()

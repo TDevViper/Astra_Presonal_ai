@@ -1,57 +1,55 @@
-# ==========================================
-# astra_engine/utils/limiter.py
-# ==========================================
+import re
 
-# Technical keywords that deserve longer responses
-_TECHNICAL_KEYWORDS = [
-    'algorithm', 'function', 'code', 'class', 'import', 'error', 'debug',
-    'neural', 'model', 'architecture', 'database', 'api', 'async', 'loop',
-    'variable', 'syntax', 'library', 'framework', 'install', 'config',
-    'docker', 'git', 'server', 'deploy', 'memory', 'cpu', 'gpu', 'network'
+INTENT_WORD_LIMITS = {
+    "code":      450,
+    "debug":     450,
+    "technical": 400,
+    "explain":   300,
+    "research":  280,
+    "search":    250,
+    "list":      200,
+    "casual":    50,
+    "greeting":  20,
+    "default":   150,
+}
+
+TECHNICAL_KEYWORDS = [
+    "code", "function", "class", "error", "bug", "fix", "implement",
+    "script", "debug", "install", "configure", "api", "database",
+    "python", "javascript", "bash", "terminal", "command", "git",
+    "deploy", "server", "build", "compile", "stack", "library"
 ]
 
-def _is_technical(text: str) -> bool:
-    t = text.lower()
-    return any(kw in t for kw in _TECHNICAL_KEYWORDS)
+CASUAL_KEYWORDS = [
+    "hi", "hello", "hey", "thanks", "ok", "okay", "sure", "cool",
+    "how are you", "whats up", "good morning", "good night"
+]
 
-def limit_words(text: str, max_words: int = 100) -> str:
-    """
-    Context-aware word limiter.
-    - Technical responses get up to 200 words
-    - Code blocks are never truncated mid-block
-    - Casual responses stay concise (max_words)
-    """
-    if not text:
-        return text
+def detect_intent_for_limit(text: str) -> str:
+    text_lower = text.lower()
+    if any(k in text_lower for k in CASUAL_KEYWORDS):
+        return "casual"
+    if any(k in text_lower for k in TECHNICAL_KEYWORDS):
+        return "technical"
+    if "explain" in text_lower or "what is" in text_lower:
+        return "explain"
+    if "search" in text_lower or "find" in text_lower or "latest" in text_lower:
+        return "search"
+    if "list" in text_lower or "give me" in text_lower:
+        return "list"
+    return "default"
 
-    # Never truncate if contains code blocks
-    if "```" in text:
-        return text
-
+def limit_words(text: str, max_words: int = None, intent: str = None) -> str:
+    if intent is None:
+        intent = "default"
+    limit = max_words or INTENT_WORD_LIMITS.get(intent, INTENT_WORD_LIMITS["default"])
     words = text.split()
-
-    # Give technical responses more room
-    effective_max = 200 if _is_technical(text) else max_words
-
-    if len(words) <= effective_max:
+    if len(words) <= limit:
         return text
-
-    truncated = " ".join(words[:effective_max])
-
-    # Cut at last sentence boundary if possible
-    for punct in ['. ', '! ', '? ']:
-        last_sentence = truncated.rfind(punct)
-        if last_sentence > effective_max * 3:  # at least 75% through
-            return truncated[:last_sentence + 1]
-
-    if truncated[-1] in ',.;:':
-        truncated = truncated[:-1]
-
+    truncated = " ".join(words[:limit])
+    last_period = truncated.rfind(".")
+    last_newline = truncated.rfind("\n")
+    cut_at = max(last_period, last_newline)
+    if cut_at > int(limit * 0.75 * 5):
+        return truncated[:cut_at + 1]
     return truncated + "..."
-
-
-def limit_chars(text: str, max_chars: int = 500) -> str:
-    """Limit text to maximum characters."""
-    if len(text) <= max_chars:
-        return text
-    return text[:max_chars].rsplit(' ', 1)[0] + "..."

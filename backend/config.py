@@ -10,7 +10,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 @dataclass
 class ModelConfig:
     model_name: str = os.getenv("OLLAMA_MODEL", "phi3:mini")
-    base_url: str = os.getenv("OLLAMA_BASE_URL", "http://100.113.54.3:11434")
+    base_url: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
     temperature: float = float(os.getenv("TEMPERATURE", "0.7"))
     max_tokens: int = int(os.getenv("MAX_TOKENS", "500"))
     top_p: float = float(os.getenv("TOP_P", "0.9"))

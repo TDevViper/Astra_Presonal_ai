@@ -45,7 +45,7 @@ from core.self_awareness import is_self_query, get_self_response
 from core.proactive import get_proactive_suggestion, get_session_summary
 from personality.system import build_system_prompt
 from utils.polisher import polish_reply
-from utils.limiter import limit_words
+from utils.limiter import limit_words, detect_intent_for_limit
 
 from tools.tool_router import detect_tool
 from tools.system_controller import handle_system_command, is_system_command
@@ -79,9 +79,17 @@ class Brain:
     def __init__(self) -> None:
         self.truth_guard          = TruthGuard()
         self.capabilities         = CapabilityManager()
-        self.model_manager        = ModelManager(default_model="phi3:mini")
+        self.model_manager        = ModelManager(default_model="mistral:latest")
         self.search_agent         = WebSearchAgent()
         self.conversation_history: List[Dict] = []
+        # Load persistent history from SQLite
+        try:
+            import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+            from memory_db import load_recent_history, init_db
+            init_db()
+            self.conversation_history = load_recent_history(n=15)
+        except Exception as _e:
+            pass
         logger.info("🚀 Brain v3.2 initialized")
 
     # ==========================================================
@@ -91,12 +99,33 @@ class Brain:
     def process(self, user_input: str, vision_mode: bool = False) -> Dict:
         try:
             user_input = clean_text(user_input)
+            # Chain detection — multi-tool commands
+            try:
+                from tools.chain_planner import detect_chain, build_chain_plan, execute_chain
+                _steps = detect_chain(user_input)
+                if _steps:
+                    _plan = build_chain_plan(user_input, _steps)
+                    _chain_result = execute_chain(_plan, self)
+                    return {"reply": _chain_result, "emotion": "neutral", "intent": "chain", "agent": "chain_executor", "confidence": 0.9, "model": "chain"}
+            except Exception:
+                pass
+            # Morning briefing on first message of day
+            try:
+                from briefing import should_give_briefing, generate_morning_brief, mark_briefing_done
+                _mem = load_memory()
+                if should_give_briefing(_mem):
+                    _brief = generate_morning_brief(_mem)
+                    _mem = mark_briefing_done(_mem)
+                    save_memory(_mem)
+                    return {"reply": _brief, "emotion": "neutral", "intent": "briefing", "agent": "briefing", "confidence": 1.0, "model": "briefing"}
+            except Exception:
+                pass
             if not user_input:
                 return self._error_reply("I didn't catch that. Try again?")
 
             memory    = load_memory()
             memory    = ensure_emotion_memory(memory)
-            user_name = memory.get("preferences", {}).get("name", "Arnav")
+            user_name = memory.get("preferences", {}).get("name", "User")
             user_loc  = memory.get("preferences", {}).get("location", "")
 
             # Keep TruthGuard in sync with latest user info
@@ -252,7 +281,8 @@ class Brain:
                 user_name=user_name, memory=memory,
                 emotion=emotion_label, intent=query_intent,
                 episodic_ctx=episodic_ctx, semantic_ctx=semantic_ctx,
-                lang_instruction=lang_instr
+                lang_instruction=lang_instr,
+                conversation_history=self.conversation_history
             )
 
             # ── 9. ReAct for complex queries ───────────────────
@@ -269,7 +299,8 @@ class Brain:
 
             if react_reply and len(react_reply.split()) >= 10:
                 reply = react_reply
-                self._add_to_history("user", processed_input)
+                _injected = processed_input + " (Reply directly, no greeting, no filler, no suggestions.)"
+                self._add_to_history("user", _injected)
                 self._add_to_history("assistant", reply)
                 # ReAct replies: skip word limiter, apply only fast fixes
                 reply = reply.strip()
@@ -281,8 +312,11 @@ class Brain:
                 )
             else:
                 # ── 10. Standard LLM call ─────────────────────
-                self._add_to_history("user", processed_input)
-                messages = [{"role": "system", "content": context}] + self.conversation_history
+                _injected = processed_input + " (Reply directly, no greeting, no filler, no suggestions.)"
+                self._add_to_history("user", _injected)
+                hard_stop = "CRITICAL INSTRUCTIONS: 1) Never start with Hey, Hi, Sure, Certainly, Of course, or any greeting. 2) Answer ONLY what was asked. 3) No suggestions unless asked. 4) Stop when the answer is complete. 5) First word must be a content word, not a filler."
+                full_context = hard_stop + "\n\n" + context
+                messages = [{"role": "system", "content": full_context}] + self.conversation_history
 
                 try:
                     response = ollama.chat(
@@ -306,7 +340,7 @@ class Brain:
                 reply = self.truth_guard.get_safe_reply(violation)
 
             reply = polish_reply(reply)
-            reply = limit_words(reply, max_words=150)  # Context-aware: technical gets 200, casual gets 150
+            reply = limit_words(reply, intent=detect_intent_for_limit(user_input))  # Context-aware: technical gets 200, casual gets 150
 
             if emotion_score > 0.7 and emotion_label in ["sad", "angry", "anxious", "tired"]:
                 emo   = emotion_reply(emotion_label, emotion_score, user_name, memory)
@@ -615,6 +649,14 @@ KNOWN FACTS ABOUT {user_name.upper()}:
 
     def _add_to_history(self, role: str, content: str) -> None:
         self.conversation_history.append({"role": role, "content": content})
+        # Persist to SQLite
+        if role == "assistant" and len(self.conversation_history) >= 2:
+            try:
+                from memory_db import save_exchange
+                last_user = next((m["content"] for m in reversed(self.conversation_history[:-1]) if m["role"] == "user"), "")
+                save_exchange(last_user, content)
+            except Exception:
+                pass
         if len(self.conversation_history) > 10:
             self.conversation_history = self.conversation_history[-10:]
 

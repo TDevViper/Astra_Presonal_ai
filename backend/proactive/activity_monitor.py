@@ -13,7 +13,7 @@ from typing import Callable, Optional
 
 logger = logging.getLogger(__name__)
 
-USER_NAME = "Arnav"
+USER_NAME = "User"  # loaded from memory at runtime
 
 THRESHOLDS = {
     "coding":   90 * 60,

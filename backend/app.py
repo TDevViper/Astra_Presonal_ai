@@ -16,6 +16,7 @@ from api.multimodal import multimodal_bp
 from api.chat_stream import stream_bp
 from api.realtime import realtime_bp
 from api.health import health_bp
+from api.knowledge import knowledge_bp
 
 
 class ColoredFormatter(logging.Formatter):
@@ -60,6 +61,7 @@ app.register_blueprint(multimodal_bp)
 app.register_blueprint(stream_bp)
 app.register_blueprint(realtime_bp)
 app.register_blueprint(health_bp)
+app.register_blueprint(knowledge_bp)
 
 
 @app.errorhandler(404)

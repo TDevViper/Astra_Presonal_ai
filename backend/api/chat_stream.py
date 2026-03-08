@@ -1,6 +1,6 @@
 import json
 from flask import Blueprint, Response, request, stream_with_context
-from core.orchestrator import orchestrator
+from core.brain_singleton import get_brain
 
 stream_bp = Blueprint("stream", __name__)
 
@@ -19,7 +19,16 @@ def chat_stream():
         )
 
     def generate():
-        result = orchestrator.run(message)
+        try:
+            from knowledge.entity_extractor import extract_and_store
+            from memory.memory_engine import load_memory
+            _mem = load_memory()
+            _name = _mem.get("preferences", {}).get("name", "User")
+            extract_and_store(message, user_name=_name, use_llm=False)
+        except Exception:
+            pass
+
+        result = get_brain().process(message)
         reply  = result.get("reply", "")
         agent  = result.get("agent", "astra")
         intent = result.get("intent", "")

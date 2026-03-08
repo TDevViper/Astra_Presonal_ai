@@ -49,3 +49,14 @@ def available_models():
     except Exception as e:
         logger.error(f"❌ Error fetching models: {e}")
         return jsonify({"error": str(e)}), 500
+@model_bp.route("/model/list", methods=["GET"])
+def list_models():
+    try:
+        import requests as _req
+        import os
+        base = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+        resp = _req.get(f"{base}/api/tags", timeout=5)
+        models = [m["name"] for m in resp.json().get("models", [])]
+        return jsonify({"models": models})
+    except Exception as e:
+        return jsonify({"models": ["mistral:latest"], "error": str(e)})

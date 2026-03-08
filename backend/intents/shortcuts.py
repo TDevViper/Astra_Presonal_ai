@@ -44,7 +44,7 @@ INTENTS = {
     "how are you":         HOW_ARE_YOU,
     "how's it going":      HOW_ARE_YOU,
     "what's up":           "Not much! What do you need?",
-    "sup":                 "Hey! What's up?",
+    "sup":                 "All good. What do you need?",
     "good morning":        "Good morning! How can I help?",
     "good night":          "Good night! Rest well.",
     "bye":                 "Bye! See you soon.",
@@ -63,7 +63,11 @@ INTENTS = {
     "sab theek":           "Haan bilkul! Aap sunao?",
     "namaste":             "Namaste! Kaise madad kar sakta hoon?",
     "namaskar":            "Namaskar! Kya kaam hai?",
+    "hi":                  "Hey! What do you need?",
     "hello":               HOW_ARE_YOU,
+    "hey":                 "Hey! What can I do for you?",
+    "sup":                 "All good. What do you need?",
+    "yo":                 "Here. What do you need?",
 
     # ── CAPABILITIES (English) ─────────────────────────────
     "what you can do":     WHAT_CAN_YOU_DO,

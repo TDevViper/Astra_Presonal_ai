@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 # Server priority order
 OLLAMA_SERVERS = [
-    {"name": "RTX 3060 (GPU)",  "url": "http://100.113.54.3:11434"},
+    {"name": "RTX 3060 (GPU)",  "url": "http://localhost:11434"},
     {"name": "Local (Mac CPU)", "url": "http://localhost:11434"},
 ]
 
@@ -24,10 +24,10 @@ MODEL_PROFILES = {
 }
 
 INTENT_MODEL_MAP = {
-    "casual":          "phi3:mini",
-    "memory":          "phi3:mini",
-    "greeting":        "phi3:mini",
-    "simple_question": "phi3:mini",
+    "casual":          "mistral:latest",
+    "memory":          "mistral:latest",
+    "greeting":        "mistral:latest",
+    "simple_question": "mistral:latest",
     "reasoning":       "llama3.2:3b",
     "step_by_step":    "llama3.2:3b",
     "analysis":        "llama3.2:3b",
@@ -63,7 +63,7 @@ def _get_active_server() -> Dict:
 
 class ModelManager:
 
-    def __init__(self, default_model: str = "phi3:mini"):
+    def __init__(self, default_model: str = "mistral:latest"):
         self.default_model  = default_model
         self.current_model  = default_model
         self._active_server = None
@@ -107,7 +107,7 @@ class ModelManager:
             return preferred
 
         # Fallback chain
-        for model in ["phi3:mini", "llama3.2:3b", "mistral:latest"]:
+        for model in ["mistral:latest", "llama3.2:3b", "phi3:mini"]:
             if model in self.available_models:
                 logger.warning(f"⚠️  Fallback: {model}")
                 self.current_model = model

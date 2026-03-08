@@ -1,3 +1,6 @@
+from core.brain_singleton import get_brain as _get_rt_brain
+_rt_brain = _get_rt_brain()
+
 import logging
 from flask import Blueprint, request, jsonify
 
@@ -40,12 +43,12 @@ def realtime_talk():
 
         logger.info(f"🎤 Heard: {user_text}")
 
-        from core.orchestrator import orchestrator
+
 
         # If image is provided and question is visual — always use vision
         image_b64 = image if (image and _wants_vision(user_text)) else None
 
-        result = orchestrator.run(user_text, image_b64=image_b64)
+        result = _rt_brain.process(user_text)
         reply  = result.get("reply", "Say that again?")
 
         logger.info(f"🤖 [{result.get('agent')}] {reply[:80]}")

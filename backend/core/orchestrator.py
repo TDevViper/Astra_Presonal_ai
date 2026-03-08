@@ -46,8 +46,8 @@ VISION_TRIGGERS = [
 
 CHAT_SHORTCUTS = {
     "greeting": {
-        "triggers": ["hello", "hi", "hii", "hi astra", "hey astra", "hey", "good morning",
-                     "good night", "namaste", "kaise ho", "how are you"],
+        "triggers": ["hello", "hi", "hii", "hi astra", "hey astra", "hey",
+                     "good morning", "good night", "namaste", "kaise ho", "how are you"],
         "reply":    "Hey! What's up?"
     },
     "identity": {
@@ -82,6 +82,15 @@ TOOL_TRIGGERS = {
     "python":     ["```python", "run python", "execute python", "run this code"],
 }
 
+# Queries that benefit from the full agent loop
+LOOP_TRIGGERS = [
+    "research and", "find and summarize", "compare and", "analyze",
+    "step by step", "how do i build", "walk me through", "best way to",
+    "should i", "pros and cons", "explain how", "difference between",
+    "recommend", "what do you think about", "help me understand",
+    "create a plan", "design a", "implement"
+]
+
 PLAN_TRIGGERS = [
     "research and", "find and summarize", "search and summarize",
     "compare and", "analyze and write", "step by step plan",
@@ -105,6 +114,8 @@ def _detect_input_type(text: str, has_image: bool) -> Tuple[str, str]:
     for tool, triggers in TOOL_TRIGGERS.items():
         if any(tr in t for tr in triggers):
             return ("tool", tool)
+    if any(tr in t for tr in LOOP_TRIGGERS):
+        return ("loop", "complex")
     if any(tr in t for tr in PLAN_TRIGGERS):
         return ("plan", "multi_step")
     if any(tr in t for tr in REACT_TRIGGERS):
@@ -123,6 +134,12 @@ def _build_context(user_input: str) -> Dict:
             ctx["facts"] = " | ".join(f["fact"] for f in facts[-5:])
         from memory.episodic import build_episodic_context
         ctx["episodes"] = build_episodic_context(user_input, ctx["user_name"])
+
+        # Knowledge graph context
+        from knowledge.graph import build_graph_context
+        graph_ctx = build_graph_context(user_input, ctx["user_name"])
+        if graph_ctx:
+            ctx["graph"] = graph_ctx
     except Exception as e:
         log_event(system_logger, "context_build_failed", error=str(e))
     return ctx
@@ -136,33 +153,26 @@ def _run_tool(tool: str, text: str) -> Optional[Dict]:
         if tool == "whatsapp":
             from tools.whatsapp_tool import handle_whatsapp_command
             result = handle_whatsapp_command(text)
-
         elif tool == "web_search":
             from tools.web_search import handle_search_command
             result = handle_search_command(text)
-
         elif tool == "calendar":
             from tools.calendar_tool import handle_calendar_command
             result = handle_calendar_command(text)
-
         elif tool == "system":
             from tools.system_controller import handle_system_command
             result = handle_system_command(text)
-
         elif tool == "git":
             from tools.git_tool import git_status
             result = git_status().get("output", "No git info")
-
         elif tool == "tasks":
             from tools.task_manager import TaskManager
             from memory.memory_engine import load_memory
             result = str(TaskManager(load_memory()).list_tasks())
-
         elif tool == "files":
             from tools.file_reader import extract_filepath, read_file
             path = extract_filepath(text)
             result = read_file(path) if path else None
-
         elif tool == "python":
             from tools.python_sandbox import propose_python_execution, extract_python_code
             code = extract_python_code(text)
@@ -192,8 +202,7 @@ Thought: what you are thinking
 Action: [tool_name or "answer"] — pick one of: web_search, recall_memory, calculate, answer
 Observation: result of the action
 
-Repeat Thought/Action/Observation up to {MAX_AGENT_STEPS} times.
-When ready, write:
+Repeat up to {MAX_AGENT_STEPS} times. When ready write:
 Final Answer: your answer
 
 User context: {context.get('facts', '')}
@@ -217,7 +226,6 @@ User context: {context.get('facts', '')}
             full_output += output + "\n"
             steps += 1
 
-            # ── Structured agent step log ──────────────────
             import re
             thought_m = re.search(r'Thought:(.*?)(?:Action:|$)', output, re.DOTALL)
             action_m  = re.search(r'Action:\s*\[?(\w+)\]?', output)
@@ -225,8 +233,7 @@ User context: {context.get('facts', '')}
             action    = action_m.group(1) if action_m else "none"
 
             log_event(agent_logger, "react_step",
-                      step=steps, action=action,
-                      thought=thought,
+                      step=steps, action=action, thought=thought,
                       has_final="Final Answer:" in output)
 
             if "Final Answer:" in output:
@@ -238,29 +245,24 @@ User context: {context.get('facts', '')}
             if action_m:
                 action_name = action_m.group(1).lower()
                 observation = ""
-
                 if action_name == "web_search":
-                    thought_text = thought_m.group(1).strip() if thought_m else user_input
-                    tool_result  = _run_tool("web_search", thought_text)
-                    observation  = tool_result["result"][:300] if tool_result else "No results found"
-
+                    query       = thought_m.group(1).strip() if thought_m else user_input
+                    tool_result = _run_tool("web_search", query)
+                    observation = tool_result["result"][:300] if tool_result else "No results found"
                 elif action_name == "recall_memory":
                     from memory.memory_recall import memory_recall
                     from memory.memory_engine import load_memory
-                    observation = memory_recall(user_input, load_memory(), "Arnav") or "Nothing found in memory"
-
+                    observation = memory_recall(user_input, load_memory(), "Arnav") or "Nothing found"
                 elif action_name == "calculate":
                     observation = "Use math to compute the answer"
-
                 else:
                     break
 
                 log_event(agent_logger, "react_observation",
                           step=steps, action=action_name,
                           observation=observation[:120])
-
                 messages.append({"role": "assistant", "content": output})
-                messages.append({"role": "user",      "content": f"Observation: {observation}\n\nContinue."})
+                messages.append({"role": "user", "content": f"Observation: {observation}\n\nContinue."})
             else:
                 break
 
@@ -270,7 +272,6 @@ User context: {context.get('facts', '')}
 
     if "Final Answer:" in full_output:
         return full_output.split("Final Answer:")[-1].strip().split("\n\n")[0]
-
     lines = [l.strip() for l in full_output.split("\n")
              if l.strip() and not l.startswith(("Thought:", "Action:", "Observation:"))]
     return lines[-1] if lines else None
@@ -280,7 +281,8 @@ def _plan_and_execute(user_input: str, context: Dict) -> Optional[str]:
     from agents.planner import decompose, execute_plan
     log_event(agent_logger, "plan_start", input=user_input[:80])
     steps  = decompose(user_input)
-    log_event(agent_logger, "plan_steps", count=len(steps), steps=[s.get("action") for s in steps])
+    log_event(agent_logger, "plan_steps",
+              count=len(steps), steps=[s.get("action") for s in steps])
     result = execute_plan(steps, user_input)
     log_event(agent_logger, "plan_done", result_len=len(result) if result else 0)
     return result if result else None
@@ -302,8 +304,11 @@ def _llm_reply(text: str, context: Dict) -> str:
         memory_ctx += f"Facts about user: {context['facts']}\n"
     if context.get("episodes"):
         memory_ctx += context["episodes"]
+    if context.get("graph"):
+        memory_ctx += "\n" + context["graph"]
     if memory_ctx:
-        messages.append({"role": "system", "content": f"Memory context:\n{memory_ctx}"})
+        messages.append({"role": "system",
+                          "content": f"Memory context:\n{memory_ctx}"})
 
     messages.append({"role": "user", "content": text})
 
@@ -330,7 +335,7 @@ def _vision_reply(text: str, image_b64: str) -> str:
             "content": (
                 "You are Astra, a personal AI with a live camera. "
                 "Answer ONLY what is asked. Do not describe the full scene. "
-                "If asked about fingers — count carefully and say the number. "
+                "If asked about fingers — count carefully. "
                 "Keep answer to 1 sentence. "
                 f"Question: {text}"
             ),
@@ -390,11 +395,13 @@ class Orchestrator:
             log_event(chat_logger, "intent_detected",
                       input_type=input_type, subcategory=subcategory)
 
+            # ── Instant shortcuts ─────────────────────────────
             if input_type == "chat":
                 reply = CHAT_SHORTCUTS[subcategory]["reply"]
                 agent = "shortcut"
                 return self._out(reply, intent, agent, 1.0, start)
 
+            # ── Vision ────────────────────────────────────────
             if input_type == "vision" and image_b64:
                 reply = _vision_reply(user_input, image_b64)
                 agent = "llava:7b"
@@ -403,14 +410,30 @@ class Orchestrator:
 
             context = _build_context(user_input)
 
+            # ── Tool direct ───────────────────────────────────
             if input_type == "tool":
                 tool_out = _run_tool(subcategory, user_input)
                 if tool_out:
                     reply = tool_out["result"]
                     agent = subcategory
                     _store(user_input, reply, intent)
-                    return self._out(reply, intent, agent, tool_out["confidence"], start)
+                    return self._out(reply, intent, agent,
+                                     tool_out["confidence"], start)
 
+            # ── Autonomous Agent Loop (complex queries) ───────
+            if input_type == "loop":
+                from core.agent_loop import agent_loop
+                log_event(chat_logger, "loop_triggered", input=user_input[:80])
+                loop_result = agent_loop.run(user_input, context)
+                reply = loop_result.final_reply
+                reply = _truth_guard(reply)
+                agent = f"agent_loop/{loop_result.iterations}steps"
+                _store(user_input, reply, intent)
+                return self._out(reply, intent, agent,
+                                 loop_result.confidence, start,
+                                 loop_steps=loop_result.iterations)
+
+            # ── Planner ───────────────────────────────────────
             if input_type == "plan":
                 result = _plan_and_execute(user_input, context)
                 if result:
@@ -418,6 +441,7 @@ class Orchestrator:
                     _store(user_input, result, intent)
                     return self._out(result, intent, agent, 0.85, start)
 
+            # ── ReAct ─────────────────────────────────────────
             if input_type == "react":
                 result = _react_loop(user_input, context)
                 if result:
@@ -427,6 +451,7 @@ class Orchestrator:
                     _store(user_input, result, intent)
                     return self._out(result, intent, agent, 0.85, start)
 
+            # ── Direct LLM ────────────────────────────────────
             raw   = _llm_reply(user_input, context)
             agent = "mistral"
             raw   = _truth_guard(raw)
@@ -439,24 +464,28 @@ class Orchestrator:
             return self._out(f"Error: {e}", "error", "error", 0.0, start)
 
     def _out(self, reply: str, intent: str, agent: str,
-             confidence: float, start: float) -> Dict:
+             confidence: float, start: float, **extra) -> Dict:
         elapsed = round(time.time() - start, 2)
         log_event(chat_logger, "response",
                   agent=agent, intent=intent,
                   confidence=confidence, elapsed=elapsed,
                   reply=reply[:120])
-        return {
+        out = {
             "reply":            reply or "Say that again?",
             "intent":           intent,
             "agent":            agent,
             "confidence":       confidence,
-            "confidence_label": "HIGH" if confidence >= 0.85 else "MEDIUM" if confidence >= 0.6 else "LOW",
-            "confidence_emoji": "🟢" if confidence >= 0.85 else "🟡" if confidence >= 0.6 else "🔴",
+            "confidence_label": "HIGH"   if confidence >= 0.85 else
+                                "MEDIUM" if confidence >= 0.6  else "LOW",
+            "confidence_emoji": "��" if confidence >= 0.85 else
+                                "🟡" if confidence >= 0.6  else "🔴",
             "emotion":          "neutral",
             "tool_used":        False,
             "memory_updated":   False,
             "elapsed":          elapsed,
         }
+        out.update(extra)
+        return out
 
 
 orchestrator = Orchestrator()

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import LiveVision from "./components/LiveVision";
 
-const API = "http://127.0.0.1:5050";
+const API = "http://127.0.0.1:5001";
 
 const agentLabel = (a) => {
   if (a?.includes("mistral")) return "MISTRAL";
@@ -451,7 +451,8 @@ export default function App() {
   const [input, setInput]           = useState("");
   const [loading, setLoading]       = useState(false);
   const [memory, setMemory]         = useState({});
-  const [models]                    = useState(["phi3:mini", "mistral:latest", "llama3.2:3b"]);
+  const [models, setModels] = useState([]);
+  const [modelsLoading, setModelsLoading] = useState(true);
   const [currentModel, setCurrentModel] = useState("phi3:mini");
   const [status, setStatus]         = useState("connecting");
   const [speakReplies, setSpeakReplies] = useState(false);
@@ -459,7 +460,15 @@ export default function App() {
   const endRef   = useRef(null);
   const inputRef = useRef(null);
 
-  useEffect(() => { checkHealth(); fetchMemory(); inputRef.current?.focus(); }, []); // eslint-disable-line
+  useEffect(() => {
+    checkHealth();
+    fetchMemory();
+    inputRef.current?.focus();
+    fetch(`${API}/model/list`)
+      .then(r => r.json())
+      .then(d => { setModels(d.models?.length ? d.models : ["mistral:latest"]); setModelsLoading(false); })
+      .catch(() => { setModels(["mistral:latest"]); setModelsLoading(false); });
+  }, []); // eslint-disable-line
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   const checkHealth = async () => {
@@ -525,7 +534,7 @@ export default function App() {
                 ? { ...m, content: m.content + data.text } : m));
             }
             if (data.type === "done") {
-              setMessages(p => p.map(m => m.id === streamId ? {
+              setMessages(prev => prev.map(m => m.id === streamId ? {
                 ...m, streaming: false,
                 confidence: data.confidence, confidence_label: data.confidence_label,
                 confidence_emoji: data.confidence_emoji,
@@ -540,7 +549,7 @@ export default function App() {
               }
               if (data.memory_updated) fetchMemory();
             }
-          } catch {}
+          } catch (parseErr) { console.warn("Stream parse error:", parseErr); }
         }
       }
     } catch {

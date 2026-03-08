@@ -5,7 +5,7 @@
 
 from utils.cleaner import clean_text
 from utils.polisher import polish_reply
-from utils.limiter import limit_words
+from utils.limiter import limit_words, detect_intent_for_limit
 
 
 def refine_reply(text: str, memory: dict, user_name: str) -> str:
@@ -58,7 +58,7 @@ def refine_reply(text: str, memory: dict, user_name: str) -> str:
             reply = reply.rstrip('.!') + f", {user_name}!"
 
     # 6. FINAL POLISH
-    reply = limit_words(reply, max_words=80)
+    reply = limit_words(reply, intent="casual")
     reply = polish_reply(reply)
 
     return reply
