@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import LiveVision from "./components/LiveVision";
 
 import API from "./config";
+import ProactiveAlerts from "./components/ProactiveAlerts";
 
 const agentLabel = (a) => {
   if (a?.includes("mistral")) return "MISTRAL";

@@ -162,3 +162,76 @@ def get_session_summary(user_name: str = "Arnav") -> Optional[str]:
         f"Main activities: {', '.join(top) if top else 'general chat'}. "
         f"Good work, {user_name}!"
     )
+
+# ── System monitoring + WebSocket proactive alerts ──────────────────────
+import threading, time, psutil
+
+_broadcast_fn = None
+
+def set_broadcast(fn):
+    global _broadcast_fn
+    _broadcast_fn = fn
+
+def _broadcast(msg: str):
+    if _broadcast_fn:
+        try:
+            _broadcast_fn(msg)
+        except Exception:
+            pass
+
+def start_proactive_monitor():
+    threading.Thread(target=_monitor_loop, daemon=True).start()
+    print("[Proactive] ✅ System monitor running")
+
+def _monitor_loop():
+    last_alerts = {}
+    while True:
+        try:
+            _check_system(last_alerts)
+            _check_tasks(last_alerts)
+        except Exception as e:
+            pass
+        time.sleep(30)
+
+def _check_system(last_alerts: dict):
+    now = time.time()
+
+    cpu = psutil.cpu_percent(interval=1)
+    if cpu > 85 and now - last_alerts.get("cpu", 0) > 300:
+        _broadcast(f"⚠️ CPU is at {cpu:.0f}% — something's heating up.")
+        last_alerts["cpu"] = now
+
+    ram = psutil.virtual_memory().percent
+    if ram > 90 and now - last_alerts.get("ram", 0) > 300:
+        _broadcast(f"⚠️ RAM at {ram:.0f}% — memory pressure is high.")
+        last_alerts["ram"] = now
+
+    disk = psutil.disk_usage('/').percent
+    if disk > 90 and now - last_alerts.get("disk", 0) > 600:
+        _broadcast(f"💾 Disk at {disk:.0f}% — running low on space.")
+        last_alerts["disk"] = now
+
+    battery = psutil.sensors_battery()
+    if battery and battery.percent < 20 and not battery.power_plugged:
+        if now - last_alerts.get("battery", 0) > 300:
+            _broadcast(f"🔋 Battery at {battery.percent:.0f}% — plug in soon.")
+            last_alerts["battery"] = now
+
+def _check_tasks(last_alerts: dict):
+    now = time.time()
+    if now - last_alerts.get("tasks", 0) < 1800:
+        return
+    try:
+        import json
+        mem_file = os.path.join(_BACKEND_DIR, "memory", "data", "memory.json")
+        if not os.path.exists(mem_file):
+            return
+        with open(mem_file) as f:
+            mem = json.load(f)
+        tasks   = mem.get("tasks", [])
+        pending = [t for t in tasks if t.get("status") == "todo"]
+        if len(pending) >= 2:
+            _broadcast(f"📌 You have {len(pending)} pending tasks. Want to review them?")
+            last_alerts["tasks"] = now
+    except Exception:
+        pass

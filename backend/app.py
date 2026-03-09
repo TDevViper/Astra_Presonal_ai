@@ -111,6 +111,12 @@ def _on_wake():
     broadcast("🎤 Wake word detected — Astra listening...")
 
 start_wake_word_listener(_on_wake)
+# ── Proactive system monitor ────────────────────────────────────────────
+from core.proactive import set_broadcast, start_proactive_monitor
+from api.ws_stream import broadcast as _ws_broadcast
+set_broadcast(_ws_broadcast)
+start_proactive_monitor()
+
 
 if __name__ == "__main__":
     print("\n" + "=" * 60)
