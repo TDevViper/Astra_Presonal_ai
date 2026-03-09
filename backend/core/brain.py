@@ -729,3 +729,24 @@ KNOWN FACTS ABOUT {user_name.upper()}:
 
 # Singleton
 brain = Brain()
+
+def stream_response(user_input: str, system_prompt: str = "", model: str = "mistral"):
+    """
+    Yields text chunks from Ollama as they arrive.
+    Pipe into speak_streaming() for real-time TTS.
+    """
+    import ollama
+    client   = ollama.Client()
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": user_input})
+
+    try:
+        for chunk in client.chat(model=model, messages=messages, stream=True):
+            token = chunk["message"]["content"]
+            if token:
+                yield token
+    except Exception as e:
+        yield f"Sorry, I encountered an error: {e}"
+

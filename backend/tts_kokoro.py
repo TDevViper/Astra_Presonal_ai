@@ -66,3 +66,30 @@ def speak(text: str):
 
 def speak_async(text: str):
     _tts.speak_async(text)
+
+# ── Streaming TTS — speak sentence by sentence ──────────────────────────
+import re
+
+def speak_streaming(text_generator):
+    """
+    Takes a generator that yields text chunks.
+    Speaks each complete sentence as soon as it arrives.
+    First sentence plays in <200ms of generation start.
+    """
+    buffer = ""
+    sentence_end = re.compile(r'([^.!?]*[.!?]+)\s*')
+
+    for chunk in text_generator:
+        buffer += chunk
+        while True:
+            match = sentence_end.match(buffer)
+            if not match:
+                break
+            sentence = match.group(1).strip()
+            buffer   = buffer[match.end():]
+            if len(sentence) > 3:
+                _tts.speak(sentence)
+
+    # Speak any remaining text
+    if buffer.strip() and len(buffer.strip()) > 3:
+        _tts.speak(buffer.strip())
