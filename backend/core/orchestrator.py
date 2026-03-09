@@ -90,6 +90,41 @@ CHAT_SHORTCUTS = {
     },
 }
 
+
+# ── Multi-tool parallel detector ────────────────────────────────────────
+def detect_multiple_tools(text: str) -> list:
+    """Detect all tools needed for a query — enables parallel execution."""
+    t       = text.lower()
+    found   = []
+
+    tool_keywords = {
+        "web_search":     ["weather", "news", "search", "latest", "google", "look up"],
+        "tasks":          ["tasks", "todo", "pending task", "my tasks", "task list"],
+        "calendar":       ["calendar", "schedule", "meeting", "appointment", "today's events"],
+        "system_monitor": ["cpu", "ram", "memory", "disk", "system stats"],
+        "git":            ["git", "commits", "what changed", "git status"],
+    }
+
+    for tool, keywords in tool_keywords.items():
+        if any(k in t for k in keywords):
+            found.append(tool)
+
+    return found
+
+
+def run_parallel_tools(text: str, context: dict = {}) -> dict:
+    """Run all detected tools in parallel. Returns {tool: result}."""
+    tools = detect_multiple_tools(text)
+    if not tools:
+        return {}
+    if len(tools) == 1:
+        from tools import dispatch_tool
+        return {tools[0]: dispatch_tool(tools[0], text, context)}
+
+    from parallel_tools import execute_tools
+    results = execute_tools(tools, text, context)
+    return {r["tool"]: r["result"] for r in results if "result" in r}
+
 TOOL_TRIGGERS = {
     "whatsapp":   ["whatsapp", "send message to", "send whatsapp"],
     "web_search": ["search for", "google", "look up", "latest news",

@@ -329,6 +329,7 @@ class Brain:
                 messages = [{"role": "system", "content": full_context}] + self.conversation_history
 
                 try:
+                    pass
                     response = ollama.chat(
                         model=selected_model,
                         messages=messages,
@@ -375,7 +376,20 @@ class Brain:
             final_conf = max(base_conf, sem_confidence_boost)  # Priority 4
             logger.info(f"confidence_score | base={base_conf:.2f} semantic_boost={sem_confidence_boost:.2f} final={final_conf:.2f}")
 
-            # Store episode for long-term episodic memory
+            # ── Parallel tool execution ─────────────────────────────────────
+            try:
+                from core.orchestrator import run_parallel_tools
+                parallel_results = run_parallel_tools(user_input)
+                if parallel_results:
+                    tool_context = "\n".join([
+                        f"[{t.upper()}]: {r}"
+                        for t, r in parallel_results.items()
+                        if r and "error" not in str(r).lower()[:20]
+                    ])
+                    if tool_context:
+                        user_input = user_input + "\n\nContext from tools:\n" + tool_context
+            except Exception:
+                pass
             store_episode(user_input, reply, intent=query_intent,
                           emotion=emotion_label, user_name=user_name)
 
