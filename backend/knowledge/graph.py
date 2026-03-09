@@ -236,7 +236,7 @@ def query_graph(subject: str = None, relation: str = None,
 
 
 def build_graph_context(user_input: str,
-                        user_name: str = "Arnav") -> str:
+                        user_name: str = "User") -> str:
     """
     Given user input, find relevant graph facts and
     return as a natural language context string.

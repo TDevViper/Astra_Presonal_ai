@@ -7,11 +7,15 @@ health_bp = Blueprint("health", __name__)
 
 @health_bp.route("/health", methods=["GET"])
 def health():
+    ollama_result = _check_ollama()
     status = {
         "status":  "ok",
-        "ollama":  _check_ollama(),
+        "ollama":  ollama_result,
         "memory":  _check_memory(),
         "vectors": _check_vectors(),
+        "brain":   {"status": "ok"},
+        "voice":   _check_voice(),
+        "models":  ollama_result.get("models", []),
     }
     if any(v.get("status") == "error" for v in status.values() if isinstance(v, dict)):
         status["status"] = "degraded"
@@ -48,6 +52,22 @@ def _check_memory() -> dict:
         return {"status": "ok", "facts_stored": fact_count}
     except Exception as e:
         return {"status": "error", "error": str(e)}
+
+
+def _check_voice() -> dict:
+    try:
+        import importlib.util
+        spec = importlib.util.find_spec("kokoro")
+        if spec:
+            return {"status": "ok"}
+        # Check if tts_kokoro.py exists
+        import os
+        tts_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "tts_kokoro.py")
+        if os.path.exists(tts_path):
+            return {"status": "ok"}
+        return {"status": "warning", "error": "kokoro not found"}
+    except Exception as e:
+        return {"status": "warning", "error": str(e)}
 
 
 def _check_vectors() -> dict:

@@ -1,12 +1,17 @@
+# ==========================================
+# core/model_manager.py — Smart Fallback
+# GPU server → local fallback automatic
+# ==========================================
+
 import logging
 import os
 import requests
 import ollama
-import time
 from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 
+# Server priority order
 OLLAMA_SERVERS = [
     {"name": "RTX 3060 (GPU)",  "url": "http://localhost:11434"},
     {"name": "Local (Mac CPU)", "url": "http://localhost:11434"},
@@ -19,10 +24,10 @@ MODEL_PROFILES = {
 }
 
 INTENT_MODEL_MAP = {
-    "casual":          "phi3:mini",
-    "memory":          "phi3:mini",
-    "greeting":        "phi3:mini",
-    "simple_question": "phi3:mini",
+    "casual":          "mistral:latest",
+    "memory":          "mistral:latest",
+    "greeting":        "mistral:latest",
+    "simple_question": "mistral:latest",
     "reasoning":       "llama3.2:3b",
     "step_by_step":    "llama3.2:3b",
     "analysis":        "llama3.2:3b",
@@ -32,12 +37,9 @@ INTENT_MODEL_MAP = {
     "web_search":      "mistral:latest",
 }
 
-_server_cache: Dict = {}
-_server_cache_time: float = 0
-_SERVER_CACHE_TTL = 30
-
 
 def _check_server(url: str, timeout: int = 1) -> bool:
+    """Ping Ollama server — returns True if alive."""
     try:
         r = requests.get(url, timeout=timeout)
         return r.status_code == 200
@@ -46,39 +48,40 @@ def _check_server(url: str, timeout: int = 1) -> bool:
 
 
 def _get_active_server() -> Dict:
-    global _server_cache, _server_cache_time
-    now = time.time()
-    if _server_cache and now - _server_cache_time < _SERVER_CACHE_TTL:
-        return _server_cache
+    """
+    Try servers in priority order.
+    Returns first one that responds.
+    """
     for server in OLLAMA_SERVERS:
         if _check_server(server["url"]):
             logger.info(f"✅ Using server: {server['name']} ({server['url']})")
-            _server_cache      = server
-            _server_cache_time = now
             return server
+    # Last resort — return local even if not responding
     logger.warning("⚠️  No server responded — defaulting to localhost")
-    _server_cache      = OLLAMA_SERVERS[-1]
-    _server_cache_time = now
     return OLLAMA_SERVERS[-1]
 
 
 class ModelManager:
 
-    def __init__(self, default_model: str = "phi3:mini"):
+    def __init__(self, default_model: str = "mistral:latest"):
         self.default_model  = default_model
         self.current_model  = default_model
         self._active_server = None
         self._refresh_server()
 
     def _refresh_server(self):
-        self._active_server       = _get_active_server()
+        """Detect best available server."""
+        self._active_server = _get_active_server()
+        # Set OLLAMA_HOST env so ollama client uses correct server
         os.environ["OLLAMA_HOST"] = self._active_server["url"]
-        self.available_models     = self._get_available_models()
+        self.available_models = self._get_available_models()
         logger.info(f"🖥️  Active: {self._active_server['name']} | Models: {self.available_models}")
 
     def _get_available_models(self) -> List[str]:
         try:
-            client = ollama.Client(host=os.environ.get("OLLAMA_HOST", "http://localhost:11434"))
+            import os
+            import ollama as _ol
+            client = _ol.Client(host=os.environ.get("OLLAMA_HOST", "http://localhost:11434"))
             result = client.list()
             models = []
             for m in result.get("models", []):
@@ -92,19 +95,19 @@ class ModelManager:
             return [self.default_model]
 
     def select_model(self, query: str, intent: str = "casual") -> str:
-        global _server_cache_time
+        # Re-check server on every call — auto-failover
         current_url = os.environ.get("OLLAMA_HOST", "")
-        if time.time() - _server_cache_time > _SERVER_CACHE_TTL:
-            if not _check_server(current_url, timeout=1):
-                logger.warning("⚡ Server switched — refreshing...")
-                self._refresh_server()
+        if not _check_server(current_url, timeout=1):
+            logger.warning("⚡ Server switched — refreshing...")
+            self._refresh_server()
 
         preferred = INTENT_MODEL_MAP.get(intent, self.default_model)
         if preferred in self.available_models:
             self.current_model = preferred
             return preferred
 
-        for model in ["phi3:mini", "llama3.2:3b", "mistral:latest"]:
+        # Fallback chain
+        for model in ["mistral:latest", "llama3.2:3b", "phi3:mini"]:
             if model in self.available_models:
                 logger.warning(f"⚠️  Fallback: {model}")
                 self.current_model = model
@@ -126,8 +129,8 @@ class ModelManager:
 
     def get_model_info(self) -> Dict:
         return {
-            "current":   self.current_model,
-            "server":    self._active_server["name"] if self._active_server else "unknown",
+            "current":  self.current_model,
+            "server":   self._active_server["name"] if self._active_server else "unknown",
             "available": self.available_models,
         }
 

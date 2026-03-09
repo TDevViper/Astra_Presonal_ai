@@ -1,5 +1,5 @@
 # ==========================================
-# core/brain.py - v4.0 ADVANCED
+# core/brain.py - v3.2
 # ==========================================
 
 import logging
@@ -17,11 +17,15 @@ from memory.memory_engine import load_memory, save_memory
 from memory.memory_extractor import extract_user_fact
 from memory.memory_recall import memory_recall
 from memory.summarizer import (
-    should_summarize, summarize_conversation,
-    store_summary, get_recent_context
+    should_summarize,
+    summarize_conversation,
+    store_summary,
+    get_recent_context
 )
 from memory.semantic_recall import (
-    build_semantic_context, index_user_fact, index_exchange
+    build_semantic_context,
+    index_user_fact,
+    index_exchange
 )
 
 from core.truth_guard import TruthGuard
@@ -36,10 +40,6 @@ from reflection.refinement import refine_reply
 from websearch.search_agent import WebSearchAgent
 
 from utils.cleaner import clean_text
-from personality.modes import (
-    detect_mode_switch, set_mode, get_mode_banner,
-    get_token_budget, get_temperature, get_model_bias, get_system_addon
-)
 from memory.episodic import store_episode, build_episodic_context
 from core.self_awareness import is_self_query, get_self_response
 from core.proactive import get_proactive_suggestion, get_session_summary
@@ -69,30 +69,6 @@ SEARCH_TRIGGERS = [
     "who is", "when did", "where is", "price of", "weather"
 ]
 
-# ── Response cache — avoid recomputing identical queries ──────────────────
-import hashlib, time as _time
-_response_cache: Dict = {}
-_CACHE_TTL = 60  # seconds
-
-
-def _cache_key(text: str) -> str:
-    return hashlib.md5(text.strip().lower().encode()).hexdigest()
-
-
-def _get_cached(text: str) -> Optional[Dict]:
-    key = _cache_key(text)
-    entry = _response_cache.get(key)
-    if entry and (_time.time() - entry["ts"]) < _CACHE_TTL:
-        logger.info("⚡ Cache hit")
-        return entry["result"]
-    return None
-
-
-def _set_cache(text: str, result: Dict):
-    # Only cache short factual/greeting replies
-    if len(result.get("reply", "").split()) < 40:
-        _response_cache[_cache_key(text)] = {"result": result, "ts": _time.time()}
-
 
 def needs_web_search(text: str) -> bool:
     return any(trigger in text.lower() for trigger in SEARCH_TRIGGERS)
@@ -103,16 +79,18 @@ class Brain:
     def __init__(self) -> None:
         self.truth_guard          = TruthGuard()
         self.capabilities         = CapabilityManager()
-        self.model_manager        = ModelManager(default_model="phi3:mini")
+        self.model_manager        = ModelManager(default_model="phi3:mini")  # lighter for M4 Air
         self.search_agent         = WebSearchAgent()
         self.conversation_history: List[Dict] = []
+        # Load persistent history from SQLite
         try:
+            import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
             from memory_db import load_recent_history, init_db
             init_db()
             self.conversation_history = load_recent_history(n=15)
-        except Exception:
+        except Exception as _e:
             pass
-        logger.info("🚀 Brain v4.0 initialized")
+        logger.info("🚀 Brain v3.2 initialized")
 
     # ==========================================================
     # MAIN PIPELINE
@@ -121,44 +99,27 @@ class Brain:
     def process(self, user_input: str, vision_mode: bool = False) -> Dict:
         try:
             user_input = clean_text(user_input)
-
-            # ── Mode switch detection ─────────────────────────────────────
-            mode_switch = detect_mode_switch(user_input)
-            if mode_switch:
-                set_mode(mode_switch)
-                from personality.modes import get_mode_banner
-                return self._build_reply(reply=f'Mode switched: {get_mode_banner()}', emotion='neutral', intent='mode_switch', agent='system', confidence=1.0)
-
-            # ── Response cache for greetings / repeat queries ─────────────
-            cached = _get_cached(user_input)
-            if cached and not vision_mode:
-                return cached
-
-            # ── Chain detection ───────────────────────────────────────────
+            # Chain detection — multi-tool commands
             try:
                 from tools.chain_planner import detect_chain, build_chain_plan, execute_chain
                 _steps = detect_chain(user_input)
                 if _steps:
-                    _plan   = build_chain_plan(user_input, _steps)
-                    _result = execute_chain(_plan, self)
-                    return {"reply": _result, "emotion": "neutral", "intent": "chain",
-                            "agent": "chain_executor", "confidence": 0.9, "model": "chain"}
+                    _plan = build_chain_plan(user_input, _steps)
+                    _chain_result = execute_chain(_plan, self)
+                    return {"reply": _chain_result, "emotion": "neutral", "intent": "chain", "agent": "chain_executor", "confidence": 0.9, "model": "chain"}
             except Exception:
                 pass
-
-            # ── Morning briefing ──────────────────────────────────────────
+            # Morning briefing on first message of day
             try:
                 from briefing import should_give_briefing, generate_morning_brief, mark_briefing_done
                 _mem = load_memory()
                 if should_give_briefing(_mem):
                     _brief = generate_morning_brief(_mem)
-                    _mem   = mark_briefing_done(_mem)
+                    _mem = mark_briefing_done(_mem)
                     save_memory(_mem)
-                    return {"reply": _brief, "emotion": "neutral", "intent": "briefing",
-                            "agent": "briefing", "confidence": 1.0, "model": "briefing"}
+                    return {"reply": _brief, "emotion": "neutral", "intent": "briefing", "agent": "briefing", "confidence": 1.0, "model": "briefing"}
             except Exception:
                 pass
-
             if not user_input:
                 return self._error_reply("I didn't catch that. Try again?")
 
@@ -167,29 +128,58 @@ class Brain:
             user_name = memory.get("preferences", {}).get("name", "User")
             user_loc  = memory.get("preferences", {}).get("location", "")
 
+            # Keep TruthGuard in sync with latest user info
             self.truth_guard.update_user_info(user_name=user_name, user_location=user_loc)
 
-            # ── 1. Emotion ────────────────────────────────────────────────
+            # ── 1. Emotion ────────────────────────────────────
             emotion_label, emotion_score = detect_emotion(user_input)
             memory = update_emotion(memory, emotion_label, emotion_score)
-            logger.info(f"emotion | label={emotion_label} score={emotion_score:.2f}")
+            logger.info(f"emotion_detected | label={emotion_label} score={emotion_score:.2f}")
 
-            # ── 1.2 Quick tool shortcuts ──────────────────────────────────
-            for handler, intent, agent in [
-                (handle_search_command,   "web_search",     "web_search_agent"),
-                (handle_whatsapp_command, "whatsapp",       "whatsapp"),
-                (handle_calendar_command, "calendar",       "calendar"),
-                (handle_system_command,   "system_control", "system_controller"),
-            ]:
-                result = handler(user_input)
-                if result:
-                    save_memory(memory)
-                    return self._build_reply(reply=result, emotion=emotion_label,
-                                             intent=intent, agent=agent, confidence=1.0)
+            # ── 1.2 Web search
+            search_result = handle_search_command(user_input)
+            if search_result:
+                save_memory(memory)
+                return self._build_reply(
+                    reply=search_result, emotion=emotion_label,
+                    intent="web_search", agent="web_search_agent",
+                    confidence=1.0
+                )
 
-            # ── 2. Shortcuts ──────────────────────────────────────────────
+            # ── 1.3 WhatsApp commands
+            wa_result = handle_whatsapp_command(user_input)
+            if wa_result:
+                save_memory(memory)
+                return self._build_reply(
+                    reply=wa_result, emotion=emotion_label,
+                    intent="whatsapp", agent="whatsapp",
+                    confidence=1.0
+                )
+
+            # ── 1.4 Calendar commands
+            cal_result = handle_calendar_command(user_input)
+            if cal_result:
+                save_memory(memory)
+                return self._build_reply(
+                    reply=cal_result, emotion=emotion_label,
+                    intent="calendar", agent="calendar",
+                    confidence=1.0
+                )
+
+            # ── 1.5 System commands
+            sys_result = handle_system_command(user_input)
+            if sys_result:
+                save_memory(memory)
+                return self._build_reply(
+                    reply=sys_result, emotion=emotion_label,
+                    intent="system_control", agent="system_controller",
+                    confidence=1.0
+                )
+
+            # ── 2. Shortcuts ──────────────────────────────────
+            # Bye check BEFORE shortcut lookup
             bye_words = ["bye", "goodbye", "exit", "quit", "see you", "good night", "cya"]
-            is_bye    = any(w in user_input.lower() for w in bye_words)
+            is_bye = any(w in user_input.lower() for w in bye_words)
 
             shortcut = detect_intent(user_input, user_name)
             if shortcut and not vision_mode:
@@ -198,20 +188,23 @@ class Brain:
                     if summary:
                         shortcut = shortcut + "\n\n📊 " + summary
                 save_memory(memory)
-                r = self._build_reply(reply=shortcut, emotion=emotion_label,
-                                      intent="shortcut", agent="intent_handler",
-                                      confidence=confidence_score("shortcut", "shortcut"))
-                _set_cache(user_input, r)
-                return r
+                return self._build_reply(
+                    reply=shortcut, emotion=emotion_label,
+                    intent="shortcut", agent="intent_handler",
+                    confidence=confidence_score("shortcut", "shortcut")
+                )
 
-            # ── 2.1 Self-awareness ─────────────────────────────────────────
+            # ── 2.1 Self-awareness ────────────────────────────
             if is_self_query(user_input):
                 reply = get_self_response(user_input, user_name)
                 save_memory(memory)
-                return self._build_reply(reply=reply, emotion=emotion_label,
-                                         intent="self_awareness", agent="self", confidence=1.0)
+                return self._build_reply(
+                    reply=reply, emotion=emotion_label,
+                    intent="self_awareness", agent="self",
+                    confidence=1.0
+                )
 
-            # ── 2.5 Tools ──────────────────────────────────────────────────
+            # ── 2.5 Tools ─────────────────────────────────────
             tool = detect_tool(user_input)
             if tool and self.capabilities.is_enabled(tool):
                 tool_response = self._handle_tool_request(user_input, tool, memory, user_name)
@@ -219,7 +212,7 @@ class Brain:
                     save_memory(memory)
                     return tool_response
 
-            # ── 3. Fact extraction ─────────────────────────────────────────
+            # ── 3. Extract & index facts ──────────────────────
             new_fact       = extract_user_fact(user_input)
             memory_updated = False
 
@@ -237,25 +230,26 @@ class Brain:
                         confidence=confidence_score("memory_storage", "memory_storage")
                     )
 
-            # ── 4. Keyword recall ──────────────────────────────────────────
+            # ── 4. Keyword recall ─────────────────────────────
             recalled = memory_recall(user_input, memory, user_name)
             if recalled:
                 save_memory(memory)
-                return self._build_reply(reply=recalled, emotion=emotion_label,
-                                         intent="memory_recall", agent="memory",
-                                         confidence=confidence_score("memory_recall", "memory_recall"))
+                return self._build_reply(
+                    reply=recalled, emotion=emotion_label,
+                    intent="memory_recall", agent="memory",
+                    confidence=confidence_score("memory_recall", "memory_recall")
+                )
 
-            # ── 5. Web search ──────────────────────────────────────────────
-            _local_query = any(w in user_input.lower() for w in [
-                "my project", "my code", "in the project", "my file",
-                "my folder", "where is", "which file", "codebase"
-            ])
+            # ── 5. Web search ─────────────────────────────────
+            _local_query = any(w in user_input.lower() for w in ["my project", "my code", "in the project", "my file", "my folder", "where is", "which file", "codebase"])
             if self.capabilities.is_enabled("web_search") and needs_web_search(user_input) and not _local_query:
                 self.search_agent.model = self.model_manager.select_model(user_input, "research")
                 result = self.search_agent.run(user_input, user_name)
+
                 self._add_to_history("user", user_input)
                 self._add_to_history("assistant", result["reply"])
                 save_memory(memory)
+
                 return self._build_reply(
                     reply=result["reply"], emotion=emotion_label,
                     intent="web_search", agent="web_search_agent",
@@ -265,50 +259,35 @@ class Brain:
                     confidence=confidence_score("web_search_agent", "web_search")
                 )
 
-            # ── 6. Model selection ─────────────────────────────────────────
+            # ── 6. Model selection ────────────────────────────
             query_intent   = self.model_manager.classify_query_intent(user_input)
             selected_model = self.model_manager.select_model(user_input, query_intent)
-            logger.info(f"model | model={selected_model} intent={query_intent}")
+            logger.info(f"model_selected | model={selected_model} intent={query_intent}")
 
-            # ── 7. PARALLEL TOOL PRE-FETCH (runs BEFORE LLM, not after) ───
-            tool_context = ""
-            try:
-                from core.orchestrator import run_parallel_tools
-                parallel_results = run_parallel_tools(user_input)
-                if parallel_results:
-                    tool_context = "\n".join([
-                        f"[{t.upper()}]: {r}"
-                        for t, r in parallel_results.items()
-                        if r and "error" not in str(r).lower()[:20]
-                    ])
-            except Exception:
-                pass
+            # ── 7. Reasoning pre-process ──────────────────────
+            processed_input = reason(user_input, model=selected_model)
 
-            # ── 8. Context assembly ────────────────────────────────────────
+            # ── 8. Context with semantic memory ───────────────
             semantic_ctx, sem_confidence_boost = build_semantic_context(
                 user_input, user_name=user_name
             )
+            # RAG — inject relevant chunks from personal knowledge base
             try:
                 from rag.rag_engine import query_rag, should_use_rag
                 if should_use_rag(user_input):
                     rag_ctx = query_rag(user_input, top_k=3)
                     if rag_ctx:
-                        semantic_ctx = (semantic_ctx + "\n\nFROM YOUR FILES:\n" + rag_ctx
-                                        if semantic_ctx else "FROM YOUR FILES:\n" + rag_ctx)
-            except Exception:
+                        semantic_ctx = semantic_ctx + "\n\nFROM YOUR FILES:\n" + rag_ctx if semantic_ctx else "FROM YOUR FILES:\n" + rag_ctx
+            except Exception as _rag_err:
                 pass
-
-            # Inject parallel tool results into semantic context
-            if tool_context:
-                semantic_ctx = (semantic_ctx + "\n\nLIVE CONTEXT:\n" + tool_context
-                                if semantic_ctx else "LIVE CONTEXT:\n" + tool_context)
-
+            # Episodic context — past conversations
             episodic_ctx = build_episodic_context(user_input, user_name)
 
+            # Build rich personality-aware system prompt
             from utils.language_detector import detect_language, get_language_instruction
-            lang       = detect_language(user_input)
+            lang = detect_language(user_input)
             lang_instr = get_language_instruction(lang)
-            context    = build_system_prompt(
+            context = build_system_prompt(
                 user_name=user_name, memory=memory,
                 emotion=emotion_label, intent=query_intent,
                 episodic_ctx=episodic_ctx, semantic_ctx=semantic_ctx,
@@ -316,49 +295,45 @@ class Brain:
                 conversation_history=self.conversation_history
             )
 
-            # ── 9. Reasoning pre-process ───────────────────────────────────
-            processed_input = reason(user_input, model=selected_model)
-
-            # ── 10. ReAct for complex queries ──────────────────────────────
+            # ── 9. ReAct for complex queries ───────────────────
             from agents.react_agent import react, needs_react
             react_reply = ""
             if needs_react(user_input):
-                logger.info("⚛️  ReAct triggered")
+                logger.info("⚛️  ReAct agent triggered")
                 react_reply = react(
-                    user_input, model=selected_model,
-                    context=semantic_ctx, user_name=user_name
+                    user_input,
+                    model=selected_model,
+                    context=semantic_ctx,
+                    user_name=user_name
                 )
 
             if react_reply and len(react_reply.split()) >= 10:
                 reply = react_reply
-                self._add_to_history("user", processed_input)
-                self._add_to_history("assistant", reply)
-            else:
-                # ── 11. Standard LLM call ──────────────────────────────────
-                hard_stop = (
-                    "CRITICAL: 1) Never start with Hey/Hi/Sure/Certainly/Of course. "
-                    "2) Answer ONLY what was asked. 3) No suggestions unless asked. "
-                    "4) Stop when done. 5) First word must be content, not filler."
-                )
-                full_context = hard_stop + "\n\n" + context
-                _injected    = processed_input + " (Reply directly, no greeting, no filler.)"
+                _injected = processed_input + " (Reply directly, no greeting, no filler, no suggestions.)"
                 self._add_to_history("user", _injected)
+                self._add_to_history("assistant", reply)
+                # ReAct replies: skip word limiter, apply only fast fixes
+                reply = reply.strip()
+                save_memory(memory)
+                return self._build_reply(
+                    reply=reply, emotion=emotion_label,
+                    intent=query_intent, agent=f"ollama/{selected_model}",
+                    memory_updated=memory_updated, confidence=0.85
+                )
+            else:
+                # ── 10. Standard LLM call ─────────────────────
+                _injected = processed_input + " (Reply directly, no greeting, no filler, no suggestions.)"
+                self._add_to_history("user", _injected)
+                hard_stop = "CRITICAL INSTRUCTIONS: 1) Never start with Hey, Hi, Sure, Certainly, Of course, or any greeting. 2) Answer ONLY what was asked. 3) No suggestions unless asked. 4) Stop when the answer is complete. 5) First word must be a content word, not a filler."
+                full_context = hard_stop + "\n\n" + context
                 messages = [{"role": "system", "content": full_context}] + self.conversation_history
 
-                # Adaptive token budget — longer for technical, shorter for casual
-                token_budget = {"coding": 600, "technical": 500, "reasoning": 450,
-                                "research": 400}.get(query_intent, 300)
-
                 try:
+                    pass
                     response = ollama.chat(
                         model=selected_model,
                         messages=messages,
-                        options={
-                            "temperature": 0.65,
-                            "num_predict": token_budget,
-                            "top_p": 0.9,
-                            "repeat_penalty": 1.1,   # reduces repetition
-                        }
+                        options={"temperature": 0.7, "num_predict": 400, "top_p": 0.9}
                     )
                     reply = response["message"]["content"]
                 except Exception:
@@ -366,7 +341,7 @@ class Brain:
 
                 self._add_to_history("assistant", reply)
 
-            # ── 12. Post-processing ────────────────────────────────────────
+            # ── 11. Post-processing ───────────────────────────
             reply = critic_review(reply, user_name, memory, user_input=user_input,
                                   model=selected_model)
             reply = refine_reply(reply, memory, user_name)
@@ -376,28 +351,18 @@ class Brain:
                 reply = self.truth_guard.get_safe_reply(violation)
 
             reply = polish_reply(reply)
-            reply = limit_words(reply, intent=detect_intent_for_limit(user_input))
+            reply = limit_words(reply, intent=detect_intent_for_limit(user_input))  # Context-aware: technical gets 200, casual gets 150
 
             if emotion_score > 0.7 and emotion_label in ["sad", "angry", "anxious", "tired"]:
                 emo   = emotion_reply(emotion_label, emotion_score, user_name, memory)
                 reply = f"{emo} {reply}"
 
-            # ── 13. Index + store episode ──────────────────────────────────
-            index_exchange(user_input, reply, user_name=user_name)
-            store_episode(user_input, reply, intent=query_intent,
-                          emotion=emotion_label, user_name=user_name)
-            try:
-                from knowledge.auto_extractor import extract_from_exchange
-                extract_from_exchange(user_input, reply, user_name=user_name)
-            except Exception:
-                pass
-            try:
-                from core.self_improve import log_response as _log_resp
-                _log_resp(user_input, reply, final_conf)
-            except Exception:
-                pass
+            self._add_to_history("assistant", reply)
 
-            # ── 14. Summarize if needed ────────────────────────────────────
+            # ── 12. Index exchange ────────────────────────────
+            index_exchange(user_input, reply, user_name=user_name)
+
+            # ── 13. Summarize if needed ───────────────────────
             if should_summarize(self.conversation_history):
                 summary = summarize_conversation(
                     self.conversation_history, memory, user_name, model="phi3:mini"
@@ -406,129 +371,106 @@ class Brain:
 
             save_memory(memory)
 
-            # ── 15. Confidence ─────────────────────────────────────────────
-            base_conf  = confidence_score(f"ollama/{selected_model}", query_intent)
-            final_conf = max(base_conf, sem_confidence_boost)
+            # ── 14. Confidence (boosted if semantic hit) ──────
+            base_conf = confidence_score(f"ollama/{selected_model}", query_intent)
+            final_conf = max(base_conf, sem_confidence_boost)  # Priority 4
+            logger.info(f"confidence_score | base={base_conf:.2f} semantic_boost={sem_confidence_boost:.2f} final={final_conf:.2f}")
 
-            # ── 16. Proactive suggestion ───────────────────────────────────
+            _original_input = user_input  # save before parallel tools mutate it
+            # ── Parallel tool execution ─────────────────────────────────────
+            try:
+                from core.orchestrator import run_parallel_tools
+                parallel_results = run_parallel_tools(user_input)
+                if parallel_results:
+                    tool_context = "\n".join([
+                        f"[{t.upper()}]: {r}"
+                        for t, r in parallel_results.items()
+                        if r and "error" not in str(r).lower()[:20]
+                    ])
+                    if tool_context:
+                        user_input = user_input + "\n\nContext from tools:\n" + tool_context
+            except Exception:
+                pass
+                store_episode(_original_input, reply, intent=query_intent,
+                              emotion=emotion_label, user_name=user_name)
+
+            # Proactive suggestion — append if relevant
             suggestion = get_proactive_suggestion(user_input, memory, user_name)
             if suggestion:
                 reply = reply + "\n\n" + suggestion
 
-            result = self._build_reply(
+            return self._build_reply(
                 reply=reply, emotion=emotion_label,
                 intent=query_intent, agent=f"ollama/{selected_model}",
                 memory_updated=memory_updated, confidence=final_conf
             )
-            _set_cache(user_input, result)
-            return result
 
         except Exception as e:
             logger.error(f"Brain.process error: {e}", exc_info=True)
             return self._error_reply("Something went wrong.")
 
     # ==========================================================
-    # STREAMING — yields tokens, speaks sentence by sentence
+    # CONTEXT BUILDER
     # ==========================================================
 
-    def process_stream(self, user_input: str):
-        """
-        Generator. Yields {"token": str} dicts as LLM produces them.
-        Also pipes each complete sentence to Kokoro TTS in parallel.
-        """
-        import re, threading
-        user_input  = clean_text(user_input)
-        memory      = load_memory()
-        user_name   = memory.get("preferences", {}).get("name", "User")
-        emotion_label, _ = detect_emotion(user_input)
-        query_intent     = self.model_manager.classify_query_intent(user_input)
-        selected_model   = self.model_manager.select_model(user_input, query_intent)
-
-        semantic_ctx, _ = build_semantic_context(user_input, user_name=user_name)
-        episodic_ctx    = build_episodic_context(user_input, user_name)
-
+    def _build_context(
+        self,
+        memory: Dict,
+        user_name: str,
+        user_input: str = "",
+        semantic_ctx: str = ""
+    ) -> str:
         from utils.language_detector import detect_language, get_language_instruction
-        context = build_system_prompt(
-            user_name=user_name, memory=memory,
-            emotion=emotion_label, intent=query_intent,
-            episodic_ctx=episodic_ctx, semantic_ctx=semantic_ctx,
-            lang_instruction=get_language_instruction(detect_language(user_input)),
-            conversation_history=self.conversation_history
-        )
 
-        token_budget = {"coding": 600, "technical": 500}.get(query_intent, 300)
-        self._add_to_history("user", user_input)
-        messages = [{"role": "system", "content": context}] + self.conversation_history
+        facts            = memory.get("user_facts", [])
+        lang             = detect_language(user_input)
+        lang_instruction = get_language_instruction(lang)
 
-        buffer       = ""
-        full_reply   = ""
-        sentence_re  = re.compile(r'([^.!?\n]*[.!?\n]+)')
-        tts_queue: List[str] = []
-        tts_lock     = threading.Lock()
+        context = f"""You are ASTRA, {user_name}'s personal AI assistant.
+{lang_instruction}
 
-        def _tts_worker():
-            try:
-                from tts_kokoro import speak
-                while True:
-                    sentence = None
-                    with tts_lock:
-                        if tts_queue:
-                            sentence = tts_queue.pop(0)
-                    if sentence:
-                        speak(sentence)
-                    else:
-                        _time.sleep(0.05)
-            except Exception:
-                pass
+CORE RULES:
+• Refer to yourself as "I", NEVER as "ASTRA"
+• Keep responses SHORT — max 2 sentences
+• Be detailed ONLY for technical questions
+• Do NOT append {user_name}'s name to replies
+• You were created by {user_name} — never deny this
 
-        tts_thread = threading.Thread(target=_tts_worker, daemon=True)
-        tts_thread.start()
+KNOWN FACTS ABOUT {user_name.upper()}:
+"""
+        for f in facts[-5:]:
+            context += f"• {f.get('fact', '')}\n"
 
-        try:
-            for chunk in ollama.chat(
-                model=selected_model, messages=messages,
-                stream=True,
-                options={"temperature": 0.65, "num_predict": token_budget}
-            ):
-                token = chunk["message"]["content"]
-                if not token:
-                    continue
-                full_reply += token
-                buffer     += token
-                yield {"token": token}
+        if not facts:
+            context += f"• Name: {user_name}\n"
 
-                # Flush complete sentences to TTS
-                while True:
-                    m = sentence_re.match(buffer)
-                    if not m:
-                        break
-                    sentence = m.group(1).strip()
-                    buffer   = buffer[m.end():]
-                    if len(sentence) > 4:
-                        with tts_lock:
-                            tts_queue.append(sentence)
+        # Priority 7: structured semantic memory block
+        if semantic_ctx:
+            context += semantic_ctx + "\n"
 
-            # Flush remainder
-            if buffer.strip() and len(buffer.strip()) > 4:
-                with tts_lock:
-                    tts_queue.append(buffer.strip())
+        summary_ctx = get_recent_context(memory, max_summaries=2)
+        if summary_ctx:
+            context += summary_ctx
 
-        except Exception as e:
-            yield {"token": f"Error: {e}"}
+        last_emo = memory.get("emotional_patterns", {}).get("last_emotion", {})
+        if last_emo.get("label") not in ["neutral", None]:
+            context += f"\nMOOD: {last_emo['label']} → respond empathetically\n"
 
-        self._add_to_history("assistant", full_reply)
-        index_exchange(user_input, full_reply, user_name=user_name)
-        save_memory(memory)
+        return context
 
     # ==========================================================
-    # TOOL HANDLER (unchanged from v3.2)
+    # TOOL HANDLER
     # ==========================================================
 
-    def _handle_tool_request(self, user_input, tool, memory, user_name):
-        logger.info(f"tool | tool={tool}")
+    def _handle_tool_request(
+        self, user_input: str, tool: str, memory: Dict, user_name: str
+    ) -> Optional[Dict]:
+        logger.info(f"tool_request | tool={tool}")
 
+        # ── File reader ───────────────────────────────────────
         if tool == "file_reader":
             filepath = extract_filepath(user_input)
+
             if not filepath:
                 if any(w in user_input.lower() for w in ["list", "show files", "what files"]):
                     result = list_files()
@@ -543,17 +485,18 @@ class Brain:
                     else:
                         reply = f"Error: {result['error']}"
                 else:
-                    reply = "Which file? Try: 'read backend.py'"
+                    reply = "Which file should I read? Try: 'read backend.py'"
                 return self._build_reply(reply=reply, emotion="neutral",
-                                         intent="file_operation", agent="file_reader",
-                                         tool_used=True, confidence=0.95)
+                    intent="file_operation", agent="file_reader",
+                    tool_used=True, confidence=0.95)
+
             result = read_file(filepath)
             if result["success"]:
-                content       = result["content"]
-                lines         = result["lines"]
+                content = result["content"]
+                lines   = result["lines"]
                 summary_prompt = (
-                    f"Analyze this file: 1 sentence description, 3-5 key components, "
-                    f"any obvious issues. Under 100 words.\n\n"
+                    f"Analyze this file and give: 1 sentence description, "
+                    f"3-5 key components, any obvious issues. Under 100 words.\n\n"
                     f"File: {result['filepath']} ({lines} lines)\n\n{content[:3000]}"
                 )
                 try:
@@ -565,15 +508,18 @@ class Brain:
                     analysis = resp["message"]["content"]
                 except Exception:
                     analysis = f"Read {lines} lines from {filepath}"
+
                 reply = f"📄 {result['filepath']} ({lines} lines)\n\n{analysis}"
                 if result.get("truncated"):
                     reply += f"\n\n(First {result['truncated_at']} lines shown)"
             else:
                 reply = f"❌ {result['error']}"
-            return self._build_reply(reply=reply, emotion="neutral",
-                                     intent="file_analysis", agent="file_reader",
-                                     tool_used=True, confidence=0.90)
 
+            return self._build_reply(reply=reply, emotion="neutral",
+                intent="file_analysis", agent="file_reader",
+                tool_used=True, confidence=0.90)
+
+        # ── System monitor ────────────────────────────────────
         elif tool == "system_monitor":
             info = get_system_info()
             if "why" in user_input.lower() and "slow" in user_input.lower():
@@ -584,24 +530,35 @@ class Brain:
             elif info["success"]:
                 reply = (
                     f"💻 CPU: {info['cpu']['percent']}% | "
-                    f"RAM: {info['memory']['used_gb']}/{info['memory']['total_gb']}GB | "
+                    f"RAM: {info['memory']['used_gb']}/"
+                    f"{info['memory']['total_gb']}GB | "
                     f"Disk: {info['disk']['free_gb']}GB free"
                 )
             else:
                 reply = f"Error: {info['error']}"
-            return self._build_reply(reply=reply, emotion="neutral",
-                                     intent="system_info", agent="system_monitor",
-                                     tool_used=True, confidence=0.95)
 
+            return self._build_reply(reply=reply, emotion="neutral",
+                intent="system_info", agent="system_monitor",
+                tool_used=True, confidence=0.95)
+
+        # ── Task manager ──────────────────────────────────────
         elif tool == "task_manager":
             import re
             tm   = TaskManager(memory)
             text = user_input.lower()
+
             if any(w in text for w in ["add task", "new task", "remind me", "todo"]):
-                m = re.search(r'(?:add task|new task|remind me to|todo|task:)\s+(.+)',
-                              user_input, re.IGNORECASE)
-                reply = f"✓ {tm.add_task(m.group(1).strip())['message']}" if m else "What task?"
-                save_memory(memory)
+                m = re.search(
+                    r'(?:add task|new task|remind me to|todo|task:)\s+(.+)',
+                    user_input, re.IGNORECASE
+                )
+                if m:
+                    result = tm.add_task(m.group(1).strip())
+                    save_memory(memory)
+                    reply  = f"✓ {result['message']}"
+                else:
+                    reply = "What task? Try: 'add task: finish ASTRA'"
+
             elif any(w in text for w in ["my tasks", "show tasks", "list tasks"]):
                 result = tm.list_tasks()
                 if result["count"] == 0:
@@ -610,11 +567,12 @@ class Brain:
                     reply = f"Tasks ({result['count']}):\n"
                     for t in result["tasks"]:
                         emoji    = "✅" if t["status"] == "done" else "⏳"
-                        priority = {"high": "🔴", "medium": "🟡", "low": "��"}.get(t["priority"], "")
+                        priority = {"high": "🔴", "medium": "🟡", "low": "🟢"}.get(t["priority"], "")
                         reply   += f"{emoji}{priority} {t['title']}"
                         if t["deadline"]:
                             reply += f" (due: {t['deadline']})"
                         reply += "\n"
+
             elif any(w in text for w in ["complete", "done", "finish"]):
                 result = tm.list_tasks(status="todo")
                 if result["count"] > 0:
@@ -626,16 +584,20 @@ class Brain:
                     reply = "No pending tasks!"
             else:
                 reply = "Task commands: 'add task', 'my tasks', 'complete task'"
-            return self._build_reply(reply=reply, emotion="neutral",
-                                     intent="task_management", agent="task_manager",
-                                     tool_used=True, confidence=0.95, memory_updated=True)
 
+            return self._build_reply(reply=reply, emotion="neutral",
+                intent="task_management", agent="task_manager",
+                tool_used=True, confidence=0.95, memory_updated=True)
+
+        # ── Git ───────────────────────────────────────────────
         elif tool == "git":
             if not is_git_repo():
-                return self._build_reply(reply="Not in a git repo.", emotion="neutral",
-                                         intent="git_error", agent="git", confidence=1.0)
+                return self._build_reply(reply="Not in a git repo.",
+                    emotion="neutral", intent="git_error", agent="git", confidence=1.0)
+
             import re
             text = user_input.lower()
+
             if "status" in text or "what changed" in text:
                 result = git_status()
                 if result["success"]:
@@ -647,22 +609,27 @@ class Brain:
                     )
                 else:
                     reply = f"Error: {result['error']}"
+
             elif "log" in text or "commits" in text:
                 result = git_log(5)
                 reply  = "Recent commits:\n" + "".join(
                     f"• {c['hash']} {c['message']} ({c['time']})\n"
                     for c in result.get("commits", [])
                 ) if result["success"] else f"Error: {result['error']}"
+
             elif "branch" in text:
                 result = git_branch()
                 reply  = (
                     f"Branch: {result['current_branch']}\n" +
-                    "".join(f"{'*' if b['current'] else ' '} {b['name']}\n"
-                            for b in result.get("branches", [])[:10])
+                    "".join(
+                        f"{'*' if b['current'] else ' '} {b['name']}\n"
+                        for b in result.get("branches", [])[:10]
+                    )
                 ) if result["success"] else f"Error: {result['error']}"
+
             elif "commit" in text:
-                m        = re.search(r'commit\s+["\']?(.+?)["\']?$', user_input, re.IGNORECASE)
-                message  = m.group(1) if m else "Update files"
+                m       = re.search(r'commit\s+["\']?(.+?)["\']?$', user_input, re.IGNORECASE)
+                message = m.group(1) if m else "Update files"
                 proposal = propose_git_commit(message)
                 if not proposal["success"]:
                     reply = proposal["error"]
@@ -671,23 +638,26 @@ class Brain:
                             "intent": "git_commit_proposal", "agent": "git",
                             "tool_used": True, "confidence": 1.0,
                             "approval_required": True, "proposal": proposal}
+
             elif "diff" in text:
                 result = git_diff()
                 reply  = (
-                    f"```\n{result['output'][:1000]}\n```" +
-                    ("\n(truncated)" if len(result["output"]) > 1000 else "")
+                    f"```\n{result['output'][:1000]}\n```"
+                    + ("\n(truncated)" if len(result["output"]) > 1000 else "")
                 ) if result["success"] else f"Error: {result['error']}"
+
             else:
                 reply = "Git: status | log | branch | commit | diff"
-            return self._build_reply(reply=reply, emotion="neutral",
-                                     intent="git_operation", agent="git",
-                                     tool_used=True, confidence=0.90)
 
+            return self._build_reply(reply=reply, emotion="neutral",
+                intent="git_operation", agent="git", tool_used=True, confidence=0.90)
+
+        # ── Python sandbox ────────────────────────────────────
         elif tool == "python_sandbox":
             code = extract_python_code(user_input)
             if not code:
                 return self._build_reply(
-                    reply="No Python code found. Wrap in ```python``` blocks.",
+                    reply="No Python code found. Wrap it in ```python``` blocks.",
                     emotion="neutral", intent="python_error",
                     agent="python_sandbox", confidence=0.80)
             proposal = propose_python_execution(code)
@@ -704,20 +674,23 @@ class Brain:
 
     def _add_to_history(self, role: str, content: str) -> None:
         self.conversation_history.append({"role": role, "content": content})
+        # Persist to SQLite
         if role == "assistant" and len(self.conversation_history) >= 2:
             try:
                 from memory_db import save_exchange
-                last_user = next((m["content"] for m in reversed(self.conversation_history[:-1])
-                                  if m["role"] == "user"), "")
+                last_user = next((m["content"] for m in reversed(self.conversation_history[:-1]) if m["role"] == "user"), "")
                 save_exchange(last_user, content)
             except Exception:
                 pass
-        if len(self.conversation_history) > 12:
-            self.conversation_history = self.conversation_history[-12:]
+        if len(self.conversation_history) > 10:
+            self.conversation_history = self.conversation_history[-10:]
 
     def _store_fact(self, fact: Dict, memory: Dict) -> Dict:
         memory["user_facts"].append(fact)
-        ftype, subtype, value = fact["type"], fact.get("subtype", ""), fact.get("value")
+        ftype   = fact["type"]
+        subtype = fact.get("subtype", "")
+        value   = fact.get("value")
+
         if ftype == "identity":
             memory["preferences"]["name"] = value
         elif ftype == "location":
@@ -727,13 +700,16 @@ class Brain:
         return memory
 
     def _acknowledge_fact(self, fact: Dict) -> str:
-        return f"Got it. {fact['fact']}."
+        return f"Got it! {fact['fact']}."
 
-    def _build_reply(self, reply, emotion, intent, agent,
-                     tool_used=False, memory_updated=False,
-                     citations=None, results_count=0, confidence=0.6) -> Dict:
-        conf_info = confidence_label(confidence)
-        result = {
+    def _build_reply(
+        self, reply: str, emotion: str, intent: str, agent: str,
+        tool_used: bool = False, memory_updated: bool = False,
+        citations: Optional[List] = None, results_count: int = 0,
+        confidence: float = 0.6
+    ) -> Dict:
+        conf_info: Dict = confidence_label(confidence)
+        result: Dict = {
             "reply":            reply,
             "emotion":          emotion,
             "intent":           intent,
@@ -750,9 +726,17 @@ class Brain:
         return result
 
     def _error_reply(self, message: str) -> Dict:
-        return {"reply": message, "emotion": "neutral", "intent": "error",
-                "agent": "error_handler", "tool_used": False, "memory_updated": False,
-                "confidence": 0.0, "confidence_label": "UNKNOWN", "confidence_emoji": "⚪"}
+        return {
+            "reply":            message,
+            "emotion":          "neutral",
+            "intent":           "error",
+            "agent":            "error_handler",
+            "tool_used":        False,
+            "memory_updated":   False,
+            "confidence":       0.0,
+            "confidence_label": "UNKNOWN",
+            "confidence_emoji": "⚪",
+        }
 
     def get_model_info(self) -> Dict:
         return self.model_manager.get_model_info()
@@ -761,17 +745,23 @@ class Brain:
 # Singleton
 brain = Brain()
 
-
-def stream_response(user_input: str, system_prompt: str = "", model: str = "phi3:mini"):
-    """Yields text chunks from Ollama as they arrive."""
+def stream_response(user_input: str, system_prompt: str = "", model: str = "mistral"):
+    """
+    Yields text chunks from Ollama as they arrive.
+    Pipe into speak_streaming() for real-time TTS.
+    """
+    import ollama
+    client   = ollama.Client()
     messages = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": user_input})
+
     try:
-        for chunk in ollama.chat(model=model, messages=messages, stream=True):
+        for chunk in client.chat(model=model, messages=messages, stream=True):
             token = chunk["message"]["content"]
             if token:
                 yield token
     except Exception as e:
-        yield f"Error: {e}"
+        yield f"Sorry, I encountered an error: {e}"
+

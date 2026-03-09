@@ -6,7 +6,7 @@ from typing import Optional, Callable
 
 logger = logging.getLogger(__name__)
 
-CHECK_INTERVAL = 60
+CHECK_INTERVAL = 300
 BREAK_INTERVAL = 90 * 60
 MORNING_HOUR   = 9
 EVENING_HOUR   = 21

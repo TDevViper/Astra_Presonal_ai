@@ -3,13 +3,13 @@
 # ==========================================
 
 # ── English responses ──────────────────────────────────────
-CREATOR_RESPONSE = "{user_name} built me. Pretty awesome, right?"
+CREATOR_RESPONSE = "Arnav built me. Pretty awesome, right?"
 WHO_ARE_YOU      = "I'm ASTRA, your personal AI assistant."
 HOW_ARE_YOU      = "Doing great! What's up?"
 WHAT_CAN_YOU_DO  = "I can chat, search the web, remember things, and answer questions. What do you need?"
 
 # ── Hindi responses ────────────────────────────────────────
-CREATOR_HINDI    = "{user_name} ne mujhe banaya hai. Kafi cool hai na?"
+CREATOR_HINDI    = "Arnav ne mujhe banaya hai. Kafi cool hai na?"
 WHO_HINDI        = "Main ASTRA hoon, aapka personal AI assistant."
 HOW_HINDI        = "Main bilkul theek hoon! Aap sunao?"
 CAN_DO_HINDI     = "Main baat kar sakta hoon, web search kar sakta hoon, cheezein yaad rakh sakta hoon. Kya chahiye?"
@@ -125,8 +125,6 @@ def detect_intent(user_message: str, user_name: str = None) -> str:
 
     for trigger, response in sorted_intents:
         if trigger in text:
-            if user_name and "{user_name}" in response:
-                response = response.replace("{user_name}", user_name)
             return response
 
     return None

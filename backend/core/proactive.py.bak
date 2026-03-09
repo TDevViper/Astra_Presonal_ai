@@ -78,7 +78,7 @@ def analyze_patterns() -> Dict:
     return patterns
 
 
-def get_welcome_back(user_name: str = "User") -> Optional[str]:
+def get_welcome_back(user_name: str = "Arnav") -> Optional[str]:
     episodes = _load_episodes()
     if not episodes:
         return None
@@ -111,7 +111,7 @@ def get_welcome_back(user_name: str = "User") -> Optional[str]:
 
 
 def get_proactive_suggestion(user_input: str, memory: Dict,
-                              user_name: str = "User") -> Optional[str]:
+                              user_name: str = "Arnav") -> Optional[str]:
     patterns     = analyze_patterns()
     topic_counts = patterns.get("topics", {})
     t            = user_input.lower()
@@ -146,7 +146,7 @@ def get_proactive_suggestion(user_input: str, memory: Dict,
     return None
 
 
-def get_session_summary(user_name: str = "User") -> Optional[str]:
+def get_session_summary(user_name: str = "Arnav") -> Optional[str]:
     episodes  = _load_episodes()
     today     = date.today().isoformat()
     today_eps = [e for e in episodes if e.get("date") == today]
@@ -162,7 +162,6 @@ def get_session_summary(user_name: str = "User") -> Optional[str]:
         f"Main activities: {', '.join(top) if top else 'general chat'}. "
         f"Good work, {user_name}!"
     )
-
 
 # ── System monitoring + WebSocket proactive alerts ──────────────────────
 import threading, time, psutil
@@ -182,7 +181,7 @@ def _broadcast(msg: str):
 
 def start_proactive_monitor():
     threading.Thread(target=_monitor_loop, daemon=True).start()
-    print("[Proactive] ✅ System monitor running (120s interval)")
+    print("[Proactive] ✅ System monitor running")
 
 def _monitor_loop():
     last_alerts = {}
@@ -190,14 +189,15 @@ def _monitor_loop():
         try:
             _check_system(last_alerts)
             _check_tasks(last_alerts)
-        except Exception:
+            _check_screen_errors(last_alerts)
+        except Exception as e:
             pass
-        time.sleep(120)
+        time.sleep(30)
 
 def _check_system(last_alerts: dict):
     now = time.time()
 
-    cpu = psutil.cpu_percent(interval=None)
+    cpu = psutil.cpu_percent(interval=None)  # non-blocking
     if cpu > 85 and now - last_alerts.get("cpu", 0) > 300:
         _broadcast(f"⚠️ CPU is at {cpu:.0f}% — something's heating up.")
         last_alerts["cpu"] = now
@@ -223,6 +223,7 @@ def _check_tasks(last_alerts: dict):
     if now - last_alerts.get("tasks", 0) < 1800:
         return
     try:
+        import json
         mem_file = os.path.join(_BACKEND_DIR, "memory", "data", "memory.json")
         if not os.path.exists(mem_file):
             return
@@ -234,4 +235,66 @@ def _check_tasks(last_alerts: dict):
             _broadcast(f"📌 You have {len(pending)} pending tasks. Want to review them?")
             last_alerts["tasks"] = now
     except Exception:
+        pass
+
+# ── Screen error detection ───────────────────────────────────────────────
+def _check_screen_errors(last_alerts: dict):
+    now = time.time()
+    # Only check every 30 seconds
+    if now - last_alerts.get("screen_error", 0) < 30:
+        return
+    try:
+        from vision.screen_watcher import ScreenWatcher
+        sw     = ScreenWatcher()
+        result = sw.capture_and_analyze(
+            "Is there an error dialog, crash report, exception traceback, "
+            "or red warning text visible? Answer only yes or no."
+        )
+        if "yes" in result.lower():
+            last_alerts["screen_error"] = now
+            # Get details
+            detail = sw.capture_and_analyze(
+                "Describe the error on screen in one sentence. Be specific."
+            )
+            _broadcast(f"🖥️ I see an error on your screen: {detail} Want me to help fix it?")
+            # Also speak it
+            try:
+                from tts_kokoro import speak_async
+                speak_async(f"Hey Arnav, I spotted an error on your screen. {detail}. Want me to help?")
+            except Exception:
+                pass
+        else:
+            last_alerts["screen_error"] = now  # update even on no-error to avoid spam
+    except Exception as e:
+        pass
+
+# ── Screen error detection ───────────────────────────────────────────────
+def _check_screen_errors(last_alerts: dict):
+    now = time.time()
+    # Only check every 30 seconds
+    if now - last_alerts.get("screen_error", 0) < 30:
+        return
+    try:
+        from vision.screen_watcher import ScreenWatcher
+        sw     = ScreenWatcher()
+        result = sw.capture_and_analyze(
+            "Is there an error dialog, crash report, exception traceback, "
+            "or red warning text visible? Answer only yes or no."
+        )
+        if "yes" in result.lower():
+            last_alerts["screen_error"] = now
+            # Get details
+            detail = sw.capture_and_analyze(
+                "Describe the error on screen in one sentence. Be specific."
+            )
+            _broadcast(f"🖥️ I see an error on your screen: {detail} Want me to help fix it?")
+            # Also speak it
+            try:
+                from tts_kokoro import speak_async
+                speak_async(f"Hey Arnav, I spotted an error on your screen. {detail}. Want me to help?")
+            except Exception:
+                pass
+        else:
+            last_alerts["screen_error"] = now  # update even on no-error to avoid spam
+    except Exception as e:
         pass
