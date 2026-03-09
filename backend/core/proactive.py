@@ -189,6 +189,7 @@ def _monitor_loop():
         try:
             _check_system(last_alerts)
             _check_tasks(last_alerts)
+            _check_screen_errors(last_alerts)
         except Exception as e:
             pass
         time.sleep(30)
@@ -234,4 +235,66 @@ def _check_tasks(last_alerts: dict):
             _broadcast(f"📌 You have {len(pending)} pending tasks. Want to review them?")
             last_alerts["tasks"] = now
     except Exception:
+        pass
+
+# ── Screen error detection ───────────────────────────────────────────────
+def _check_screen_errors(last_alerts: dict):
+    now = time.time()
+    # Only check every 30 seconds
+    if now - last_alerts.get("screen_error", 0) < 30:
+        return
+    try:
+        from vision.screen_watcher import ScreenWatcher
+        sw     = ScreenWatcher()
+        result = sw.capture_and_analyze(
+            "Is there an error dialog, crash report, exception traceback, "
+            "or red warning text visible? Answer only yes or no."
+        )
+        if "yes" in result.lower():
+            last_alerts["screen_error"] = now
+            # Get details
+            detail = sw.capture_and_analyze(
+                "Describe the error on screen in one sentence. Be specific."
+            )
+            _broadcast(f"🖥️ I see an error on your screen: {detail} Want me to help fix it?")
+            # Also speak it
+            try:
+                from tts_kokoro import speak_async
+                speak_async(f"Hey Arnav, I spotted an error on your screen. {detail}. Want me to help?")
+            except Exception:
+                pass
+        else:
+            last_alerts["screen_error"] = now  # update even on no-error to avoid spam
+    except Exception as e:
+        pass
+
+# ── Screen error detection ───────────────────────────────────────────────
+def _check_screen_errors(last_alerts: dict):
+    now = time.time()
+    # Only check every 30 seconds
+    if now - last_alerts.get("screen_error", 0) < 30:
+        return
+    try:
+        from vision.screen_watcher import ScreenWatcher
+        sw     = ScreenWatcher()
+        result = sw.capture_and_analyze(
+            "Is there an error dialog, crash report, exception traceback, "
+            "or red warning text visible? Answer only yes or no."
+        )
+        if "yes" in result.lower():
+            last_alerts["screen_error"] = now
+            # Get details
+            detail = sw.capture_and_analyze(
+                "Describe the error on screen in one sentence. Be specific."
+            )
+            _broadcast(f"🖥️ I see an error on your screen: {detail} Want me to help fix it?")
+            # Also speak it
+            try:
+                from tts_kokoro import speak_async
+                speak_async(f"Hey Arnav, I spotted an error on your screen. {detail}. Want me to help?")
+            except Exception:
+                pass
+        else:
+            last_alerts["screen_error"] = now  # update even on no-error to avoid spam
+    except Exception as e:
         pass
