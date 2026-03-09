@@ -376,6 +376,7 @@ class Brain:
             final_conf = max(base_conf, sem_confidence_boost)  # Priority 4
             logger.info(f"confidence_score | base={base_conf:.2f} semantic_boost={sem_confidence_boost:.2f} final={final_conf:.2f}")
 
+            _original_input = user_input  # save before parallel tools mutate it
             # ── Parallel tool execution ─────────────────────────────────────
             try:
                 from core.orchestrator import run_parallel_tools
@@ -390,8 +391,8 @@ class Brain:
                         user_input = user_input + "\n\nContext from tools:\n" + tool_context
             except Exception:
                 pass
-            store_episode(user_input, reply, intent=query_intent,
-                          emotion=emotion_label, user_name=user_name)
+                store_episode(_original_input, reply, intent=query_intent,
+                              emotion=emotion_label, user_name=user_name)
 
             # Proactive suggestion — append if relevant
             suggestion = get_proactive_suggestion(user_input, memory, user_name)

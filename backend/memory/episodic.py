@@ -50,7 +50,7 @@ def store_episode(user_msg: str, astra_reply: str,
         "emotion":    emotion,
         "user_name":  user_name
     })
-    _auto_extract_after_store(user_input, reply)
+    _auto_extract_after_store(user_msg, reply)
     _save_episodes(episodes)
     logger.debug(f"📼 Episode stored: {user_msg[:40]}")
     try:
@@ -122,9 +122,9 @@ def get_episode_stats() -> Dict:
     }
 
 # ── Auto knowledge graph population (appended by upgrade) ──────────────
-def _auto_extract_after_store(user_input: str, reply: str):
+def _auto_extract_after_store(user_msg: str, reply: str):
     try:
         from knowledge.auto_extractor import extract_and_store
-        extract_and_store(user_input + " " + reply, user_name="Arnav")
+        extract_and_store(user_msg + " " + reply, user_name="Arnav")
     except Exception:
         pass
