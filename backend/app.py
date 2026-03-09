@@ -100,6 +100,18 @@ def internal_error(e):
     logger.error(f"Internal server error: {e}")
     return jsonify({"error": "Internal server error"}), 500
 
+
+# ── Porcupine wake word ─────────────────────────────────────────────────
+from core.wake_word import start_wake_word_listener
+from dotenv import load_dotenv
+load_dotenv()
+
+def _on_wake():
+    from api.ws_stream import broadcast
+    broadcast("🎤 Wake word detected — Astra listening...")
+
+start_wake_word_listener(_on_wake)
+
 if __name__ == "__main__":
     print("\n" + "=" * 60)
     print("🚀 ASTRA ENGINE STARTING")
