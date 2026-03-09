@@ -102,7 +102,7 @@ class ActivityMonitor:
                 self._check_screen()
             except Exception as e:
                 logger.error(f"ActivityMonitor error: {e}")
-            time.sleep(30)
+            time.sleep(120)  # M4 optimized
 
     # ── App Detection ─────────────────────────────────────────
 
@@ -228,6 +228,7 @@ class ActivityMonitor:
     # ── Screen Awareness ──────────────────────────────────────
 
     def _check_screen(self):
+        return  # disabled on M4 Air — too heavy
         now     = datetime.now()
         elapsed = (now - self._last_screen).seconds
 

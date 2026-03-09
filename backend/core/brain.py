@@ -79,7 +79,7 @@ class Brain:
     def __init__(self) -> None:
         self.truth_guard          = TruthGuard()
         self.capabilities         = CapabilityManager()
-        self.model_manager        = ModelManager(default_model="mistral:latest")
+        self.model_manager        = ModelManager(default_model="phi3:mini")  # lighter for M4 Air
         self.search_agent         = WebSearchAgent()
         self.conversation_history: List[Dict] = []
         # Load persistent history from SQLite

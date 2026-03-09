@@ -29,7 +29,7 @@ def _get_embedder():
     if _embedder is None:
         from sentence_transformers import SentenceTransformer
         logger.info("🧠 Loading embedding model (all-MiniLM-L6-v2)...")
-        _embedder = SentenceTransformer("all-MiniLM-L6-v2")
+        _embedder = SentenceTransformer("BAAI/bge-small-en-v1.5")  # unified model with rag/embeddings.py
         logger.info("✅ Embedder ready")
     return _embedder
 

@@ -16,9 +16,9 @@ _frame_buffer = FrameBuffer(maxlen=10)
 _continuous_vision = ContinuousVision(
     broadcast_fn = broadcast,
     get_frame_fn = _frame_buffer.latest,
-    interval     = 8
+    interval     = 30  # M4 optimized: increased interval
 )
-_continuous_vision.start()
+# _continuous_vision.start()  # disabled at startup — starts only when vision tab is open
 
 
 from config import config
@@ -110,12 +110,12 @@ def _on_wake():
     from api.ws_stream import broadcast
     broadcast("🎤 Wake word detected — Astra listening...")
 
-start_wake_word_listener(_on_wake)
+# start_wake_word_listener(_on_wake)  # disabled at startup — enable via /voice/start
 # ── Proactive system monitor ────────────────────────────────────────────
-from core.proactive import set_broadcast, start_proactive_monitor
+from core.proactive import set_broadcast
 from api.ws_stream import broadcast as _ws_broadcast
 set_broadcast(_ws_broadcast)
-start_proactive_monitor()
+# start_proactive_monitor()  # disabled — proactive_engine handles this
 
 
 if __name__ == "__main__":

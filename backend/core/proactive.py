@@ -197,7 +197,7 @@ def _monitor_loop():
 def _check_system(last_alerts: dict):
     now = time.time()
 
-    cpu = psutil.cpu_percent(interval=1)
+    cpu = psutil.cpu_percent(interval=None)  # non-blocking
     if cpu > 85 and now - last_alerts.get("cpu", 0) > 300:
         _broadcast(f"⚠️ CPU is at {cpu:.0f}% — something's heating up.")
         last_alerts["cpu"] = now
