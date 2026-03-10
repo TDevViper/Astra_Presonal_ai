@@ -1,5 +1,5 @@
 # ==========================================
-# core/brain.py - v4.0 ADVANCED
+# core/brain.py - v4.1 FULL PIPELINE STREAM
 # ==========================================
 
 import logging
@@ -69,10 +69,9 @@ SEARCH_TRIGGERS = [
     "who is", "when did", "where is", "price of", "weather"
 ]
 
-# ── Response cache — avoid recomputing identical queries ──────────────────
 import hashlib, time as _time
 _response_cache: Dict = {}
-_CACHE_TTL = 60  # seconds
+_CACHE_TTL = 60
 
 
 def _cache_key(text: str) -> str:
@@ -89,7 +88,6 @@ def _get_cached(text: str) -> Optional[Dict]:
 
 
 def _set_cache(text: str, result: Dict):
-    # Only cache short factual/greeting replies
     if len(result.get("reply", "").split()) < 40:
         _response_cache[_cache_key(text)] = {"result": result, "ts": _time.time()}
 
@@ -112,29 +110,22 @@ class Brain:
             self.conversation_history = load_recent_history(n=15)
         except Exception:
             pass
-        logger.info("🚀 Brain v4.0 initialized")
-
-    # ==========================================================
-    # MAIN PIPELINE
-    # ==========================================================
+        logger.info("🚀 Brain v4.1 initialized")
 
     def process(self, user_input: str, vision_mode: bool = False) -> Dict:
         try:
             user_input = clean_text(user_input)
 
-            # ── Mode switch detection ─────────────────────────────────────
             mode_switch = detect_mode_switch(user_input)
             if mode_switch:
                 set_mode(mode_switch)
                 from personality.modes import get_mode_banner
                 return self._build_reply(reply=f'Mode switched: {get_mode_banner()}', emotion='neutral', intent='mode_switch', agent='system', confidence=1.0)
 
-            # ── Response cache for greetings / repeat queries ─────────────
             cached = _get_cached(user_input)
             if cached and not vision_mode:
                 return cached
 
-            # ── Chain detection ───────────────────────────────────────────
             try:
                 from tools.chain_planner import detect_chain, build_chain_plan, execute_chain
                 _steps = detect_chain(user_input)
@@ -146,7 +137,6 @@ class Brain:
             except Exception:
                 pass
 
-            # ── Morning briefing ──────────────────────────────────────────
             try:
                 from briefing import should_give_briefing, generate_morning_brief, mark_briefing_done
                 _mem = load_memory()
@@ -169,12 +159,10 @@ class Brain:
 
             self.truth_guard.update_user_info(user_name=user_name, user_location=user_loc)
 
-            # ── 1. Emotion ────────────────────────────────────────────────
             emotion_label, emotion_score = detect_emotion(user_input)
             memory = update_emotion(memory, emotion_label, emotion_score)
             logger.info(f"emotion | label={emotion_label} score={emotion_score:.2f}")
 
-            # ── 1.2 Quick tool shortcuts ──────────────────────────────────
             for handler, intent, agent in [
                 (handle_search_command,   "web_search",     "web_search_agent"),
                 (handle_whatsapp_command, "whatsapp",       "whatsapp"),
@@ -187,7 +175,6 @@ class Brain:
                     return self._build_reply(reply=result, emotion=emotion_label,
                                              intent=intent, agent=agent, confidence=1.0)
 
-            # ── 2. Shortcuts ──────────────────────────────────────────────
             bye_words = ["bye", "goodbye", "exit", "quit", "see you", "good night", "cya"]
             is_bye    = any(w in user_input.lower() for w in bye_words)
 
@@ -204,14 +191,12 @@ class Brain:
                 _set_cache(user_input, r)
                 return r
 
-            # ── 2.1 Self-awareness ─────────────────────────────────────────
             if is_self_query(user_input):
                 reply = get_self_response(user_input, user_name)
                 save_memory(memory)
                 return self._build_reply(reply=reply, emotion=emotion_label,
                                          intent="self_awareness", agent="self", confidence=1.0)
 
-            # ── 2.5 Tools ──────────────────────────────────────────────────
             tool = detect_tool(user_input)
             if tool and self.capabilities.is_enabled(tool):
                 tool_response = self._handle_tool_request(user_input, tool, memory, user_name)
@@ -219,7 +204,6 @@ class Brain:
                     save_memory(memory)
                     return tool_response
 
-            # ── 3. Fact extraction ─────────────────────────────────────────
             new_fact       = extract_user_fact(user_input)
             memory_updated = False
 
@@ -228,7 +212,6 @@ class Brain:
                 index_user_fact(new_fact, user_name=user_name)
                 save_memory(memory)
                 memory_updated = True
-
                 if not is_question_like(user_input):
                     return self._build_reply(
                         reply=self._acknowledge_fact(new_fact),
@@ -237,7 +220,6 @@ class Brain:
                         confidence=confidence_score("memory_storage", "memory_storage")
                     )
 
-            # ── 4. Keyword recall ──────────────────────────────────────────
             recalled = memory_recall(user_input, memory, user_name)
             if recalled:
                 save_memory(memory)
@@ -245,7 +227,6 @@ class Brain:
                                          intent="memory_recall", agent="memory",
                                          confidence=confidence_score("memory_recall", "memory_recall"))
 
-            # ── 5. Web search ──────────────────────────────────────────────
             _local_query = any(w in user_input.lower() for w in [
                 "my project", "my code", "in the project", "my file",
                 "my folder", "where is", "which file", "codebase"
@@ -265,12 +246,10 @@ class Brain:
                     confidence=confidence_score("web_search_agent", "web_search")
                 )
 
-            # ── 6. Model selection ─────────────────────────────────────────
             query_intent   = self.model_manager.classify_query_intent(user_input)
             selected_model = self.model_manager.select_model(user_input, query_intent)
             logger.info(f"model | model={selected_model} intent={query_intent}")
 
-            # ── 7. PARALLEL TOOL PRE-FETCH (runs BEFORE LLM, not after) ───
             tool_context = ""
             try:
                 from core.orchestrator import run_parallel_tools
@@ -284,10 +263,7 @@ class Brain:
             except Exception:
                 pass
 
-            # ── 8. Context assembly ────────────────────────────────────────
-            semantic_ctx, sem_confidence_boost = build_semantic_context(
-                user_input, user_name=user_name
-            )
+            semantic_ctx, sem_confidence_boost = build_semantic_context(user_input, user_name=user_name)
             try:
                 from rag.rag_engine import query_rag, should_use_rag
                 if should_use_rag(user_input):
@@ -298,7 +274,6 @@ class Brain:
             except Exception:
                 pass
 
-            # Inject parallel tool results into semantic context
             if tool_context:
                 semantic_ctx = (semantic_ctx + "\n\nLIVE CONTEXT:\n" + tool_context
                                 if semantic_ctx else "LIVE CONTEXT:\n" + tool_context)
@@ -316,10 +291,8 @@ class Brain:
                 conversation_history=self.conversation_history
             )
 
-            # ── 9. Reasoning pre-process ───────────────────────────────────
             processed_input = reason(user_input, model=selected_model)
 
-            # ── 10. ReAct for complex queries ──────────────────────────────
             from agents.react_agent import react, needs_react
             react_reply = ""
             if needs_react(user_input):
@@ -334,7 +307,6 @@ class Brain:
                 self._add_to_history("user", processed_input)
                 self._add_to_history("assistant", reply)
             else:
-                # ── 11. Standard LLM call ──────────────────────────────────
                 hard_stop = (
                     "CRITICAL: 1) Never start with Hey/Hi/Sure/Certainly/Of course. "
                     "2) Answer ONLY what was asked. 3) No suggestions unless asked. "
@@ -345,7 +317,6 @@ class Brain:
                 self._add_to_history("user", _injected)
                 messages = [{"role": "system", "content": full_context}] + self.conversation_history
 
-                # Adaptive token budget — longer for technical, shorter for casual
                 token_budget = {"coding": 600, "technical": 500, "reasoning": 450,
                                 "research": 400}.get(query_intent, 300)
 
@@ -357,7 +328,7 @@ class Brain:
                             "temperature": 0.65,
                             "num_predict": token_budget,
                             "top_p": 0.9,
-                            "repeat_penalty": 1.1,   # reduces repetition
+                            "repeat_penalty": 1.1,
                         }
                     )
                     reply = response["message"]["content"]
@@ -366,9 +337,7 @@ class Brain:
 
                 self._add_to_history("assistant", reply)
 
-            # ── 12. Post-processing ────────────────────────────────────────
-            reply = critic_review(reply, user_name, memory, user_input=user_input,
-                                  model=selected_model)
+            reply = critic_review(reply, user_name, memory, user_input=user_input, model=selected_model)
             reply = refine_reply(reply, memory, user_name)
 
             is_valid, violation = self.truth_guard.validate(reply)
@@ -382,7 +351,6 @@ class Brain:
                 emo   = emotion_reply(emotion_label, emotion_score, user_name, memory)
                 reply = f"{emo} {reply}"
 
-            # ── 13. Index + store episode ──────────────────────────────────
             index_exchange(user_input, reply, user_name=user_name)
             store_episode(user_input, reply, intent=query_intent,
                           emotion=emotion_label, user_name=user_name)
@@ -393,11 +361,10 @@ class Brain:
                 pass
             try:
                 from core.self_improve import log_response as _log_resp
-                _log_resp(user_input, reply, final_conf)
+                _log_resp(user_input, reply, 0.75)
             except Exception:
                 pass
 
-            # ── 14. Summarize if needed ────────────────────────────────────
             if should_summarize(self.conversation_history):
                 summary = summarize_conversation(
                     self.conversation_history, memory, user_name, model="phi3:mini"
@@ -406,11 +373,9 @@ class Brain:
 
             save_memory(memory)
 
-            # ── 15. Confidence ─────────────────────────────────────────────
             base_conf  = confidence_score(f"ollama/{selected_model}", query_intent)
             final_conf = max(base_conf, sem_confidence_boost)
 
-            # ── 16. Proactive suggestion ───────────────────────────────────
             suggestion = get_proactive_suggestion(user_input, memory, user_name)
             if suggestion:
                 reply = reply + "\n\n" + suggestion
@@ -428,48 +393,222 @@ class Brain:
             return self._error_reply("Something went wrong.")
 
     # ==========================================================
-    # STREAMING — yields tokens, speaks sentence by sentence
+    # STREAMING — full pipeline + post-processing
     # ==========================================================
 
     def process_stream(self, user_input: str):
         """
-        Generator. Yields {"token": str} dicts as LLM produces them.
-        Also pipes each complete sentence to Kokoro TTS in parallel.
+        Generator — yields {"token": str} dicts while streaming,
+        then yields one {"meta": {...}} dict at the end with enriched
+        emotion/confidence/agent/intent for the done frame.
+
+        Full pipeline:
+          1.  Mode switch
+          2.  Response cache
+          3.  Chain detection
+          4.  Quick tool shortcuts
+          5.  Intent shortcuts
+          6.  Self-awareness
+          7.  Tool routing
+          8.  Fact extraction
+          9.  Memory recall
+          10. Web search
+          11. Ollama streaming (mode-aware temperature + token budget)
+          12. Post-processing: critic, refine, truth_guard, polish,
+              limit_words, emotion prefix, proactive suggestion,
+              episode store, summarize, knowledge graph, self-improve
         """
         import re, threading
-        user_input  = clean_text(user_input)
-        memory      = load_memory()
-        user_name   = memory.get("preferences", {}).get("name", "User")
-        emotion_label, _ = detect_emotion(user_input)
-        query_intent     = self.model_manager.classify_query_intent(user_input)
-        selected_model   = self.model_manager.select_model(user_input, query_intent)
+        user_input = clean_text(user_input)
+        if not user_input:
+            yield {"token": "I didn't catch that — try again?"}
+            return
+
+        memory    = load_memory()
+        memory    = ensure_emotion_memory(memory)
+        user_name = memory.get("preferences", {}).get("name", "User")
+
+        # ── 1. Mode switch ────────────────────────────────────────────────
+        mode_switch = detect_mode_switch(user_input)
+        if mode_switch:
+            set_mode(mode_switch)
+            yield {"token": f"Mode switched: {get_mode_banner()}"}
+            return
+
+        # ── 2. Response cache ─────────────────────────────────────────────
+        cached = _get_cached(user_input)
+        if cached:
+            for word in cached.get("reply", "").split(" "):
+                yield {"token": word + " "}
+            return
+
+        # ── 3. Chain detection ────────────────────────────────────────────
+        try:
+            from tools.chain_planner import detect_chain, build_chain_plan, execute_chain
+            _steps = detect_chain(user_input)
+            if _steps:
+                _plan   = build_chain_plan(user_input, _steps)
+                _result = execute_chain(_plan, self)
+                self._add_to_history("user", user_input)
+                self._add_to_history("assistant", _result)
+                save_memory(memory)
+                for word in _result.split(" "):
+                    yield {"token": word + " "}
+                return
+        except Exception:
+            pass
+
+        emotion_label, emotion_score = detect_emotion(user_input)
+        memory = update_emotion(memory, emotion_label, emotion_score)
+
+        # ── 4. Quick tool shortcuts ───────────────────────────────────────
+        for handler, intent, agent in [
+            (handle_search_command,   "web_search",     "web_search_agent"),
+            (handle_whatsapp_command, "whatsapp",       "whatsapp"),
+            (handle_calendar_command, "calendar",       "calendar"),
+            (handle_system_command,   "system_control", "system_controller"),
+        ]:
+            result = handler(user_input)
+            if result:
+                save_memory(memory)
+                self._add_to_history("user", user_input)
+                self._add_to_history("assistant", result)
+                for word in result.split(" "):
+                    yield {"token": word + " "}
+                return
+
+        # ── 5. Intent shortcuts ───────────────────────────────────────────
+        shortcut = detect_intent(user_input, user_name)
+        if shortcut:
+            save_memory(memory)
+            self._add_to_history("user", user_input)
+            self._add_to_history("assistant", shortcut)
+            _set_cache(user_input, {"reply": shortcut})
+            for word in shortcut.split(" "):
+                yield {"token": word + " "}
+            return
+
+        # ── 6. Self-awareness ─────────────────────────────────────────────
+        if is_self_query(user_input):
+            reply = get_self_response(user_input, user_name)
+            save_memory(memory)
+            self._add_to_history("user", user_input)
+            self._add_to_history("assistant", reply)
+            for word in reply.split(" "):
+                yield {"token": word + " "}
+            return
+
+        # ── 7. Tool routing ───────────────────────────────────────────────
+        tool = detect_tool(user_input)
+        if tool and self.capabilities.is_enabled(tool):
+            tool_response = self._handle_tool_request(user_input, tool, memory, user_name)
+            if tool_response:
+                reply = tool_response.get("reply", "")
+                save_memory(memory)
+                self._add_to_history("user", user_input)
+                self._add_to_history("assistant", reply)
+                for word in reply.split(" "):
+                    yield {"token": word + " "}
+                return
+
+        # ── 8. Fact extraction ────────────────────────────────────────────
+        new_fact = extract_user_fact(user_input)
+        if new_fact:
+            memory = self._store_fact(new_fact, memory)
+            index_user_fact(new_fact, user_name=user_name)
+            save_memory(memory)
+            if not is_question_like(user_input):
+                ack = self._acknowledge_fact(new_fact)
+                self._add_to_history("user", user_input)
+                self._add_to_history("assistant", ack)
+                for word in ack.split(" "):
+                    yield {"token": word + " "}
+                return
+
+        # ── 9. Memory recall ──────────────────────────────────────────────
+        recalled = memory_recall(user_input, memory, user_name)
+        if recalled:
+            save_memory(memory)
+            self._add_to_history("user", user_input)
+            self._add_to_history("assistant", recalled)
+            for word in recalled.split(" "):
+                yield {"token": word + " "}
+            return
+
+        # ── 10. Web search ────────────────────────────────────────────────
+        _local_query = any(w in user_input.lower() for w in [
+            "my project", "my code", "in the project", "my file",
+            "my folder", "where is", "which file", "codebase"
+        ])
+        if self.capabilities.is_enabled("web_search") and needs_web_search(user_input) and not _local_query:
+            self.search_agent.model = self.model_manager.select_model(user_input, "research")
+            result = self.search_agent.run(user_input, user_name)
+            reply  = result.get("reply", "")
+            self._add_to_history("user", user_input)
+            self._add_to_history("assistant", reply)
+            save_memory(memory)
+            for word in reply.split(" "):
+                yield {"token": word + " "}
+            return
+
+        # ── 11. Ollama streaming ──────────────────────────────────────────
+        query_intent   = self.model_manager.classify_query_intent(user_input)
+        selected_model = self.model_manager.select_model(user_input, query_intent)
+        temperature    = get_temperature()
+        token_budget   = get_token_budget(query_intent)
 
         semantic_ctx, _ = build_semantic_context(user_input, user_name=user_name)
         episodic_ctx    = build_episodic_context(user_input, user_name)
 
+        try:
+            from rag.rag_engine import query_rag, should_use_rag
+            if should_use_rag(user_input):
+                rag_ctx = query_rag(user_input, top_k=3)
+                if rag_ctx:
+                    semantic_ctx = (semantic_ctx + "\n\nFROM YOUR FILES:\n" + rag_ctx
+                                    if semantic_ctx else "FROM YOUR FILES:\n" + rag_ctx)
+        except Exception:
+            pass
+
+        tool_context = ""
+        try:
+            from core.orchestrator import run_parallel_tools
+            parallel_results = run_parallel_tools(user_input)
+            if parallel_results:
+                tool_context = "\n".join([
+                    f"[{t.upper()}]: {r}"
+                    for t, r in parallel_results.items()
+                    if r and "error" not in str(r).lower()[:20]
+                ])
+        except Exception:
+            pass
+
         from utils.language_detector import detect_language, get_language_instruction
-        context = build_system_prompt(
+        system_prompt = build_system_prompt(
             user_name=user_name, memory=memory,
             emotion=emotion_label, intent=query_intent,
             episodic_ctx=episodic_ctx, semantic_ctx=semantic_ctx,
             lang_instruction=get_language_instruction(detect_language(user_input)),
             conversation_history=self.conversation_history
         )
+        if tool_context:
+            system_prompt += f"\n\nLIVE TOOL DATA:\n{tool_context}"
+        system_prompt += get_system_addon()
 
-        token_budget = {"coding": 600, "technical": 500}.get(query_intent, 300)
         self._add_to_history("user", user_input)
-        messages = [{"role": "system", "content": context}] + self.conversation_history
+        messages = [{"role": "system", "content": system_prompt}] + self.conversation_history
 
-        buffer       = ""
-        full_reply   = ""
-        sentence_re  = re.compile(r'([^.!?\n]*[.!?\n]+)')
+        buffer      = ""
+        full_reply  = ""
+        sentence_re = re.compile(r'([^.!?\n]*[.!?\n]+)')
         tts_queue: List[str] = []
-        tts_lock     = threading.Lock()
+        tts_lock    = threading.Lock()
+        tts_done    = threading.Event()
 
         def _tts_worker():
             try:
                 from tts_kokoro import speak
-                while True:
+                while not tts_done.is_set() or tts_queue:
                     sentence = None
                     with tts_lock:
                         if tts_queue:
@@ -488,7 +627,7 @@ class Brain:
             for chunk in ollama.chat(
                 model=selected_model, messages=messages,
                 stream=True,
-                options={"temperature": 0.65, "num_predict": token_budget}
+                options={"temperature": temperature, "num_predict": token_budget}
             ):
                 token = chunk["message"]["content"]
                 if not token:
@@ -497,7 +636,6 @@ class Brain:
                 buffer     += token
                 yield {"token": token}
 
-                # Flush complete sentences to TTS
                 while True:
                     m = sentence_re.match(buffer)
                     if not m:
@@ -508,20 +646,122 @@ class Brain:
                         with tts_lock:
                             tts_queue.append(sentence)
 
-            # Flush remainder
             if buffer.strip() and len(buffer.strip()) > 4:
                 with tts_lock:
                     tts_queue.append(buffer.strip())
 
         except Exception as e:
+            logger.error(f"process_stream ollama error: {e}")
             yield {"token": f"Error: {e}"}
+        finally:
+            tts_done.set()
+
+        # ── 12. Post-processing pipeline ──────────────────────────────────
+        try:
+            full_reply = critic_review(full_reply, user_name, memory,
+                                       user_input=user_input, model=selected_model, intent=query_intent)
+        except Exception:
+            pass
+
+        try:
+            full_reply = refine_reply(full_reply, memory, user_name)
+        except Exception:
+            pass
+
+        try:
+            is_valid, violation = self.truth_guard.validate(full_reply)
+            if not is_valid:
+                full_reply = self.truth_guard.get_safe_reply(violation)
+        except Exception:
+            pass
+
+        try:
+            full_reply = polish_reply(full_reply)
+        except Exception:
+            pass
+
+        try:
+            full_reply = limit_words(full_reply, intent=detect_intent_for_limit(user_input))
+        except Exception:
+            pass
+
+        try:
+            if emotion_score > 0.7 and emotion_label in ["sad", "angry", "anxious", "tired"]:
+                emo        = emotion_reply(emotion_label, emotion_score, user_name, memory)
+                full_reply = f"{emo} {full_reply}"
+        except Exception:
+            pass
+
+        try:
+            suggestion = get_proactive_suggestion(user_input, memory, user_name)
+            if suggestion:
+                full_reply = full_reply + "\n\n" + suggestion
+        except Exception:
+            pass
+
+        final_conf = 0.75
+        try:
+            final_conf = confidence_score(f"ollama/{selected_model}", query_intent)
+        except Exception:
+            pass
 
         self._add_to_history("assistant", full_reply)
-        index_exchange(user_input, full_reply, user_name=user_name)
+
+        try:
+            index_exchange(user_input, full_reply, user_name=user_name)
+        except Exception:
+            pass
+
+        try:
+            store_episode(user_input, full_reply, intent=query_intent,
+                          emotion=emotion_label, user_name=user_name)
+        except Exception:
+            pass
+
+        try:
+            if should_summarize(self.conversation_history):
+                summary = summarize_conversation(
+                    self.conversation_history, memory, user_name, model="phi3:mini"
+                )
+                memory = store_summary(memory, summary)
+        except Exception:
+            pass
+
         save_memory(memory)
 
+        try:
+            threading.Thread(
+                target=__import__("knowledge.auto_extractor", fromlist=["extract_from_exchange"]).extract_from_exchange,
+                args=(user_input, full_reply),
+                kwargs={"user_name": user_name},
+                daemon=True
+            ).start()
+        except Exception:
+            pass
+
+        try:
+            threading.Thread(
+                target=__import__("core.self_improve", fromlist=["log_response"]).log_response,
+                args=(user_input, full_reply, final_conf),
+                daemon=True
+            ).start()
+        except Exception:
+            pass
+
+        yield {
+            "meta": {
+                "full":           full_reply,
+                "agent":          f"ollama/{selected_model}",
+                "intent":         query_intent,
+                "emotion":        emotion_label,
+                "confidence":     final_conf,
+                "tool_used":      False,
+                "memory_updated": True,
+            }
+        }
+
     # ==========================================================
-    # TOOL HANDLER (unchanged from v3.2)
+    # TOOL HANDLER
     # ==========================================================
 
     def _handle_tool_request(self, user_input, tool, memory, user_name):
@@ -549,8 +789,8 @@ class Brain:
                                          tool_used=True, confidence=0.95)
             result = read_file(filepath)
             if result["success"]:
-                content       = result["content"]
-                lines         = result["lines"]
+                content        = result["content"]
+                lines          = result["lines"]
                 summary_prompt = (
                     f"Analyze this file: 1 sentence description, 3-5 key components, "
                     f"any obvious issues. Under 100 words.\n\n"
@@ -610,7 +850,7 @@ class Brain:
                     reply = f"Tasks ({result['count']}):\n"
                     for t in result["tasks"]:
                         emoji    = "✅" if t["status"] == "done" else "⏳"
-                        priority = {"high": "🔴", "medium": "🟡", "low": "��"}.get(t["priority"], "")
+                        priority = {"high": "🔴", "medium": "🟡", "low": "🟢"}.get(t["priority"], "")
                         reply   += f"{emoji}{priority} {t['title']}"
                         if t["deadline"]:
                             reply += f" (due: {t['deadline']})"
@@ -661,7 +901,7 @@ class Brain:
                             for b in result.get("branches", [])[:10])
                 ) if result["success"] else f"Error: {result['error']}"
             elif "commit" in text:
-                m        = re.search(r'commit\s+["\']?(.+?)["\']?$', user_input, re.IGNORECASE)
+                m        = re.search(r'commit\s+(.+?)$', user_input, re.IGNORECASE)
                 message  = m.group(1) if m else "Update files"
                 proposal = propose_git_commit(message)
                 if not proposal["success"]:
@@ -758,12 +998,10 @@ class Brain:
         return self.model_manager.get_model_info()
 
 
-# Singleton
 brain = Brain()
 
 
 def stream_response(user_input: str, system_prompt: str = "", model: str = "phi3:mini"):
-    """Yields text chunks from Ollama as they arrive."""
     messages = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})

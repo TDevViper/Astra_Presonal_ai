@@ -97,7 +97,11 @@ Output ONLY: {{"score": X, "issue": "one-line issue or empty"}}"""
     except Exception: pass
 
 
+_log_counter = 0
+
 def log_response(user_input: str, response: str, confidence: float, user_rating=None):
+    global _log_counter
+    _log_counter += 1
     intent    = classify_intent(user_input)
     heuristic = _score_reply(user_input, response, intent)
     ts        = datetime.now().isoformat()
@@ -105,7 +109,7 @@ def log_response(user_input: str, response: str, confidence: float, user_rating=
     logs.append({"ts":ts,"input":user_input[:200],"response":response[:400],
                  "confidence":confidence,"rating":user_rating,"intent":intent,"h_score":heuristic})
     _save_logs(logs)
-    if heuristic < 0.6:
+    if heuristic < 0.6 and _log_counter % 10 == 0:
         threading.Thread(target=_deep_score_async, args=(user_input,response,ts), daemon=True).start()
 
 
