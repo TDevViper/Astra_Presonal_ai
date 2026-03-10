@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import LiveVision from "./components/LiveVision";
 import KnowledgeGraph from "./components/KnowledgeGraph";
 import ProactiveAlerts from "./components/ProactiveAlerts";
+import AgentTrace from "./components/AgentTrace";
+import AgentTrace from "./components/AgentTrace";
 import API from "./config";
 
 const agentLabel = (a) => {
@@ -13,8 +15,8 @@ const agentLabel = (a) => {
   if (a === "intent_handler")    return "SHORTCUT";
   if (a === "system_controller") return "SYSCTRL";
   if (a === "calendar")          return "CALENDAR";
-  if (a === "whatsapp")          return "WHATSAPP";
-  return (a || "ASTRA").toUpperCase();
+  if (a === "chain_executor")    return "CHAIN";
+  return (a || "ASTRA").toUpperCase().slice(0, 10);
 };
 
 const emotionColor = (e) => ({
@@ -22,69 +24,62 @@ const emotionColor = (e) => ({
   anxious:"#ffaa00", tired:"#8899aa", surprised:"#ff88ff", neutral:"#00d4ff"
 }[e] || "#00d4ff");
 
-function Waveform({ active, color = "#00d4ff", bars = 32 }) {
-  const [heights, setHeights] = useState(() => Array(bars).fill(0.1));
-  const timerRef = useRef(null);
-
+// ── Waveform ────────────────────────────────────────────────────────────────
+function Waveform({ active, color = "#00d4ff", bars = 28 }) {
+  const [heights, setHeights] = useState(() => Array(bars).fill(0.08));
+  const ref = useRef(null);
   useEffect(() => {
-    if (!active) {
-      setHeights(Array(bars).fill(0.1));
-      return;
-    }
+    if (!active) { setHeights(Array(bars).fill(0.08)); return; }
     const animate = () => {
       setHeights(Array(bars).fill(0).map((_, i) => {
-        const center = Math.abs(i - bars / 2) / (bars / 2);
-        return (1 - center * 0.5) * 0.35 + Math.random() * 0.65;
+        const c = Math.abs(i - bars / 2) / (bars / 2);
+        return (1 - c * 0.45) * 0.3 + Math.random() * 0.7;
       }));
-      timerRef.current = setTimeout(animate, 75);
+      ref.current = setTimeout(animate, 70);
     };
     animate();
-    return () => clearTimeout(timerRef.current);
+    return () => clearTimeout(ref.current);
   }, [active, bars]);
-
   return (
-    <div style={{ display:"flex", alignItems:"center", gap:2, height:36, padding:"0 4px" }}>
+    <div style={{ display:"flex", alignItems:"center", gap:2, height:32 }}>
       {heights.map((h, i) => (
         <div key={i} style={{
-          width:3, borderRadius:2,
-          height:`${Math.max(h * 100, 8)}%`,
+          width:2.5, borderRadius:2,
+          height:`${Math.max(h*100, 6)}%`,
           background: active
-            ? `linear-gradient(to top, ${color}99, ${color})`
-            : `rgba(0,212,255,0.12)`,
-          boxShadow: active ? `0 0 4px ${color}88` : "none",
-          transition:"height 0.07s ease",
+            ? `linear-gradient(to top, ${color}88, ${color}ff)`
+            : "rgba(0,212,255,0.1)",
+          boxShadow: active ? `0 0 3px ${color}66` : "none",
+          transition:"height 0.06s ease",
         }} />
       ))}
     </div>
   );
 }
 
+// ── Stat bar ────────────────────────────────────────────────────────────────
 function StatBar({ label, value = 0, color = "#00d4ff" }) {
-  const barColor = value > 80 ? "#ff4444" : value > 60 ? "#ffaa00" : color;
+  const c = value > 80 ? "#ff4444" : value > 60 ? "#ffaa00" : color;
   return (
-    <div style={{ marginBottom:7 }}>
-      <div style={{ display:"flex", justifyContent:"space-between", fontSize:8, color:"rgba(0,212,255,0.45)", marginBottom:3, letterSpacing:1 }}>
-        <span>{label}</span>
-        <span style={{ color:barColor }}>{value}%</span>
+    <div style={{ marginBottom:6 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", fontSize:8, color:"rgba(0,212,255,0.4)", marginBottom:2, letterSpacing:1 }}>
+        <span>{label}</span><span style={{ color:c }}>{value}%</span>
       </div>
-      <div style={{ height:2, background:"rgba(0,212,255,0.07)", borderRadius:1, overflow:"hidden" }}>
-        <div style={{
-          height:"100%", width:`${value}%`, borderRadius:1,
-          background:barColor, boxShadow:`0 0 5px ${barColor}`,
-          transition:"width 1.2s ease"
-        }} />
+      <div style={{ height:2, background:"rgba(0,212,255,0.06)", borderRadius:1, overflow:"hidden" }}>
+        <div style={{ height:"100%", width:`${value}%`, borderRadius:1, background:c, boxShadow:`0 0 4px ${c}`, transition:"width 1.2s ease" }} />
       </div>
     </div>
   );
 }
 
+// ── Glass panel ─────────────────────────────────────────────────────────────
 function GlassPanel({ children, style }) {
   return (
     <div style={{
-      background:"rgba(0,212,255,0.025)",
-      border:"1px solid rgba(0,212,255,0.09)",
-      backdropFilter:"blur(12px)",
-      padding:"10px 12px", marginBottom:9,
+      background:"rgba(0,212,255,0.02)",
+      border:"1px solid rgba(0,212,255,0.08)",
+      backdropFilter:"blur(10px)",
+      padding:"9px 11px", marginBottom:8,
       ...style
     }}>{children}</div>
   );
@@ -92,12 +87,42 @@ function GlassPanel({ children, style }) {
 
 function PanelLabel({ children }) {
   return (
-    <div style={{ fontSize:7, letterSpacing:4, color:"rgba(0,212,255,0.3)", marginBottom:8, textTransform:"uppercase" }}>
+    <div style={{ fontSize:7, letterSpacing:4, color:"rgba(0,212,255,0.28)", marginBottom:7, textTransform:"uppercase" }}>
       {children}
     </div>
   );
 }
 
+// ── Thinking dots ────────────────────────────────────────────────────────────
+function ThinkingDots() {
+  const [dot, setDot] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setDot(d => (d + 1) % 4), 350);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <span style={{ color:"rgba(0,212,255,0.5)", fontFamily:"monospace", fontSize:13 }}>
+      {["⠋","⠙","⠹","⠸"][dot]} thinking
+    </span>
+  );
+}
+
+// ── Streaming token renderer ─────────────────────────────────────────────────
+function StreamingText({ tokens }) {
+  return (
+    <span style={{ whiteSpace:"pre-wrap", wordBreak:"break-word" }}>
+      {tokens}
+      <span style={{
+        display:"inline-block", width:8, height:14,
+        background:"#00d4ff", marginLeft:2, verticalAlign:"middle",
+        animation:"blink 0.7s steps(1) infinite",
+        borderRadius:1,
+      }} />
+    </span>
+  );
+}
+
+// ── System sidebar ───────────────────────────────────────────────────────────
 function SystemSidebar({ health, memory, models, currentModel, onSwitchModel }) {
   const [sysInfo, setSysInfo] = useState(null);
   const [time, setTime]       = useState(new Date());
@@ -108,673 +133,612 @@ function SystemSidebar({ health, memory, models, currentModel, onSwitchModel }) 
   }, []);
 
   useEffect(() => {
-    const fetchSys = async () => {
+    const fetch_ = async () => {
       try {
         const r = await fetch(`${API}/execute`, {
           method:"POST", headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({ command:"system_info" })
+          body: JSON.stringify({ command:"system_info" })
         });
         if (r.ok) setSysInfo(await r.json());
       } catch {}
     };
-    fetchSys();
-    const t = setInterval(fetchSys, 12000);
+    fetch_();
+    const t = setInterval(fetch_, 30000);
     return () => clearInterval(t);
   }, []);
 
-  const facts    = memory?.user_facts || [];
-  const emotions = memory?.emotional_patterns?.history?.slice(-3).reverse() || [];
+  const cpu  = sysInfo?.cpu?.percent  ?? 0;
+  const ram  = sysInfo?.memory?.percent ?? 0;
+  const disk = sysInfo?.disk?.percent ?? 0;
 
   return (
     <div style={{
-      width:220, minWidth:220, height:"100vh",
-      background:"linear-gradient(180deg,rgba(0,5,12,0.98) 0%,rgba(0,2,8,0.99) 100%)",
-      borderRight:"1px solid rgba(0,212,255,0.07)",
-      display:"flex", flexDirection:"column",
-      fontFamily:"'Courier New',monospace",
-      overflow:"hidden", position:"relative", flexShrink:0,
+      width:180, flexShrink:0, display:"flex", flexDirection:"column", gap:0,
+      borderLeft:"1px solid rgba(0,212,255,0.07)", padding:"12px 10px",
+      overflowY:"auto", fontSize:10, color:"rgba(0,212,255,0.7)",
     }}>
-      <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:"linear-gradient(90deg,transparent,#00d4ff60,transparent)" }} />
-
-      <div style={{ padding:"16px 14px 12px", borderBottom:"1px solid rgba(0,212,255,0.07)" }}>
-        <div style={{ fontSize:7, letterSpacing:5, color:"rgba(0,212,255,0.25)", marginBottom:3 }}>STARK INDUSTRIES</div>
-        <div style={{ fontSize:13, letterSpacing:4, color:"#00d4ff", fontWeight:"bold", textShadow:"0 0 14px rgba(0,212,255,0.6)" }}>
-          ◈ ASTRA v3.0
+      {/* Clock */}
+      <GlassPanel>
+        <div style={{ fontSize:18, fontWeight:200, letterSpacing:3, color:"#00d4ff", textAlign:"center", fontFamily:"monospace" }}>
+          {time.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit", second:"2-digit" })}
         </div>
-        <div style={{ marginTop:9, display:"flex", alignItems:"center", gap:6 }}>
-          <div style={{ width:5, height:5, borderRadius:"50%", background:"#00ff88", boxShadow:"0 0 8px #00ff88", animation:"pulse 2s infinite" }} />
-          <span style={{ fontSize:9, letterSpacing:2, color:"rgba(0,255,136,0.7)" }}>
-            {time.toLocaleTimeString("en-US",{hour12:false})}
-          </span>
+        <div style={{ fontSize:8, textAlign:"center", color:"rgba(0,212,255,0.3)", letterSpacing:2, marginTop:2 }}>
+          {time.toLocaleDateString([], { weekday:"short", month:"short", day:"numeric" }).toUpperCase()}
         </div>
-      </div>
+      </GlassPanel>
 
-      <div style={{ flex:1, overflowY:"auto", padding:"10px 12px" }}>
+      {/* System */}
+      <GlassPanel>
+        <PanelLabel>SYSTEM</PanelLabel>
+        <StatBar label="CPU"  value={cpu}  color="#00ff88" />
+        <StatBar label="RAM"  value={ram}  color="#00d4ff" />
+        <StatBar label="DISK" value={disk} color="#ffaa00" />
+      </GlassPanel>
 
-        <GlassPanel>
-          <PanelLabel>Operator</PanelLabel>
-          <div style={{ fontSize:13, color:"#00d4ff", letterSpacing:2, fontWeight:"bold", textShadow:"0 0 10px rgba(0,212,255,0.5)" }}>
-            {memory?.preferences?.name || "ARNAV"}
+      {/* Services */}
+      <GlassPanel>
+        <PanelLabel>SERVICES</PanelLabel>
+        {[
+          ["BRAIN",   health?.brain   ?? false],
+          ["MEMORY",  health?.memory  ?? false],
+          ["VOICE",   health?.voice   ?? false],
+          ["OLLAMA",  health?.ollama  ?? false],
+        ].map(([name, ok]) => (
+          <div key={name} style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+            <span style={{ letterSpacing:1, fontSize:8, color:"rgba(0,212,255,0.4)" }}>{name}</span>
+            <span style={{ color: ok ? "#00ff88" : "#ff4444", fontSize:9 }}>{ok ? "●" : "○"}</span>
           </div>
-          {memory?.preferences?.location && (
-            <div style={{ fontSize:9, color:"rgba(0,212,255,0.35)", marginTop:4, letterSpacing:1 }}>▲ {memory.preferences.location}</div>
-          )}
-        </GlassPanel>
+        ))}
+      </GlassPanel>
 
-        {sysInfo?.cpu && (
-          <GlassPanel>
-            <PanelLabel>System Load</PanelLabel>
-            <StatBar label="CPU"  value={sysInfo.cpu?.percent}    color="#00d4ff" />
-            <StatBar label="RAM"  value={sysInfo.memory?.percent} color="#00ff88" />
-            <StatBar label="DISK" value={sysInfo.disk?.percent}   color="#ffaa00" />
-          </GlassPanel>
-        )}
-
-        {emotions.length > 0 && (
-          <GlassPanel>
-            <PanelLabel>Affect Scan</PanelLabel>
-            {emotions.map((e,i) => (
-              <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
-                <div style={{ display:"flex", alignItems:"center", gap:5 }}>
-                  <div style={{ width:4, height:4, borderRadius:"50%", background:emotionColor(e.label), boxShadow:`0 0 5px ${emotionColor(e.label)}` }} />
-                  <span style={{ fontSize:9, color:emotionColor(e.label), letterSpacing:1 }}>{e.label?.toUpperCase()}</span>
-                </div>
-                <span style={{ fontSize:8, color:"rgba(0,212,255,0.3)" }}>{(e.score*100).toFixed(0)}%</span>
-              </div>
-            ))}
-          </GlassPanel>
-        )}
-
-        {facts.length > 0 && (
-          <GlassPanel>
-            <PanelLabel>Intel ({facts.length})</PanelLabel>
-            {facts.slice(-5).map((f,i) => (
-              <div key={i} style={{ fontSize:9, color:"rgba(0,212,255,0.38)", marginBottom:5, lineHeight:1.5, paddingLeft:7, borderLeft:"1px solid rgba(0,212,255,0.15)" }}>
-                {f.fact?.slice(0,48)}
-              </div>
-            ))}
-          </GlassPanel>
-        )}
-
-        <GlassPanel>
-          <PanelLabel>Neural Net</PanelLabel>
-          {models.map(m => (
-            <div key={m} onClick={() => onSwitchModel(m)} style={{
-              display:"flex", alignItems:"center", gap:8, padding:"5px 0",
-              cursor:"pointer", borderBottom:"1px solid rgba(0,212,255,0.05)",
-              color: currentModel===m ? "#00d4ff" : "rgba(0,212,255,0.22)",
-              transition:"color 0.2s",
+      {/* Model switcher */}
+      <GlassPanel>
+        <PanelLabel>NEURAL NET</PanelLabel>
+        {(models || ["phi3:mini"]).map(m => (
+          <div key={m} onClick={() => onSwitchModel?.(m)}
+            style={{
+              padding:"4px 7px", marginBottom:3, cursor:"pointer", borderRadius:2,
+              fontSize:8, letterSpacing:1,
+              background: currentModel === m ? "rgba(0,212,255,0.12)" : "transparent",
+              color: currentModel === m ? "#00d4ff" : "rgba(0,212,255,0.35)",
+              border: currentModel === m ? "1px solid rgba(0,212,255,0.25)" : "1px solid transparent",
+              transition:"all 0.2s",
             }}>
-              <div style={{
-                width:5, height:5, borderRadius:"50%",
-                background: currentModel===m ? "#00d4ff" : "transparent",
-                border:"1px solid rgba(0,212,255,0.3)",
-                boxShadow: currentModel===m ? "0 0 8px #00d4ff" : "none", flexShrink:0,
-              }} />
-              <span style={{ fontSize:9, letterSpacing:1 }}>{m.split(":")[0].toUpperCase()}</span>
-              {currentModel===m && <span style={{ marginLeft:"auto", fontSize:7, color:"#00ff88", letterSpacing:1 }}>LIVE</span>}
-            </div>
-          ))}
-        </GlassPanel>
+            {m.toUpperCase()}
+          </div>
+        ))}
+      </GlassPanel>
 
-        {health && (
-          <GlassPanel>
-            <PanelLabel>Services</PanelLabel>
-            {[["OLLAMA",health.ollama?.status],["MEMORY",health.memory?.status],["VECTORS",health.vectors?.status]].map(([n,s]) => (
-              <div key={n} style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
-                <span style={{ fontSize:8, color:"rgba(0,212,255,0.38)", letterSpacing:1 }}>{n}</span>
-                <span style={{ fontSize:8, color:s==="ok"?"#00ff88":"#ff4444", letterSpacing:1 }}>{s==="ok"?"◉ OK":"◎ ERR"}</span>
-              </div>
-            ))}
-          </GlassPanel>
-        )}
-      </div>
-
-      <div style={{ padding:"8px 14px", borderTop:"1px solid rgba(0,212,255,0.07)", fontSize:7, color:"rgba(0,212,255,0.12)", letterSpacing:3, textAlign:"center" }}>
-        ASTRA · CLASSIFIED
-      </div>
+      {/* Memory stats */}
+      <GlassPanel>
+        <PanelLabel>MEMORY CORE</PanelLabel>
+        <div style={{ fontSize:9, color:"rgba(0,212,255,0.35)", lineHeight:1.8 }}>
+          <div>FACTS  <span style={{ color:"#00d4ff", float:"right" }}>{memory?.user_facts?.length ?? 0}</span></div>
+          <div>TASKS  <span style={{ color:"#ffaa00", float:"right" }}>{memory?.tasks?.filter(t=>t.status==="todo").length ?? 0}</span></div>
+          <div>CONVOS <span style={{ color:"#00ff88", float:"right" }}>{memory?.conversation_count ?? 0}</span></div>
+        </div>
+      </GlassPanel>
     </div>
   );
 }
 
-function ConfBar({ value }) {
-  const segs   = 10;
-  const filled = Math.round((value||0) * segs);
-  const color  = value >= 0.9 ? "#00ff88" : value >= 0.6 ? "#00d4ff" : value >= 0.3 ? "#ffaa00" : "#ff4444";
+// ── ArcReactor ───────────────────────────────────────────────────────────────
+function ArcReactor({ active, emotion }) {
+  const color  = emotionColor(emotion);
+  const [pulse, setPulse] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const t = setInterval(() => setPulse(p => (p + 1) % 3), 600);
+    return () => clearInterval(t);
+  }, [active]);
   return (
-    <span style={{ display:"flex", gap:1.5, alignItems:"center" }}>
-      {Array.from({length:segs},(_,i) => (
-        <span key={i} style={{ display:"inline-block", width:3, height:8, background:i<filled?color:"rgba(0,212,255,0.08)", boxShadow:i<filled?`0 0 4px ${color}`:"none" }} />
+    <div style={{ width:44, height:44, position:"relative", flexShrink:0 }}>
+      {[38, 28, 18].map((size, i) => (
+        <div key={i} style={{
+          position:"absolute",
+          top:"50%", left:"50%",
+          transform:"translate(-50%,-50%)",
+          width:size, height:size,
+          borderRadius:"50%",
+          border:`1px solid ${color}`,
+          opacity: active ? (0.9 - i * 0.2) + (pulse === i ? 0.3 : 0) : 0.2,
+          boxShadow: active ? `0 0 ${6 + i * 4}px ${color}44` : "none",
+          transition:"opacity 0.4s ease",
+        }} />
       ))}
-      <span style={{ marginLeft:4, color, fontSize:9 }}>{((value||0)*100).toFixed(0)}%</span>
-    </span>
-  );
-}
-
-function ArcReactor({ active, size = 44 }) {
-  return (
-    <div style={{ position:"relative", width:size, height:size, flexShrink:0 }}>
-      <div style={{ position:"absolute", inset:0, borderRadius:"50%", border:"1px solid rgba(0,212,255,0.3)", animation:active?"spin 8s linear infinite":"none" }}>
-        {[0,90,180,270].map(deg => (
-          <div key={deg} style={{
-            position:"absolute", width:4, height:4, borderRadius:"50%",
-            background:"#00d4ff", top:"50%", left:"50%",
-            transform:`rotate(${deg}deg) translateX(${size/2-2}px) translate(-50%,-50%)`,
-            boxShadow:"0 0 6px #00d4ff",
-          }} />
-        ))}
-      </div>
-      <div style={{ position:"absolute", inset:8, borderRadius:"50%", border:"1px solid rgba(0,212,255,0.5)", animation:active?"spin 4s linear infinite reverse":"none" }} />
       <div style={{
-        position:"absolute", inset:size*0.35, borderRadius:"50%",
-        background: active
-          ? "radial-gradient(circle,#ffffff 0%,#00d4ff 40%,#0055ff 100%)"
-          : "radial-gradient(circle,#0a1a2a 0%,#050d14 100%)",
-        boxShadow: active ? "0 0 20px rgba(0,212,255,0.9),0 0 50px rgba(0,100,255,0.4)" : "none",
-        transition:"all 0.5s ease",
+        position:"absolute", top:"50%", left:"50%",
+        transform:"translate(-50%,-50%)",
+        width:8, height:8, borderRadius:"50%",
+        background: active ? color : "rgba(0,212,255,0.2)",
+        boxShadow: active ? `0 0 10px ${color}` : "none",
+        transition:"all 0.4s",
       }} />
     </div>
   );
 }
 
-function Message({ msg }) {
-  const isUser   = msg.role === "user";
-  const isSystem = msg.role === "system";
-
-  if (isSystem) return (
-    <div style={{ textAlign:"center", padding:"4px 0", margin:"4px 0", fontSize:9, letterSpacing:3, color:"rgba(0,212,255,0.18)", fontFamily:"'Courier New',monospace" }}>
-      ── {msg.content} ──
-    </div>
-  );
-
-  const eColor = msg.emotion ? emotionColor(msg.emotion) : (isUser ? "#3388ff" : "#00d4ff");
+// ── Chat message ──────────────────────────────────────────────────────────────
+function Message({ msg, isStreaming }) {
+  const isUser  = msg.role === "user";
+  const emotion = msg.emotion || "neutral";
+  const color   = emotionColor(emotion);
 
   return (
-    <div style={{ marginBottom:20, display:"flex", flexDirection:"column", alignItems:isUser?"flex-end":"flex-start", animation:"fadeUp 0.25s ease-out" }}>
-      <div style={{ fontSize:8, letterSpacing:2, marginBottom:5, fontFamily:"'Courier New',monospace", display:"flex", alignItems:"center", gap:6, color:isUser?"rgba(50,136,255,0.6)":"rgba(0,212,255,0.45)" }}>
-        {isUser ? <span>OPERATOR</span> : (
-          <>
-            <span style={{ color:"#00d4ff" }}>ASTRA</span>
-            <span style={{ color:"rgba(0,212,255,0.18)" }}>◆</span>
-            <span>{agentLabel(msg.agent)}</span>
-            {msg.intent && <><span style={{ color:"rgba(0,212,255,0.18)" }}>◆</span><span style={{ color:"rgba(0,212,255,0.28)" }}>{msg.intent?.toUpperCase()}</span></>}
-          </>
+    <div style={{
+      display:"flex", justifyContent: isUser ? "flex-end" : "flex-start",
+      marginBottom:14, alignItems:"flex-start", gap:10,
+    }}>
+      {!isUser && (
+        <div style={{
+          width:28, height:28, borderRadius:"50%", flexShrink:0, marginTop:4,
+          border:`1px solid ${color}44`,
+          display:"flex", alignItems:"center", justifyContent:"center",
+          fontSize:10, color:color,
+        }}>A</div>
+      )}
+      <div style={{ maxWidth:"72%", minWidth:60 }}>
+        <div style={{
+          padding:"11px 15px",
+          background: isUser
+            ? "rgba(0,212,255,0.08)"
+            : "rgba(255,255,255,0.03)",
+          border: isUser
+            ? "1px solid rgba(0,212,255,0.18)"
+            : `1px solid ${color}22`,
+          backdropFilter:"blur(12px)",
+          color:"rgba(255,255,255,0.88)",
+          fontSize:13.5, lineHeight:1.65,
+          whiteSpace:"pre-wrap", wordBreak:"break-word",
+          position:"relative", overflow:"hidden",
+        }}>
+          {/* Sheen overlay */}
+          <div style={{
+            position:"absolute", top:0, left:0, right:0, height:1,
+            background: `linear-gradient(90deg, transparent, ${color}33, transparent)`,
+            pointerEvents:"none",
+          }} />
+          {isStreaming
+            ? <StreamingText tokens={msg.content} />
+            : msg.content
+          }
+        </div>
+        {/* Metadata row */}
+        {!isUser && msg.agent && (
+          <div style={{ marginTop:4, display:"flex", gap:8, alignItems:"center" }}>
+            <span style={{ fontSize:8, color:"rgba(0,212,255,0.25)", letterSpacing:2 }}>
+              {agentLabel(msg.agent)}
+            </span>
+            {msg.confidence && (
+              <span style={{ fontSize:8, color:"rgba(0,212,255,0.2)" }}>
+                {Math.round(msg.confidence * 100)}%
+              </span>
+            )}
+            {msg.intent && (
+              <span style={{ fontSize:8, color:"rgba(0,212,255,0.2)", letterSpacing:1 }}>
+                {msg.intent.toUpperCase()}
+              </span>
+            )}
+          </div>
         )}
       </div>
-
-      <div style={{
-        maxWidth:"76%", padding:"13px 17px",
-        background: isUser
-          ? "linear-gradient(135deg,rgba(0,60,140,0.35) 0%,rgba(0,30,80,0.45) 100%)"
-          : "linear-gradient(135deg,rgba(0,212,255,0.04) 0%,rgba(0,10,25,0.6) 100%)",
-        border:`1px solid ${isUser?"rgba(0,100,255,0.25)":"rgba(0,212,255,0.12)"}`,
-        backdropFilter:"blur(16px)",
-        boxShadow: isUser
-          ? "inset 0 0 30px rgba(0,80,180,0.08), 0 4px 20px rgba(0,0,0,0.3)"
-          : "inset 0 0 30px rgba(0,212,255,0.02), 0 4px 20px rgba(0,0,0,0.3)",
-        fontFamily:"'Courier New',monospace", fontSize:13,
-        color: isUser ? "rgba(180,220,255,0.9)" : "rgba(200,240,255,0.85)",
-        lineHeight:1.75, whiteSpace:"pre-wrap", wordBreak:"break-word",
-        position:"relative", overflow:"hidden",
-      }}>
-        {/* Glass sheen */}
-        <div style={{ position:"absolute", top:0, left:0, right:0, height:"40%", background:"linear-gradient(180deg,rgba(255,255,255,0.025) 0%,transparent 100%)", pointerEvents:"none" }} />
-        {msg.content}
-        {msg.streaming && (
-          <span style={{ display:"inline-block", width:8, height:14, background:"#00d4ff", marginLeft:3, verticalAlign:"middle", animation:"blink 0.7s step-end infinite" }} />
-        )}
-      </div>
-
-      {!isUser && msg.confidence !== undefined && (
-        <div style={{ display:"flex", gap:12, marginTop:5, flexWrap:"wrap", fontSize:9, fontFamily:"'Courier New',monospace", color:"rgba(0,212,255,0.28)", letterSpacing:1 }}>
-          <ConfBar value={msg.confidence} />
-          {msg.emotion && msg.emotion !== "neutral" && (
-            <span style={{ color:emotionColor(msg.emotion) }}>● {msg.emotion?.toUpperCase()}</span>
-          )}
-          {msg.tool_used     && <span style={{ color:"#00ff88" }}>⚡ TOOL</span>}
-          {msg.memory_updated && <span style={{ color:"#ffaa00" }}>◈ SAVED</span>}
-        </div>
-      )}
-
-      {msg.citations?.length > 0 && (
-        <div style={{ marginTop:5, maxWidth:"76%", fontFamily:"'Courier New',monospace" }}>
-          {msg.citations.slice(0,3).map(c => (
-            <div key={c.index} style={{ fontSize:9, marginBottom:3, color:"rgba(0,212,255,0.28)" }}>
-              <span style={{ color:"rgba(0,100,255,0.6)" }}>[{c.index}]</span>{" "}
-              <a href={c.url} target="_blank" rel="noreferrer" style={{ color:"rgba(0,212,255,0.28)", textDecoration:"none" }}>{c.title?.slice(0,55)}</a>
-            </div>
-          ))}
-        </div>
+      {isUser && (
+        <div style={{
+          width:28, height:28, borderRadius:"50%", flexShrink:0, marginTop:4,
+          border:"1px solid rgba(0,212,255,0.2)",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          fontSize:10, color:"rgba(0,212,255,0.5)",
+        }}>U</div>
       )}
     </div>
   );
 }
 
-function ThinkingDots() {
-  return (
-    <div style={{ display:"flex", alignItems:"center", gap:14, padding:"8px 0", fontFamily:"'Courier New',monospace" }}>
-      <ArcReactor active={true} size={40} />
-      <div>
-        <div style={{ fontSize:10, letterSpacing:3, color:"rgba(0,212,255,0.5)", marginBottom:6 }}>ASTRA PROCESSING</div>
-        <div style={{ display:"flex", gap:4 }}>
-          {[0,1,2,3,4].map(i => (
-            <div key={i} style={{ width:3, height:14, background:"#00d4ff", boxShadow:"0 0 6px #00d4ff", animation:`waveBar 1s ease-in-out ${i*0.1}s infinite` }} />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function VoiceButton({ onTranscript, speaking }) {
-  const [state, setState] = useState("idle");
-
-  const handle = async () => {
-    if (state !== "idle") return;
-    setState("listening");
-    try {
-      const r = await fetch(`${API}/voice/listen`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ duration:5 }) });
-      const d = await r.json();
-      if (d.text?.trim()) onTranscript(d.text.trim());
-    } catch (e) { console.error(e); }
-    finally { setState("idle"); }
-  };
-
-  const color = state === "listening" ? "#ff4444" : speaking ? "#00ff88" : "#00d4ff";
-
-  return (
-    <button onClick={handle} disabled={state!=="idle"} style={{ position:"relative", background:"transparent", border:"none", cursor:state==="idle"?"pointer":"default", padding:0 }}>
-      <div style={{
-        width:38, height:38, borderRadius:"50%",
-        border:`2px solid ${color}`,
-        display:"flex", alignItems:"center", justifyContent:"center",
-        background:`${color}12`,
-        boxShadow:`0 0 ${state==="listening"?"20px":"10px"} ${color}44`,
-        animation: state==="listening" ? "voicePulse 0.8s ease-in-out infinite" : "none",
-        transition:"all 0.3s ease",
-      }}>
-        <span style={{ fontSize:15 }}>{state==="listening" ? "●" : "🎤"}</span>
-      </div>
-      {state==="listening" && (
-        <div style={{ position:"absolute", inset:-5, borderRadius:"50%", border:`1px solid ${color}40`, animation:"ripple 1s ease-out infinite" }} />
-      )}
-    </button>
-  );
-}
-
+// ════════════════════════════════════════════════════════════════════════════
+// MAIN APP
+// ════════════════════════════════════════════════════════════════════════════
 export default function App() {
-  const [tab,          setTab]          = useState("chat");
   const [messages,     setMessages]     = useState([]);
   const [input,        setInput]        = useState("");
   const [loading,      setLoading]      = useState(false);
+  const [streaming,    setStreaming]     = useState(false);
+  const [streamBuffer, setStreamBuffer] = useState("");
+  const [tab,          setTab]          = useState("chat");
+  const [health,       setHealth]       = useState({});
   const [memory,       setMemory]       = useState({});
   const [models,       setModels]       = useState([]);
   const [currentModel, setCurrentModel] = useState("phi3:mini");
-  const [status,       setStatus]       = useState("connecting");
-  const [health,       setHealth]       = useState(null);
-  const [speakReplies, setSpeakReplies] = useState(false);
-  const [wakeActive,   setWakeActive]   = useState(false);
-  const [isSpeaking,   setIsSpeaking]   = useState(false);
-  const endRef   = useRef(null);
-  const inputRef = useRef(null);
+  const [emotion,      setEmotion]      = useState("neutral");
+  const [voicePlaying, setVoicePlaying] = useState(false);
+  const [useStream,    setUseStream]    = useState(true);
+  const [currentMode,  setCurrentMode]  = useState("jarvis");
+  const [modes,        setModes]        = useState([]);
 
+  const bottomRef  = useRef(null);
+  const inputRef   = useRef(null);
+  const abortRef   = useRef(null);
+
+  // ── Auto-scroll ──────────────────────────────────────────────────────────
   useEffect(() => {
-    checkHealth();
-    fetchMemory();
-    inputRef.current?.focus();
-    fetch(`${API}/model/list`)
-      .then(r => r.json())
-      .then(d => setModels(d.models?.length ? d.models : ["phi3:mini"]))
-      .catch(() => setModels(["phi3:mini"]));
-  }, []); // eslint-disable-line
+    bottomRef.current?.scrollIntoView({ behavior:"smooth" });
+  }, [messages, streamBuffer]);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior:"smooth" }); }, [messages]);
+  // ── Health + Memory poll ─────────────────────────────────────────────────
+  useEffect(() => {
+    const poll = async () => {
+      try {
+        const [h, m, mdl, modeData] = await Promise.all([
+          fetch(`${API}/health`).then(r => r.json()).catch(() => ({})),
+          fetch(`${API}/memory`).then(r => r.json()).catch(() => ({})),
+          fetch(`${API}/model`).then(r => r.json()).catch(() => ({})),
+          fetch(`${API}/mode/list`).then(r => r.json()).catch(() => ({})),
+        ]);
+        setHealth(h);
+        setMemory(m);
+        if (mdl.available) setModels(mdl.available);
+        if (mdl.current)   setCurrentModel(mdl.current);
+        if (modeData.modes) setModes(modeData.modes);
+        if (modeData.current) setCurrentMode(modeData.current);
+      } catch {}
+    };
+    poll();
+    const t = setInterval(poll, 20000);
+    return () => clearInterval(t);
+  }, []);
 
-  const checkHealth = async () => {
+  // ── Switch model ─────────────────────────────────────────────────────────
+  const switchModel = useCallback(async (model) => {
     try {
-      const r = await fetch(`${API}/health`);
-      if (r.ok) {
-        const d = await r.json();
-        setHealth(d);
-        setStatus("online");
-        setCurrentModel(d.model || "phi3:mini");
-        addSystem("ASTRA NEURAL CORE ONLINE · ALL SYSTEMS NOMINAL");
-      }
-    } catch {
-      setStatus("offline");
-      addSystem("BACKEND OFFLINE — RUN: python app.py");
-    }
-  };
-
-  const fetchMemory = async () => {
-    try {
-      const r = await fetch(`${API}/memory`);
-      if (r.ok) setMemory(await r.json());
-    } catch {}
-  };
-
-  const addSystem = (text) => setMessages(p => [...p, { role:"system", content:text, id:Date.now() }]);
-
-  const sendMessage = async (text = input.trim()) => {
-    if (!text || loading) return;
-    setInput("");
-    setMessages(p => [...p, { role:"user", content:text, id:Date.now() }]);
-    setLoading(true);
-
-    const streamId = Date.now() + 99999;
-    setMessages(p => [...p, { role:"assistant", content:"", id:streamId, agent:"astra", intent:"", streaming:true }]);
-
-    try {
-      const response = await fetch(`${API}/chat/stream`, {
+      await fetch(`${API}/model/set`, {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ message:text })
+        body: JSON.stringify({ model })
+      });
+      setCurrentModel(model);
+    } catch {}
+  }, []);
+
+  // ── Switch mode ─────────────────────────────────────────────────────────────
+  const switchMode = useCallback(async (modeId) => {
+    try {
+      const r = await fetch(`${API}/mode/set`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ mode:modeId })
+      });
+      const d = await r.json();
+      if (d.mode) setCurrentMode(d.mode);
+    } catch {}
+  }, []);
+
+  // ── Send message — streaming ─────────────────────────────────────────────
+  const sendStream = useCallback(async (text) => {
+    setLoading(true);
+    setStreaming(true);
+    setStreamBuffer("");
+
+    const userMsg = { role:"user", content:text, id: Date.now() };
+    setMessages(prev => [...prev, userMsg]);
+
+    let buffer = "";
+    try {
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      const res = await fetch(`${API}/chat/stream`, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ message:text }),
+        signal: controller.signal,
       });
 
-      const reader  = response.body.getReader();
+      const reader = res.body.getReader();
       const decoder = new TextDecoder();
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value);
-        const lines = chunk.split("\n").filter(l => l.startsWith("data: "));
+        const text_ = decoder.decode(value);
+        const lines = text_.split("\n");
         for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
           try {
-            const data = JSON.parse(line.slice(6));
-            if (data.type === "meta") {
-              setMessages(p => p.map(m => m.id===streamId ? {...m, agent:data.model, intent:data.intent} : m));
+            const data = JSON.parse(line.slice(5));
+            if (data.token) {
+              buffer += data.token;
+              setStreamBuffer(buffer);
             }
-            if (data.type === "token") {
-              setMessages(p => p.map(m => m.id===streamId ? {...m, content:m.content+data.text} : m));
-            }
-            if (data.type === "done") {
-              setMessages(p => p.map(m => m.id===streamId ? {
-                ...m, streaming:false,
-                confidence:data.confidence, emotion:data.emotion,
-                tool_used:data.tool_used, memory_updated:data.memory_updated,
-                agent:data.agent, intent:data.intent,
-              } : m));
-              if (speakReplies && data.full) {
-                setIsSpeaking(true);
-                fetch(`${API}/voice/say`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ text:data.full }) })
-                  .finally(() => setTimeout(() => setIsSpeaking(false), (data.full?.length||0)*55));
-              }
-              if (data.memory_updated) fetchMemory();
-            }
+            if (data.done) break;
           } catch {}
         }
       }
-    } catch {
-      addSystem("CONNECTION ERROR — IS BACKEND RUNNING?");
-      setMessages(p => p.filter(m => m.id!==streamId));
-    } finally {
-      setLoading(false);
-      inputRef.current?.focus();
+    } catch (e) {
+      if (e.name !== "AbortError") {
+        buffer = "Connection error. Is the backend running?";
+        setStreamBuffer(buffer);
+      }
     }
-  };
 
-  const switchModel = async (model) => {
+    // Commit streamed message
+    const assistantMsg = {
+      role:"assistant", content:buffer,
+      agent:`ollama/${currentModel}`,
+      id: Date.now() + 1,
+    };
+    setMessages(prev => [...prev, assistantMsg]);
+    setStreamBuffer("");
+    setStreaming(false);
+    setLoading(false);
+  }, [currentModel]);
+
+  // ── Send message — standard ──────────────────────────────────────────────
+  const sendStandard = useCallback(async (text) => {
+    setLoading(true);
+    const userMsg = { role:"user", content:text, id: Date.now() };
+    setMessages(prev => [...prev, userMsg]);
+
     try {
-      await fetch(`${API}/model/switch`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ model }) });
-      setCurrentModel(model);
-      addSystem(`NEURAL NET SWITCHED → ${model.toUpperCase()}`);
-    } catch {}
-  };
-
-  const clearMemory = async () => {
-    await fetch(`${API}/memory`, { method:"DELETE" });
-    setMemory({});
-    addSystem("MEMORY CORE WIPED");
-  };
-
-  const toggleWake = async () => {
-    if (wakeActive) {
-      await fetch(`${API}/voice/stop`, { method:"POST" });
-      setWakeActive(false);
-    } else {
-      await fetch(`${API}/voice/start`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ mode:"wake_word" }) });
-      setWakeActive(true);
+      const r = await fetch(`${API}/chat`, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ message:text }),
+      });
+      const data = await r.json();
+      setEmotion(data.emotion || "neutral");
+      setMessages(prev => [...prev, {
+        role:"assistant", content:data.reply,
+        agent:data.agent, intent:data.intent,
+        confidence:data.confidence, emotion:data.emotion,
+        id: Date.now() + 1,
+      }]);
+    } catch {
+      setMessages(prev => [...prev, {
+        role:"assistant", content:"Connection error.",
+        id: Date.now() + 1,
+      }]);
     }
+    setLoading(false);
+  }, []);
+
+  const send = useCallback(() => {
+    const text = input.trim();
+    if (!text || loading) return;
+    setInput("");
+    if (useStream) sendStream(text);
+    else           sendStandard(text);
+    inputRef.current?.focus();
+  }, [input, loading, useStream, sendStream, sendStandard]);
+
+  const onKey = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
   };
 
-  const msgCount = messages.filter(m => m.role !== "system").length;
+  const stopStream = () => {
+    abortRef.current?.abort();
+    setStreaming(false);
+    setLoading(false);
+  };
 
+  // ── Tabs ─────────────────────────────────────────────────────────────────
   const tabs = [
-    { id:"chat",   label:"◈ INTERFACE" },
-    { id:"vision", label:"◎ VISION"    },
-    { id:"graph",  label:"◈ MEMORY"    },
+    { id:"chat",   label:"◈  INTERFACE" },
+    { id:"vision", label:"◉  VISION"    },
+    { id:"graph",  label:"⬡  MEMORY"    },
   ];
 
+  const tabStyle = (id) => ({
+    padding:"8px 16px", cursor:"pointer",
+    fontSize:9, letterSpacing:3, fontWeight:500,
+    color: tab === id ? "#00d4ff" : "rgba(0,212,255,0.3)",
+    borderBottom: tab === id ? "1px solid #00d4ff" : "1px solid transparent",
+    background:"transparent", border:"none",
+    borderBottom: tab === id ? "1px solid #00d4ff" : "1px solid transparent",
+    transition:"all 0.2s",
+  });
+
   return (
-    <div style={{ display:"flex", height:"100vh", overflow:"hidden", background:"#00030a", fontFamily:"'Courier New',monospace" }}>
+    <div style={{
+      background:"#050a0f", color:"rgba(255,255,255,0.85)",
+      height:"100vh", display:"flex", flexDirection:"column",
+      fontFamily:"-apple-system, 'SF Pro Display', sans-serif",
+      overflow:"hidden",
+    }}>
+      <style>{`
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { width:3px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:rgba(0,212,255,0.15); border-radius:2px; }
+        textarea:focus { outline:none; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+      `}</style>
 
-      {/* Animated background grid */}
+      {/* Header */}
       <div style={{
-        position:"fixed", inset:0, pointerEvents:"none", zIndex:0,
-        backgroundImage:`linear-gradient(rgba(0,212,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.025) 1px,transparent 1px)`,
-        backgroundSize:"44px 44px",
-      }} />
-
-      {/* Scan line */}
-      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, pointerEvents:"none", zIndex:9999, overflow:"hidden" }}>
-        <div style={{ position:"absolute", left:0, right:0, height:2, background:"linear-gradient(90deg,transparent,rgba(0,212,255,0.1),transparent)", animation:"scanline 10s linear infinite" }} />
-      </div>
-
-      <SystemSidebar
-        health={health}
-        memory={memory}
-        models={models}
-        currentModel={currentModel}
-        onSwitchModel={switchModel}
-      />
-
-      <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden", position:"relative", zIndex:1 }}>
-
-        {/* Header */}
-        <div style={{
-          padding:"10px 24px",
-          borderBottom:"1px solid rgba(0,212,255,0.1)",
-          background:"linear-gradient(90deg,rgba(0,5,14,0.97) 0%,rgba(0,3,10,0.98) 100%)",
-          display:"flex", justifyContent:"space-between", alignItems:"center",
-          flexShrink:0, position:"relative",
-        }}>
-          <div style={{ position:"absolute", bottom:0, left:0, right:0, height:1, background:"linear-gradient(90deg,transparent,rgba(0,212,255,0.35),transparent)" }} />
-
-          <div style={{ display:"flex", alignItems:"center", gap:18 }}>
-            <ArcReactor active={status==="online"} size={46} />
-            <div>
-              <div style={{ fontSize:20, fontWeight:"bold", letterSpacing:6, color:"#00d4ff", textShadow:"0 0 20px rgba(0,212,255,0.7),0 0 50px rgba(0,212,255,0.2)" }}>
-                ASTRA
-              </div>
-              <div style={{ fontSize:7, letterSpacing:4, color:"rgba(0,212,255,0.3)", marginTop:1 }}>
-                ADVANCED SYSTEM FOR TACTICAL REASONING & AUTOMATION
-              </div>
+        display:"flex", alignItems:"center", justifyContent:"space-between",
+        padding:"10px 20px",
+        borderBottom:"1px solid rgba(0,212,255,0.08)",
+        background:"rgba(0,0,0,0.4)",
+        backdropFilter:"blur(20px)",
+      }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <ArcReactor active={loading || streaming} emotion={emotion} />
+          <div>
+            <div style={{ fontSize:15, fontWeight:300, letterSpacing:5, color:"#00d4ff" }}>ASTRA</div>
+            <div style={{ fontSize:7, letterSpacing:4, color:"rgba(0,212,255,0.3)" }}>
+              PERSONAL AI · {currentModel.toUpperCase()}
             </div>
-
-            {/* Tabs */}
-            <div style={{ display:"flex", gap:3, marginLeft:12 }}>
-              {tabs.map(({ id, label }) => (
-                <button key={id} onClick={() => setTab(id)} style={{
-                  background: tab===id ? "rgba(0,212,255,0.08)" : "transparent",
-                  border:`1px solid ${tab===id?"rgba(0,212,255,0.45)":"rgba(0,212,255,0.12)"}`,
-                  color: tab===id ? "#00d4ff" : "rgba(0,212,255,0.28)",
-                  fontFamily:"'Courier New',monospace", fontSize:10,
-                  padding:"5px 14px", cursor:"pointer", letterSpacing:2,
-                  boxShadow: tab===id ? "0 0 12px rgba(0,212,255,0.12)" : "none",
-                  transition:"all 0.2s",
-                }}>
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ display:"flex", gap:10, alignItems:"center" }}>
-            {/* Live waveform when speaking */}
-            {isSpeaking && <Waveform active={true} color="#00ff88" bars={20} />}
-
-            {/* Status */}
-            <div style={{ display:"flex", alignItems:"center", gap:5 }}>
-              <div style={{ width:5, height:5, borderRadius:"50%", background:status==="online"?"#00ff88":"#ff4444", boxShadow:`0 0 8px ${status==="online"?"#00ff88":"#ff4444"}`, animation:"pulse 2s infinite" }} />
-              <span style={{ fontSize:8, letterSpacing:2, color:status==="online"?"rgba(0,255,136,0.6)":"rgba(255,68,68,0.6)" }}>
-                {status.toUpperCase()}
-              </span>
-            </div>
-
-            <div style={{ width:1, height:18, background:"rgba(0,212,255,0.12)" }} />
-
-            <span style={{ fontSize:8, letterSpacing:2, color:"rgba(0,212,255,0.35)" }}>
-              {currentModel?.split(":")[0]?.toUpperCase()}
-            </span>
-            <span style={{ fontSize:8, letterSpacing:1, color:"rgba(0,212,255,0.25)" }}>
-              {msgCount} MSG
-            </span>
-
-            <div style={{ width:1, height:18, background:"rgba(0,212,255,0.12)" }} />
-
-            {[
-              { label:wakeActive?"◉ WAKE":"◎ WAKE",    active:wakeActive,    onClick:toggleWake,               activeColor:"#00d4ff" },
-              { label:speakReplies?"◉ VOICE":"◎ VOICE", active:speakReplies,  onClick:()=>setSpeakReplies(p=>!p), activeColor:"#00ff88" },
-            ].map(({ label, active, onClick, activeColor }) => (
-              <button key={label} onClick={onClick} style={{
-                background: active ? `${activeColor}12` : "transparent",
-                border:`1px solid ${active?activeColor+"55":"rgba(0,212,255,0.12)"}`,
-                color: active ? activeColor : "rgba(0,212,255,0.28)",
-                fontFamily:"'Courier New',monospace", fontSize:9,
-                padding:"4px 10px", cursor:"pointer", letterSpacing:2,
-                boxShadow: active ? `0 0 10px ${activeColor}20` : "none",
-                transition:"all 0.2s",
-              }}>{label}</button>
-            ))}
-
-            <button onClick={clearMemory} style={{
-              background:"transparent", border:"1px solid rgba(255,68,68,0.18)",
-              color:"rgba(255,68,68,0.35)", fontFamily:"'Courier New',monospace",
-              fontSize:9, padding:"4px 10px", cursor:"pointer", letterSpacing:2, transition:"all 0.2s",
-            }}
-              onMouseOver={e => e.currentTarget.style.borderColor="rgba(255,68,68,0.55)"}
-              onMouseOut={e  => e.currentTarget.style.borderColor="rgba(255,68,68,0.18)"}
-            >✕ WIPE</button>
           </div>
         </div>
 
-        {/* Content */}
-        {tab === "vision" ? (
-          <div style={{ flex:1, overflow:"hidden" }}>
-            <LiveVision onAnalysis={(entry) => { if (entry.question) addSystem(`◎ ${entry.jarvis}`); }} />
-          </div>
-        ) : tab === "graph" ? (
-          <div style={{ flex:1, overflow:"hidden" }}>
-            <KnowledgeGraph />
-          </div>
-        ) : (
-          <>
-            {/* Messages */}
-            <div style={{ flex:1, overflowY:"auto", padding:"28px 36px", background:"transparent" }}>
+        {/* Tabs */}
+        <div style={{ display:"flex", gap:0 }}>
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} style={tabStyle(t.id)}>
+              {t.label}
+            </button>
+          ))}
+        </div>
 
-              {messages.length === 0 && (
-                <div style={{ textAlign:"center", marginTop:"13vh" }}>
-                  <div style={{ marginBottom:24, display:"flex", justifyContent:"center" }}>
-                    <ArcReactor active={status==="online"} size={72} />
-                  </div>
-                  <div style={{ fontSize:20, letterSpacing:8, color:"#00d4ff", marginBottom:6, fontWeight:"bold", textShadow:"0 0 24px rgba(0,212,255,0.5)" }}>
-                    ASTRA ONLINE
-                  </div>
-                  <div style={{ fontSize:9, letterSpacing:4, color:"rgba(0,212,255,0.28)", marginBottom:36 }}>
-                    ADVANCED PERSONAL AI · ALL SYSTEMS READY
-                  </div>
-                  <div style={{ display:"flex", gap:10, justifyContent:"center", flexWrap:"wrap" }}>
-                    {["what's playing","open spotify","my schedule today","message mom I'm home","volume up","battery status"].map(cmd => (
-                      <button key={cmd} onClick={() => sendMessage(cmd)} style={{
-                        background:"rgba(0,212,255,0.04)", border:"1px solid rgba(0,212,255,0.15)",
-                        color:"rgba(0,212,255,0.45)", fontFamily:"'Courier New',monospace",
-                        fontSize:10, padding:"7px 16px", cursor:"pointer", letterSpacing:1,
-                        backdropFilter:"blur(8px)", transition:"all 0.2s",
-                      }}
-                        onMouseOver={e => { e.currentTarget.style.background="rgba(0,212,255,0.09)"; e.currentTarget.style.color="#00d4ff"; e.currentTarget.style.borderColor="rgba(0,212,255,0.4)"; }}
-                        onMouseOut={e  => { e.currentTarget.style.background="rgba(0,212,255,0.04)"; e.currentTarget.style.color="rgba(0,212,255,0.45)"; e.currentTarget.style.borderColor="rgba(0,212,255,0.15)"; }}
-                      >{cmd}</button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {messages.map(msg => <Message key={msg.id} msg={msg} />)}
-              {loading && <ThinkingDots />}
-              <div ref={endRef} />
-            </div>
-
-            {/* Input bar */}
-            <div style={{
-              padding:"14px 36px 22px",
-              borderTop:"1px solid rgba(0,212,255,0.08)",
-              background:"linear-gradient(0deg,rgba(0,2,8,0.98) 0%,rgba(0,4,12,0.95) 100%)",
-              flexShrink:0, position:"relative",
-            }}>
-              <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:"linear-gradient(90deg,transparent,rgba(0,212,255,0.25),transparent)" }} />
-
-              <div style={{
-                display:"flex", alignItems:"center", gap:14, padding:"12px 18px",
-                background:"rgba(0,212,255,0.025)",
-                border:`1px solid ${loading?"rgba(0,212,255,0.08)":"rgba(0,212,255,0.22)"}`,
-                backdropFilter:"blur(20px)",
-                boxShadow: loading ? "none" : "0 0 30px rgba(0,212,255,0.04), inset 0 0 30px rgba(0,212,255,0.02)",
-                transition:"all 0.3s",
-                position:"relative", overflow:"hidden",
+        {/* Mode switcher */}
+        <div style={{ display:"flex", gap:3, padding:"0 12px", borderLeft:"1px solid rgba(0,212,255,0.1)", alignItems:"center" }}>
+          {modes.map(m => {
+            const active = m.id === currentMode;
+            const col = { jarvis:"#00d4ff", focus:"#ff6b35", chill:"#00ff88", expert:"#bf5fff", debug:"#ffaa00" }[m.id] || "#00d4ff";
+            return (
+              <button key={m.id} onClick={() => switchMode(m.id)} title={m.description} style={{
+                background: active ? `${col}18` : "transparent",
+                border: `1px solid ${active ? col+"66" : "rgba(0,212,255,0.08)"}`,
+                color: active ? col : "rgba(0,212,255,0.22)",
+                fontFamily:"'Courier New',monospace", fontSize:8,
+                padding:"4px 9px", cursor:"pointer", letterSpacing:1,
+                boxShadow: active ? `0 0 8px ${col}44` : "none",
+                transition:"all 0.18s",
               }}>
-                {/* Glass sheen */}
-                <div style={{ position:"absolute", top:0, left:0, right:0, height:"45%", background:"linear-gradient(180deg,rgba(255,255,255,0.02) 0%,transparent 100%)", pointerEvents:"none" }} />
+                {m.emoji} {m.name}
+              </button>
+            );
+          })}
+        </div>
 
-                <VoiceButton onTranscript={sendMessage} speaking={isSpeaking} />
+        {/* Voice waveform */}
+        <div style={{ width:100, display:"flex", alignItems:"center", gap:8 }}>
+          <Waveform active={voicePlaying} color="#00ff88" bars={16} />
+          <div style={{
+            fontSize:7, letterSpacing:3,
+            color: voicePlaying ? "#00ff88" : "rgba(0,212,255,0.2)",
+          }}>
+            {voicePlaying ? "SPEAKING" : "IDLE"}
+          </div>
+        </div>
+      </div>
 
-                {/* Waveform in input when speaking */}
-                <Waveform active={loading || isSpeaking} color={isSpeaking?"#00ff88":"#00d4ff"} bars={18} />
+      {/* Body */}
+      <div style={{ flex:1, display:"flex", overflow:"hidden" }}>
 
-                <div style={{ width:1, height:22, background:"rgba(0,212,255,0.15)" }} />
+        {/* Main content */}
+        <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
 
-                <span style={{ color:"rgba(0,212,255,0.35)", fontSize:16 }}>›</span>
-
-                <input
-                  ref={inputRef}
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => e.key==="Enter" && !e.shiftKey && sendMessage()}
-                  placeholder="ENTER COMMAND..."
-                  disabled={loading}
-                  style={{
-                    flex:1, background:"transparent", border:"none", outline:"none",
-                    color:"rgba(200,240,255,0.85)", fontFamily:"'Courier New',monospace",
-                    fontSize:13, caretColor:"#00d4ff", letterSpacing:1,
-                  }}
-                />
-
-                <span style={{ fontSize:9, color:"rgba(0,212,255,0.2)", letterSpacing:2, flexShrink:0 }}>
-                  {loading ? "PROCESSING..." : "ENTER ↵"}
-                </span>
+          {tab === "chat" && (
+            <>
+              {/* Messages */}
+              <div style={{ flex:1, overflowY:"auto", padding:"20px 24px" }}>
+                {messages.length === 0 && (
+                  <div style={{
+                    height:"100%", display:"flex", flexDirection:"column",
+                    alignItems:"center", justifyContent:"center", gap:8,
+                    color:"rgba(0,212,255,0.15)",
+                  }}>
+                    <div style={{ fontSize:48, fontWeight:100, letterSpacing:12 }}>ASTRA</div>
+                    <div style={{ fontSize:9, letterSpacing:6 }}>SYSTEMS READY · AWAITING INPUT</div>
+                  </div>
+                )}
+                {messages.map(msg => (
+                  <Message key={msg.id} msg={msg} isStreaming={false} />
+                ))}
+                {/* Live streaming message */}
+                {streaming && streamBuffer && (
+                  <Message
+                    msg={{ role:"assistant", content:streamBuffer, agent:`ollama/${currentModel}` }}
+                    isStreaming={true}
+                  />
+                )}
+                {/* Thinking indicator */}
+                {loading && !streaming && (
+                  <div style={{ marginBottom:14, paddingLeft:38 }}>
+                    <ThinkingDots />
+                  </div>
+                )}
+                <div ref={bottomRef} />
               </div>
+
+              {/* Input bar */}
+              <div style={{
+                padding:"12px 20px",
+                borderTop:"1px solid rgba(0,212,255,0.07)",
+                background:"rgba(0,0,0,0.5)",
+                backdropFilter:"blur(20px)",
+              }}>
+                <div style={{
+                  display:"flex", alignItems:"center", gap:10,
+                  background:"rgba(0,212,255,0.04)",
+                  border:"1px solid rgba(0,212,255,0.12)",
+                  padding:"6px 12px",
+                }}>
+                  <Waveform active={loading} color="#00d4ff" bars={20} />
+                  <textarea
+                    ref={inputRef}
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={onKey}
+                    placeholder="speak to ASTRA..."
+                    rows={1}
+                    style={{
+                      flex:1, background:"transparent", border:"none",
+                      color:"rgba(255,255,255,0.85)", fontSize:14,
+                      resize:"none", fontFamily:"inherit", lineHeight:1.5,
+                      minHeight:24, maxHeight:120, padding:0,
+                    }}
+                  />
+                  {/* Stream toggle */}
+                  <div
+                    onClick={() => setUseStream(s => !s)}
+                    title={useStream ? "Streaming ON" : "Streaming OFF"}
+                    style={{
+                      fontSize:8, letterSpacing:2, cursor:"pointer",
+                      color: useStream ? "#00ff88" : "rgba(0,212,255,0.25)",
+                      padding:"3px 6px",
+                      border: `1px solid ${useStream ? "rgba(0,255,136,0.3)" : "rgba(0,212,255,0.1)"}`,
+                    }}>
+                    SSE
+                  </div>
+                  {streaming
+                    ? <button onClick={stopStream} style={{
+                        background:"rgba(255,68,68,0.15)", border:"1px solid rgba(255,68,68,0.3)",
+                        color:"#ff4444", fontSize:9, letterSpacing:2, padding:"5px 10px", cursor:"pointer",
+                      }}>STOP</button>
+                    : <button onClick={send} disabled={!input.trim() || loading} style={{
+                        background: input.trim() ? "rgba(0,212,255,0.1)" : "transparent",
+                        border:`1px solid ${input.trim() ? "rgba(0,212,255,0.3)" : "rgba(0,212,255,0.08)"}`,
+                        color: input.trim() ? "#00d4ff" : "rgba(0,212,255,0.2)",
+                        fontSize:9, letterSpacing:2, padding:"5px 12px", cursor:"pointer",
+                        transition:"all 0.2s",
+                      }}>SEND</button>
+                  }
+                </div>
+                <div style={{ marginTop:5, display:"flex", gap:16, fontSize:8, color:"rgba(0,212,255,0.2)", letterSpacing:1 }}>
+                  <span>ENTER to send · SHIFT+ENTER newline</span>
+                  <span style={{ marginLeft:"auto" }}>
+                    {useStream ? "⚡ STREAMING" : "◉ STANDARD"} · {currentModel.toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
+
+          {tab === "vision" && (
+            <div style={{ flex:1, padding:20, overflow:"auto" }}>
+              <LiveVision />
             </div>
-          </>
+          )}
+
+          {tab === "graph" && (
+            <div style={{ flex:1, overflow:"hidden" }}>
+              <KnowledgeGraph />
+            </div>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        {tab === "chat" && (
+          <SystemSidebar
+            health={health} memory={memory}
+            models={models} currentModel={currentModel}
+            onSwitchModel={switchModel}
+          />
         )}
       </div>
 
+      {/* Proactive alerts */}
+      <AgentTrace messages={messages} />
       <ProactiveAlerts />
-
-      <style>{`
-        * { box-sizing:border-box; margin:0; padding:0; }
-        ::-webkit-scrollbar { width:2px; }
-        ::-webkit-scrollbar-track { background:transparent; }
-        ::-webkit-scrollbar-thumb { background:rgba(0,212,255,0.15); border-radius:1px; }
-        input::placeholder { color:rgba(0,212,255,0.18); letter-spacing:2px; }
-        button { outline:none; }
-        @keyframes scanline  { 0%{transform:translateY(-100vh)} 100%{transform:translateY(100vh)} }
-        @keyframes spin      { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-        @keyframes pulse     { 0%,100%{opacity:1} 50%{opacity:0.3} }
-        @keyframes blink     { 0%,100%{opacity:1} 50%{opacity:0} }
-        @keyframes fadeUp    { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes waveBar   { 0%,100%{transform:scaleY(0.3);opacity:0.3} 50%{transform:scaleY(1);opacity:1} }
-        @keyframes voicePulse{ 0%,100%{box-shadow:0 0 20px rgba(255,68,68,0.4)} 50%{box-shadow:0 0 40px rgba(255,68,68,0.8)} }
-        @keyframes ripple    { 0%{transform:scale(1);opacity:0.6} 100%{transform:scale(1.9);opacity:0} }
-      `}</style>
+      <AgentTrace messages={messages} />
     </div>
   );
 }

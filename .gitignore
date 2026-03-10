@@ -59,3 +59,10 @@ backend/kokoro-v0_19.onnx
 backend/voices.bin
 kokoro-v0_19.onnx
 voices.bin
+
+*.db
+*.npy
+*.ppn
+*.zip
+memory/
+embedding_cache/                    

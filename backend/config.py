@@ -1,42 +1,75 @@
-from dataclasses import dataclass, field
-from typing import Optional
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
+# Ollama
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Redis
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 
-@dataclass
-class ModelConfig:
-    model_name: str = os.getenv("OLLAMA_MODEL", "phi3:mini")
-    base_url: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-    temperature: float = float(os.getenv("TEMPERATURE", "0.7"))
-    max_tokens: int = int(os.getenv("MAX_TOKENS", "500"))
-    top_p: float = float(os.getenv("TOP_P", "0.9"))
-    context_window: int = 4096
-    max_history: int = 10
+# Models
+DEFAULT_MODEL   = os.getenv("DEFAULT_MODEL", "phi3:mini")
+VISION_MODEL    = os.getenv("VISION_MODEL",  "llava:7b")
+RESEARCH_MODEL  = os.getenv("RESEARCH_MODEL", "llama3.2:3b")
+TECHNICAL_MODEL = os.getenv("TECHNICAL_MODEL", "mistral")
 
+# Flask
+FLASK_HOST = os.getenv("FLASK_HOST", "0.0.0.0")
+FLASK_PORT = int(os.getenv("FLASK_PORT", 5050))
+DEBUG      = os.getenv("FLASK_ENV", "production") != "production"
 
-@dataclass
-class AppConfig:
-    host: str = os.getenv("FLASK_HOST", "0.0.0.0")
-    port: int = int(os.getenv("FLASK_PORT", "5001"))
-    debug: bool = os.getenv("FLASK_DEBUG", "False").lower() == "true"
-    memory_file: str = os.path.join(BASE_DIR, "memory", "data", "memory.json")
-    max_facts: int = 50
-    enable_web_search: bool = os.getenv("ENABLE_WEB_SEARCH", "False").lower() == "true"
-    enable_emotions: bool = os.getenv("ENABLE_EMOTIONS", "True").lower() == "true"
-    enable_memory: bool = os.getenv("ENABLE_MEMORY", "True").lower() == "true"
-    model: Optional[ModelConfig] = None  # ✅ Fixed type hint
+# Memory paths
+BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
+MEMORY_DIR  = os.path.join(BASE_DIR, "memory")
+DB_PATH     = os.path.join(BASE_DIR, "astra_memory.db")
 
-    def __post_init__(self):
-        self.model = ModelConfig()
-        if not os.path.exists(self.memory_file):
-            import json
-            os.makedirs(os.path.dirname(self.memory_file), exist_ok=True)
-            with open(self.memory_file, "w") as f:
-                json.dump({}, f)
+# API keys
+SERPER_API_KEY    = os.getenv("SERPER_API_KEY", "")
+PICOVOICE_API_KEY = os.getenv("PICOVOICE_API_KEY", "")
 
+# Features
+ENABLE_MEMORY   = os.getenv("ENABLE_MEMORY", "true").lower() == "true"
+ENABLE_EMOTIONS = os.getenv("ENABLE_EMOTIONS", "true").lower() == "true"
 
-config = AppConfig()
+# Backward compat class — covers every config.xyz used in app.py
+class config:
+    # server
+    host  = FLASK_HOST
+    port  = FLASK_PORT
+    debug = DEBUG
+
+    # features
+    enable_memory   = ENABLE_MEMORY
+    enable_emotions = ENABLE_EMOTIONS
+
+    # ollama
+    ollama_host     = OLLAMA_HOST
+    default_model   = DEFAULT_MODEL
+    vision_model    = VISION_MODEL
+    research_model  = RESEARCH_MODEL
+    technical_model = TECHNICAL_MODEL
+
+    # redis
+    redis_url = REDIS_URL
+
+    # paths
+    memory_dir = MEMORY_DIR
+    db_path    = DB_PATH
+
+    # keys
+    serper_api_key    = SERPER_API_KEY
+    picovoice_api_key = PICOVOICE_API_KEY
+
+    # uppercase aliases
+    OLLAMA_HOST       = OLLAMA_HOST
+    REDIS_URL         = REDIS_URL
+    DEFAULT_MODEL     = DEFAULT_MODEL
+    VISION_MODEL      = VISION_MODEL
+    RESEARCH_MODEL    = RESEARCH_MODEL
+    TECHNICAL_MODEL   = TECHNICAL_MODEL
+    FLASK_HOST        = FLASK_HOST
+    FLASK_PORT        = FLASK_PORT
+    DEBUG             = DEBUG
+    MEMORY_DIR        = MEMORY_DIR
+    DB_PATH           = DB_PATH
+    SERPER_API_KEY    = SERPER_API_KEY
+    PICOVOICE_API_KEY = PICOVOICE_API_KEY

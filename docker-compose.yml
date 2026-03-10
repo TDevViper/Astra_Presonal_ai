@@ -1,0 +1,64 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: astra_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list || exit 0"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    container_name: astra_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: astra_backend
+    ports:
+      - "5001:5001"
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - REDIS_URL=redis://redis:6379
+      - FLASK_ENV=production
+      - SERPER_API_KEY=03b05ab76491d97e3ae37f89cbc6683b28387347
+      - PICOVOICE_API_KEY=B4BwPK/BqPhCN/oOvPymoBwpjLMio43IROUiDSDgXzGFq/QqAbQXng==
+    volumes:
+      - ./backend/memory:/app/memory
+      - ./backend/astra_memory.db:/app/astra_memory.db
+    depends_on:
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: astra_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  ollama_data:

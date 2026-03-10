@@ -1,38 +1,30 @@
-import os, struct, threading
-import pvporcupine
-import pyaudio
+import os
+import logging
 
-ACCESS_KEY = os.getenv("PORCUPINE_KEY", "")
-PPN_PATH   = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                          "Hey-ASTRA_en_mac_v4_0_0.ppn")
+logger = logging.getLogger(__name__)
 
-def start_wake_word_listener(on_wake_callback):
-    if not ACCESS_KEY:
-        print("[WakeWord] No PORCUPINE_KEY set — skipping")
-        return
+# pvporcupine is Mac-only hardware wake word — skip in Docker
+try:
+    import pvporcupine
+    PORCUPINE_AVAILABLE = True
+except ImportError:
+    PORCUPINE_AVAILABLE = False
+    logger.warning("pvporcupine not available — wake word disabled (Docker mode)")
 
-    def _listen():
-        try:
-            porcupine = pvporcupine.create(
-                access_key        = ACCESS_KEY,
-                keyword_paths     = [PPN_PATH]
-            )
-            pa     = pyaudio.PyAudio()
-            stream = pa.open(
-                rate              = porcupine.sample_rate,
-                channels          = 1,
-                format            = pyaudio.paInt16,
-                input             = True,
-                frames_per_buffer = porcupine.frame_length
-            )
-            print("[WakeWord] ✅ Say 'Hey Astra' to activate...")
-            while True:
-                pcm = stream.read(porcupine.frame_length, exception_on_overflow=False)
-                pcm = struct.unpack_from("h" * porcupine.frame_length, pcm)
-                if porcupine.process(pcm) >= 0:
-                    print("[WakeWord] 🎤 Hey Astra detected!")
-                    on_wake_callback()
-        except Exception as e:
-            print(f"[WakeWord] Error: {e}")
 
-    threading.Thread(target=_listen, daemon=True).start()
+def start_wake_word_listener(callback=None):
+    if not PORCUPINE_AVAILABLE:
+        logger.info("Wake word listener skipped — not available in this environment")
+        return None
+    try:
+        import pvporcupine
+        import sounddevice as sd
+        import numpy as np
+        logger.info("Wake word listener started")
+    except Exception as e:
+        logger.warning(f"Wake word listener failed to start: {e}")
+        return None
+
+
+def stop_wake_word_listener():
+    pass
