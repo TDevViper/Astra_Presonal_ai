@@ -64,7 +64,7 @@ logger.addHandler(handler)
 
 app = Flask(__name__)
 sock.init_app(app)
-CORS(app)
+CORS(app, origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000"])
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(memory_bp)

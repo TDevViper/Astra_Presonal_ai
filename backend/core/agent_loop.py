@@ -1,3 +1,4 @@
+import os
 # ==========================================
 # core/agent_loop.py — Autonomous Agent Loop
 # Flow: Observe → Plan → Act → Reflect → Repeat
@@ -212,7 +213,7 @@ def _act_llm(user_input: str, context: Dict, prior_results: str = "") -> Tuple[s
         import ollama
         import requests
 
-        GPU_HOST   = "http://100.113.54.3:11434"
+        GPU_HOST   = os.getenv("REMOTE_GPU_HOST", "")
         LOCAL_HOST = "http://localhost:11434"
 
         try:
@@ -263,7 +264,7 @@ def _act_reflect(user_input: str, draft_reply: str,
         import ollama
         import requests
 
-        GPU_HOST   = "http://100.113.54.3:11434"
+        GPU_HOST   = os.getenv("REMOTE_GPU_HOST", "")
         LOCAL_HOST = "http://localhost:11434"
 
         try:

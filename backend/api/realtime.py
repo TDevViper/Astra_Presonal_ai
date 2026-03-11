@@ -1,3 +1,4 @@
+import os
 from core.brain_singleton import get_brain as _get_rt_brain
 _rt_brain = _get_rt_brain()
 
@@ -73,7 +74,7 @@ def realtime_talk():
 @realtime_bp.route("/realtime/status", methods=["GET"])
 def realtime_status():
     import ollama
-    GPU_HOST = "http://100.113.54.3:11434"
+    GPU_HOST = os.getenv("REMOTE_GPU_HOST", "")
     status   = {}
     try:
         from voice.listener import get_model

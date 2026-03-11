@@ -11,7 +11,7 @@ from typing import List, Dict
 
 logger = logging.getLogger(__name__)
 
-GPU_HOST   = "http://100.113.54.3:11434"
+GPU_HOST   = os.getenv("REMOTE_GPU_HOST", "")
 LOCAL_HOST = "http://localhost:11434"
 
 # Queries that need planning (multi-step)

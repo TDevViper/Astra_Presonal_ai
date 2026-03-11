@@ -1,3 +1,4 @@
+import os
 # ==========================================
 # knowledge/entity_extractor.py
 # Extracts (subject, relation, object) triples
@@ -92,7 +93,7 @@ def extract_triples_llm(text: str,
         import requests
 
         LOCAL_HOST = "http://localhost:11434"
-        GPU_HOST   = "http://100.113.54.3:11434"
+        GPU_HOST   = os.getenv("REMOTE_GPU_HOST", "")
 
         try:
             alive = requests.get(GPU_HOST, timeout=1).status_code == 200

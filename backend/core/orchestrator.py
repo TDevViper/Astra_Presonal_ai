@@ -31,7 +31,7 @@ except Exception:
 
 logger = logging.getLogger(__name__)
 
-GPU_HOST   = "http://100.113.54.3:11434"
+GPU_HOST   = os.getenv("REMOTE_GPU_HOST", "")
 LOCAL_HOST = "http://localhost:11434"
 
 MAX_AGENT_STEPS = 5

@@ -70,3 +70,12 @@ logs/
 *.safetensors
 *.onnx
 *.pt
+
+# Coverage
+.coverage
+htmlcov/
+coverage.xml
+
+# Backup files (all variants)
+*.bak*
+*.orig

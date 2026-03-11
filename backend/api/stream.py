@@ -31,7 +31,7 @@ def chat_stream():
         user_name = memory.get("preferences", {}).get("name", "Arnav")
 
         # Auto-select server — fast failover
-        gpu_url   = "http://100.113.54.3:11434"
+        gpu_url   = os.getenv("REMOTE_GPU_HOST", "")
         local_url = "http://localhost:11434"
         base_url  = gpu_url if _check_server(gpu_url, timeout=1) else local_url
         os.environ["OLLAMA_HOST"] = base_url
