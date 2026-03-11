@@ -1,68 +1,29 @@
-# =========================
 # Python
-# =========================
 __pycache__/
 *.pyc
 *.pyo
-*.pyd
-*.egg-info/
-.Python
-
-# Virtual Environments
-.venv/
-venv/
 venv311/
-
-# Environment Variables
 .env
 
-# =========================
-# Node / Frontend
-# =========================
-node_modules/
-dist/
-
-# =========================
-# IDE / Editor
-# =========================
-.vscode/
-
-# =========================
-# macOS
-# =========================
-.DS_Store
-
-# =========================
-# Logs
-# =========================
-logs/
-*.log
-
-# =========================
-# Model Files
-# =========================
-*.pt
-*.pth
-*.h5
-
-
-# memory.json
-
-backend/data/
-backend/memory/data/
-memory.json
-*.sqlite3
-# Kokoro TTS model files
-backend/kokoro-v1_0.pth
-backend/voices/
-backend/kokoro-v0_19.onnx
-backend/voices.bin
-kokoro-v0_19.onnx
-voices.bin
-
+# Databases — never commit user data
 *.db
-*.npy
+*.sqlite
+
+# Backup files
+*.bak
+*.bak2
+*.bak3
+
+# Docker
+.dockerignore
+
+# Vector store — regenerates automatically
+backend/memory/embedding_cache/
+backend/memory/vector_store/index.faiss
+
+# Models
 *.ppn
-*.zip
-memory/
-embedding_cache/                    
+*.gguf
+
+# OS
+.DS_Store
