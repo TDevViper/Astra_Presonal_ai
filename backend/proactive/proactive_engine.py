@@ -22,7 +22,7 @@ class ProactiveEngine:
             global USER_NAME
             USER_NAME = _m.get("preferences", {}).get("name", "User")
         except Exception:
-            pass
+            pass  # TODO: handle
         self._running = False
         self._thread: Optional[threading.Thread] = None
         self._last_break_reminder = datetime.now()
@@ -114,7 +114,7 @@ class ProactiveEngine:
             else:
                 msg += "Clear calendar today. "
         except Exception:
-            pass
+            pass  # TODO: handle
 
         if tasks:
             msg += f"You have {len(tasks)} task{'s' if len(tasks) > 1 else ''} pending. Top priority: {tasks[0]['title']}. "

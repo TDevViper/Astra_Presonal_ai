@@ -1,0 +1,72 @@
+{
+  "user_facts": [],
+  "preferences": {
+    "name": "Arnav"
+  },
+  "conversation_summary": [],
+  "emotional_patterns": {
+    "last_emotion": {
+      "label": "neutral",
+      "score": 0.0,
+      "timestamp": "2026-02-21T05:05:04.227530"
+    },
+    "history": [
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-02-20T20:07:38.625883"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-02-20T20:13:18.042205"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-02-20T20:13:34.954055"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-02-20T20:15:42.291439"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-02-21T04:44:07.460648"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-02-21T04:44:43.170810"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-02-21T05:02:19.482337"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-02-21T05:02:31.188583"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-02-21T05:02:42.786133"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-02-21T05:05:04.227636"
+      }
+    ],
+    "emotion_stats": {
+      "neutral": {
+        "count": 10,
+        "avg_score": 0.0
+      }
+    }
+  }
+}

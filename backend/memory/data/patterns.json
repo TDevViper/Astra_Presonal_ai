@@ -1,0 +1,29 @@
+{
+  "topics": {
+    "neural": 7,
+    "networks": 7,
+    "building": 7,
+    "backpropagation": 3,
+    "detail": 3,
+    "quantum": 3,
+    "computing": 3,
+    "(venv311)": 2,
+    "(base)": 2,
+    "arnavyadav@arnavs-macbook-air": 2
+  },
+  "last_session": "2026-03-11T03:08:21.389359",
+  "pending_tasks": [],
+  "top_topics": [
+    "neural",
+    "networks",
+    "building",
+    "backpropagation",
+    "detail"
+  ],
+  "top_intents": [
+    "casual",
+    "technical",
+    "reasoning"
+  ],
+  "episode_count": 41
+}

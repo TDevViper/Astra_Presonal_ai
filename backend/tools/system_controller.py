@@ -137,7 +137,7 @@ def _get_active_music_app() -> Optional[str]:
             if state == "playing":
                 return app
         except Exception:
-            pass
+            pass  # TODO: handle
     # Return first running music app
     for app in MUSIC_APPS:
         try:
@@ -148,7 +148,7 @@ def _get_active_music_app() -> Optional[str]:
             if "true" in result.stdout.lower():
                 return app
         except Exception:
-            pass
+            pass  # TODO: handle
     return "Spotify"  # default
 
 
@@ -309,7 +309,7 @@ def set_brightness(level: int) -> str:
         _osascript(f'set brightness of display 1 to {val}')
         return f"Brightness set to {level}%."
     except Exception:
-        pass
+        pass  # TODO: handle
     """Set screen brightness 0-100."""
     level = max(0, min(100, level))
     try:

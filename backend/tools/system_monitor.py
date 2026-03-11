@@ -19,8 +19,8 @@ def get_system_info() -> Dict:
                     "cpu": round(cpu, 1),
                     "memory": round(mem, 1)
                 })
-            except:
-                pass
+            except Exception:
+                pass  # TODO: handle
 
         processes = sorted(processes, key=lambda p: p["cpu"], reverse=True)[:5]
 

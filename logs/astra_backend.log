@@ -1,0 +1,17 @@
+
+============================================================
+🚀 ASTRA ENGINE STARTING
+============================================================
+📍 Model:       phi3:mini
+🌡️  Temperature: 0.7
+🌐 Server:      http://127.0.0.1:5050
+💾 Memory:      True
+😊 Emotions:    True
+============================================================
+
+ * Serving Flask app 'app'
+ * Debug mode: on
+This process is not trusted! Input event monitoring will not be possible until it is added to accessibility clients.
+This process is not trusted! Input event monitoring will not be possible until it is added to accessibility clients.
+Address already in use
+Port 5050 is in use by another program. Either identify and stop that program, or start the server with a different port.

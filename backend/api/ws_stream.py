@@ -33,7 +33,7 @@ def websocket_stream(ws):
                 ws.send(json.dumps({"type": "token", "data": token}))
             ws.send(json.dumps({"type": "done"}))
     except Exception:
-        pass
+        pass  # TODO: handle
     finally:
         with _lock:
             if ws in _connected_clients:

@@ -27,7 +27,7 @@ def get_model():
             from core.brain import brain
             current = brain.model_manager.current_model
         except Exception:
-            pass
+            pass  # TODO: handle
         return jsonify({"current": current, "available": names})
     except Exception as e:
         return jsonify({"current": "phi3:mini", "available": ["phi3:mini"], "error": str(e)})

@@ -112,7 +112,7 @@ def execute_python_code(code: str, timeout: int = MAX_EXECUTION_TIME) -> Dict:
             try:
                 os.unlink(tmp_path)
             except Exception:
-                pass
+                pass  # TODO: handle
 
 
 def extract_python_code(text: str) -> Optional[str]:

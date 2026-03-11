@@ -162,7 +162,7 @@ def _parse_json(text: str) -> Dict:
     try:
         return json.loads(text)
     except Exception:
-        pass
+        pass  # TODO: handle
 
     # Try extracting JSON block
     match = re.search(r'\{[\s\S]*\}', text)
@@ -170,7 +170,7 @@ def _parse_json(text: str) -> Dict:
         try:
             return json.loads(match.group())
         except Exception:
-            pass
+            pass  # TODO: handle
 
     # Fallback — return raw as jarvis_response
     return {
@@ -197,6 +197,6 @@ def analyze_code_in_image(image_b64: str) -> Dict:
             )
             result["fix_suggestion"] = fix_response["message"]["content"]
         except Exception:
-            pass
+            pass  # TODO: handle
 
     return result

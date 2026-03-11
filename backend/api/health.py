@@ -28,7 +28,7 @@ def health():
         if patterns.get("top_topics"):
             status["frequent_topics"] = patterns["top_topics"][:3]
     except Exception:
-        pass
+        pass  # TODO: handle
 
     return jsonify(status), 200 if status["status"] == "ok" else 207
 

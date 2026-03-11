@@ -119,7 +119,7 @@ class ActivityMonitor:
                 self._activity_type = self._classify_app(app_name)
                 logger.info(f"📱 App: {app_name} → {self._activity_type}")
         except Exception:
-            pass
+            pass  # TODO: handle
 
     def _classify_app(self, app_name: str) -> str:
         for key, activity in APP_MAP.items():

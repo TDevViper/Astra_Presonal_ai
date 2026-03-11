@@ -71,7 +71,7 @@ def _save_mode():
         with open(_MODE_FILE, "w") as f:
             json.dump({"mode": _current_mode}, f)
     except Exception:
-        pass
+        pass  # TODO: handle
 
 
 _load_mode()

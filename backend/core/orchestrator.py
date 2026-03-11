@@ -53,7 +53,7 @@ def _client_and_model() -> Tuple:
             if any(m in n for n in names):
                 return local, m, "CPU"
     except Exception:
-        pass
+        pass  # TODO: handle
     return local, "phi3:mini", "CPU"
 
 

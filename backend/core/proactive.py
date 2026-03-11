@@ -178,7 +178,7 @@ def _broadcast(msg: str):
         try:
             _broadcast_fn(msg)
         except Exception:
-            pass
+            pass  # TODO: handle
 
 def start_proactive_monitor():
     threading.Thread(target=_monitor_loop, daemon=True).start()
@@ -191,7 +191,7 @@ def _monitor_loop():
             _check_system(last_alerts)
             _check_tasks(last_alerts)
         except Exception:
-            pass
+            pass  # TODO: handle
         time.sleep(120)
 
 def _check_system(last_alerts: dict):
@@ -234,4 +234,4 @@ def _check_tasks(last_alerts: dict):
             _broadcast(f"📌 You have {len(pending)} pending tasks. Want to review them?")
             last_alerts["tasks"] = now
     except Exception:
-        pass
+        pass  # TODO: handle

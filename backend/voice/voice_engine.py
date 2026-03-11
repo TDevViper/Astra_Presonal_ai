@@ -87,7 +87,7 @@ def speak(text: str, rate: int = 185, volume: float = 1.0) -> None:
                 try:
                     os.system(f'say -r {rate} "{clean[:200]}"')
                 except Exception:
-                    pass
+                    pass  # TODO: handle
 
     t = threading.Thread(target=_speak, daemon=True)
     t.start()

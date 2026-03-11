@@ -69,27 +69,8 @@ SEARCH_TRIGGERS = [
     "who is", "when did", "where is", "price of", "weather"
 ]
 
-import hashlib, time as _time
-_response_cache: Dict = {}
-_CACHE_TTL = 60
-
-
-def _cache_key(text: str) -> str:
-    return hashlib.md5(text.strip().lower().encode()).hexdigest()
-
-
-def _get_cached(text: str) -> Optional[Dict]:
-    key = _cache_key(text)
-    entry = _response_cache.get(key)
-    if entry and (_time.time() - entry["ts"]) < _CACHE_TTL:
-        logger.info("⚡ Cache hit")
-        return entry["result"]
-    return None
-
-
-def _set_cache(text: str, result: Dict):
-    if len(result.get("reply", "").split()) < 40:
-        _response_cache[_cache_key(text)] = {"result": result, "ts": _time.time()}
+import time as _time
+from core.cache import get_cached as _get_cached, set_cached as _set_cache
 
 
 def needs_web_search(text: str) -> bool:
@@ -108,8 +89,8 @@ class Brain:
             from memory_db import load_recent_history, init_db
             init_db()
             self.conversation_history = load_recent_history(n=15)
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug(f"Non-critical failure: {_e}")  # TODO: handle
         logger.info("🚀 Brain v4.1 initialized")
 
     def process(self, user_input: str, vision_mode: bool = False) -> Dict:
@@ -135,7 +116,7 @@ class Brain:
                     return {"reply": _result, "emotion": "neutral", "intent": "chain",
                             "agent": "chain_executor", "confidence": 0.9, "model": "chain"}
             except Exception:
-                pass
+                pass  # TODO: handle
 
             try:
                 from briefing import should_give_briefing, generate_morning_brief, mark_briefing_done
@@ -147,7 +128,7 @@ class Brain:
                     return {"reply": _brief, "emotion": "neutral", "intent": "briefing",
                             "agent": "briefing", "confidence": 1.0, "model": "briefing"}
             except Exception:
-                pass
+                pass  # TODO: handle
 
             if not user_input:
                 return self._error_reply("I didn't catch that. Try again?")
@@ -261,7 +242,7 @@ class Brain:
                         if r and "error" not in str(r).lower()[:20]
                     ])
             except Exception:
-                pass
+                pass  # TODO: handle
 
             semantic_ctx, sem_confidence_boost = build_semantic_context(user_input, user_name=user_name)
             try:
@@ -272,7 +253,7 @@ class Brain:
                         semantic_ctx = (semantic_ctx + "\n\nFROM YOUR FILES:\n" + rag_ctx
                                         if semantic_ctx else "FROM YOUR FILES:\n" + rag_ctx)
             except Exception:
-                pass
+                pass  # TODO: handle
 
             if tool_context:
                 semantic_ctx = (semantic_ctx + "\n\nLIVE CONTEXT:\n" + tool_context
@@ -358,12 +339,12 @@ class Brain:
                 from knowledge.auto_extractor import extract_from_exchange
                 extract_from_exchange(user_input, reply, user_name=user_name)
             except Exception:
-                pass
+                pass  # TODO: handle
             try:
                 from core.self_improve import log_response as _log_resp
                 _log_resp(user_input, reply, 0.75)
             except Exception:
-                pass
+                pass  # TODO: handle
 
             if should_summarize(self.conversation_history):
                 summary = summarize_conversation(
@@ -455,8 +436,8 @@ class Brain:
                 for word in _result.split(" "):
                     yield {"token": word + " "}
                 return
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug(f"Non-critical failure: {_e}")  # TODO: handle
 
         emotion_label, emotion_score = detect_emotion(user_input)
         memory = update_emotion(memory, emotion_label, emotion_score)
@@ -567,8 +548,8 @@ class Brain:
                 if rag_ctx:
                     semantic_ctx = (semantic_ctx + "\n\nFROM YOUR FILES:\n" + rag_ctx
                                     if semantic_ctx else "FROM YOUR FILES:\n" + rag_ctx)
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug(f"Non-critical failure: {_e}")  # TODO: handle
 
         tool_context = ""
         try:
@@ -580,8 +561,8 @@ class Brain:
                     for t, r in parallel_results.items()
                     if r and "error" not in str(r).lower()[:20]
                 ])
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug(f"Non-critical failure: {_e}")  # TODO: handle
 
         from utils.language_detector import detect_language, get_language_instruction
         system_prompt = build_system_prompt(
@@ -618,7 +599,7 @@ class Brain:
                     else:
                         _time.sleep(0.05)
             except Exception:
-                pass
+                pass  # TODO: handle
 
         tts_thread = threading.Thread(target=_tts_worker, daemon=True)
         tts_thread.start()
@@ -660,63 +641,63 @@ class Brain:
         try:
             full_reply = critic_review(full_reply, user_name, memory,
                                        user_input=user_input, model=selected_model, intent=query_intent)
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug(f"Non-critical failure: {_e}")  # TODO: handle
 
         try:
             full_reply = refine_reply(full_reply, memory, user_name)
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug(f"Non-critical failure: {_e}")  # TODO: handle
 
         try:
             is_valid, violation = self.truth_guard.validate(full_reply)
             if not is_valid:
                 full_reply = self.truth_guard.get_safe_reply(violation)
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug(f"Non-critical failure: {_e}")  # TODO: handle
 
         try:
             full_reply = polish_reply(full_reply)
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug(f"Non-critical failure: {_e}")  # TODO: handle
 
         try:
             full_reply = limit_words(full_reply, intent=detect_intent_for_limit(user_input))
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug(f"Non-critical failure: {_e}")  # TODO: handle
 
         try:
             if emotion_score > 0.7 and emotion_label in ["sad", "angry", "anxious", "tired"]:
                 emo        = emotion_reply(emotion_label, emotion_score, user_name, memory)
                 full_reply = f"{emo} {full_reply}"
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug(f"Non-critical failure: {_e}")  # TODO: handle
 
         try:
             suggestion = get_proactive_suggestion(user_input, memory, user_name)
             if suggestion:
                 full_reply = full_reply + "\n\n" + suggestion
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug(f"Non-critical failure: {_e}")  # TODO: handle
 
         final_conf = 0.75
         try:
             final_conf = confidence_score(f"ollama/{selected_model}", query_intent)
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug(f"Non-critical failure: {_e}")  # TODO: handle
 
         self._add_to_history("assistant", full_reply)
 
         try:
             index_exchange(user_input, full_reply, user_name=user_name)
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug(f"Non-critical failure: {_e}")  # TODO: handle
 
         try:
             store_episode(user_input, full_reply, intent=query_intent,
                           emotion=emotion_label, user_name=user_name)
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug(f"Non-critical failure: {_e}")  # TODO: handle
 
         try:
             if should_summarize(self.conversation_history):
@@ -724,8 +705,8 @@ class Brain:
                     self.conversation_history, memory, user_name, model="phi3:mini"
                 )
                 memory = store_summary(memory, summary)
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug(f"Non-critical failure: {_e}")  # TODO: handle
 
         save_memory(memory)
 
@@ -736,8 +717,8 @@ class Brain:
                 kwargs={"user_name": user_name},
                 daemon=True
             ).start()
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug(f"Non-critical failure: {_e}")  # TODO: handle
 
         try:
             threading.Thread(
@@ -745,8 +726,8 @@ class Brain:
                 args=(user_input, full_reply, final_conf),
                 daemon=True
             ).start()
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug(f"Non-critical failure: {_e}")  # TODO: handle
 
         yield {
             "meta": {
@@ -951,7 +932,7 @@ class Brain:
                                   if m["role"] == "user"), "")
                 save_exchange(last_user, content)
             except Exception:
-                pass
+                pass  # TODO: handle
         if len(self.conversation_history) > 12:
             self.conversation_history = self.conversation_history[-12:]
 

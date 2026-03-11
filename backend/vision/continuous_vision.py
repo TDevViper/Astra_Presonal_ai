@@ -26,7 +26,7 @@ class ContinuousVision:
                         self.broadcast(f"👁️ I see: {desc}")
                         self.last_desc = desc
             except Exception:
-                pass
+                pass  # TODO: handle
             time.sleep(self.interval)
 
     def _is_significant_change(self, new_desc: str) -> bool:
