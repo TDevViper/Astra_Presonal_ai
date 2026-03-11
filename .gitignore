@@ -1,29 +1,65 @@
+# -------------------------
 # Python
+# -------------------------
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+
+# Virtual environments
+venv/
 venv311/
 .env
 
-# Databases — never commit user data
+# -------------------------
+# Databases (never commit)
+# -------------------------
 *.db
 *.sqlite
 
+# -------------------------
 # Backup files
+# -------------------------
 *.bak
 *.bak2
 *.bak3
 
+# -------------------------
+# AI / ML models
+# -------------------------
+*.pth
+*.pt
+*.bin
+*.gguf
+*.onnx
+*.safetensors
+*.ppn
+models/
+
+# -------------------------
+# Vector DB / embeddings
+# -------------------------
+backend/memory/embedding_cache/
+backend/memory/vector_store/
+
+# -------------------------
+# OS files
+# -------------------------
+.DS_Store
+
+# -------------------------
 # Docker
+# -------------------------
 .dockerignore
 
-# Vector store — regenerates automatically
-backend/memory/embedding_cache/
-backend/memory/vector_store/index.faiss
+# -------------------------
+# Logs
+# -------------------------
+*.log
+logs/
 
-# Models
-*.ppn
-*.gguf
-
-# OS
-.DS_Store
+# -------------------------
+# IDE
+# -------------------------
+.vscode/
+.idea/
