@@ -1,6 +1,8 @@
 import logging
 from flask import Flask, jsonify
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -64,6 +66,13 @@ logger.addHandler(handler)
 
 app = Flask(__name__)
 sock.init_app(app)
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per minute"],
+    storage_uri="memory://"
+)
+
 CORS(app, origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000"])
 
 app.register_blueprint(chat_bp)
@@ -107,6 +116,9 @@ from core.proactive import set_broadcast
 from api.ws_stream import broadcast as _ws_broadcast
 set_broadcast(_ws_broadcast)
 
+
+from core.gpu_health import start as _start_gpu_health
+_start_gpu_health()
 
 if __name__ == "__main__":
     print("\n" + "=" * 60)
