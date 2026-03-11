@@ -497,11 +497,71 @@ export default function App() {
     setLoading(false);
   }, []);
 
+  // ── WebSocket setup ──────────────────────────────────────────────────────
+  const wsMetaRef   = useRef(null);
+  const wsBufferRef = useRef("");
+
+  const { send: wsSend, connected: wsConnected } = useAstraWS({
+    onToken: (token) => {
+      wsBufferRef.current += token;
+      setStreamBuffer(wsBufferRef.current);
+    },
+    onMeta: (meta) => {
+      wsMetaRef.current = meta;
+    },
+    onDone: () => {
+      const buffer = wsBufferRef.current;
+      const meta   = wsMetaRef.current || {};
+      setMessages(prev => [...prev, {
+        role: "assistant", content: buffer,
+        agent:      meta.agent      || `ollama/${currentModel}`,
+        intent:     meta.intent     || "general",
+        confidence: meta.confidence || 0.8,
+        emotion:    meta.emotion    || "neutral",
+        id: Date.now() + 1,
+      }]);
+      setStreamBuffer("");
+      wsBufferRef.current  = "";
+      wsMetaRef.current    = null;
+      setStreaming(false);
+      setLoading(false);
+    },
+    onError: (err) => {
+      setMessages(prev => [...prev, {
+        role: "assistant", content: `Error: ${err}`,
+        id: Date.now() + 1,
+      }]);
+      setStreamBuffer("");
+      wsBufferRef.current = "";
+      setStreaming(false);
+      setLoading(false);
+    },
+  });
+
+  // ── Send via WebSocket (with HTTP fallback) ───────────────────────────────
+  const sendStreamWS = useCallback((text) => {
+    setLoading(true);
+    setStreaming(true);
+    setStreamBuffer("");
+    wsBufferRef.current = "";
+    wsMetaRef.current   = null;
+
+    const userMsg = { role: "user", content: text, id: Date.now() };
+    setMessages(prev => [...prev, userMsg]);
+
+    const sent = wsSend(text);
+    if (!sent) {
+      // WS not ready — fall back to HTTP stream
+      sendStream(text);
+    }
+  }, [wsSend, sendStream]);
+
   const send = useCallback(() => {
     const text = input.trim();
     if (!text || loading) return;
     setInput("");
-    if (useStream) sendStream(text);
+    if (useStream && wsConnected) sendStreamWS(text);
+    else if (useStream) sendStream(text);
     else           sendStandard(text);
     inputRef.current?.focus();
   }, [input, loading, useStream, sendStream, sendStandard]);

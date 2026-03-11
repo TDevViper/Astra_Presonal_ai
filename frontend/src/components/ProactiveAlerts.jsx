@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { WS } from "../config";
+import { WS_URL } from "../config";
 
 export default function ProactiveAlerts() {
   const [alerts, setAlerts] = useState([]);
@@ -7,7 +7,7 @@ export default function ProactiveAlerts() {
 
   useEffect(() => {
     function connect() {
-      const ws = new WebSocket(WS);
+      const ws = new WebSocket(WS_URL);
       wsRef.current = ws;
       ws.onmessage = (e) => {
         try {
