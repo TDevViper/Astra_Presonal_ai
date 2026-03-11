@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.6.0
         with:
           python-version: "3.11"
 
@@ -27,16 +27,27 @@ jobs:
           pip install ollama sentence-transformers faiss-cpu
           pip install networkx spacy redis
           pip install numpy psutil
+          pip install python-dotenv requests
+
+      - name: Download spacy model
+        run: python -m spacy download en_core_web_sm
 
       - name: Run tests
         working-directory: backend
         env:
           REMOTE_GPU_HOST: ""
+          REDIS_URL: "redis://localhost:6379"
           REDIS_HOST: ""
+          SERPER_API_KEY: ""
+          PICOVOICE_API_KEY: ""
+          FLASK_ENV: "testing"
+          OLLAMA_HOST: "http://localhost:11434"
         run: |
           python -m pytest tests/ -v --cov=core --cov-report=term-missing
 
       - name: Coverage summary
         working-directory: backend
+        env:
+          FLASK_ENV: "testing"
         run: |
           python -m pytest tests/ --cov=core --cov-report=xml
