@@ -5,7 +5,16 @@
 from .file_reader import read_file
 from .api_caller  import call_api
 
-TOOLS             = ["file_reader", "system_monitor", "task_manager", "git", "python_sandbox", "screen_watcher", "smart_home", "device_discovery", "system_controller"]
+
+FACE_TRIGGERS = [
+    "who is this", "who is that", "who are they", "recognize this person",
+    "remember this person", "remember this face", "learn this face",
+    "who do you see", "identify this person", "do you know this person",
+    "forget this person", "who are my faces", "list known faces",
+    "who is in front", "who is in the room",
+]
+
+TOOLS             = ["file_reader", "system_monitor", "task_manager", "git", "python_sandbox", "screen_watcher", "smart_home", "device_discovery", "system_controller", "face_recognition"]
 APPROVAL_REQUIRED = ["git", "python_sandbox"]
 
 FILE_TRIGGERS = [
@@ -86,6 +95,8 @@ def detect_tool(user_input: str) -> str | None:
     from tools.system_controller import is_system_command
     if is_system_command(text):
         return "system_controller"
+    if any(t in text for t in FACE_TRIGGERS):
+        return "face_recognition"
 
     return None
 

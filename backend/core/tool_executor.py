@@ -21,6 +21,7 @@ class ToolExecutor:
             "git":            self._git,
             "python_sandbox": self._python_sandbox,
             "system_controller": self._system_controller,
+            "face_recognition":  self._face_recognition,
         }.get(tool)
         if handler:
             return handler(user_input, memory, user_name)
@@ -202,3 +203,51 @@ class ToolExecutor:
         return self._build_reply("I couldn't execute that system command.",
                                  "neutral", "system_control", "system_controller",
                                  tool_used=True, confidence=0.3)
+
+    # ── Face recognition ──────────────────────────────────────────────────
+
+    def _face_recognition(self, user_input: str, memory: Dict, user_name: str) -> Dict:
+        import re
+        from vision.face_recognition_engine import (
+            identify_faces, learn_face, list_known_faces, forget_face
+        )
+        text = user_input.lower()
+
+        # Learn: "remember this person as Priya" / "this is my friend John"
+        learn_match = re.search(
+            r'(?:remember|learn|this is|her name is|his name is|they are|name is)\s+(?:this person as |as |)([A-Za-z ]+)',
+            user_input, re.IGNORECASE
+        )
+        if learn_match and any(w in text for w in ["remember", "learn", "this is", "name is"]):
+            name = learn_match.group(1).strip().title()
+            # Need image — signal that camera is needed
+            return self._build_reply(
+                f"Sure! Show me {name}'s face on camera and I'll remember them. "
+                f"Use the camera button and say 'remember this as {name}'.",
+                "neutral", "face_learn_pending", "face_recognition",
+                tool_used=True, confidence=0.9
+            )
+
+        # List known faces
+        if any(w in text for w in ["list", "who do you know", "known faces", "my faces"]):
+            result = list_known_faces()
+            return self._build_reply(result["message"], "neutral",
+                                     "face_list", "face_recognition",
+                                     tool_used=True, confidence=1.0)
+
+        # Forget
+        forget_match = re.search(r'forget\s+([A-Za-z ]+)', user_input, re.IGNORECASE)
+        if forget_match:
+            name   = forget_match.group(1).strip().title()
+            result = forget_face(name)
+            return self._build_reply(result["message"], "neutral",
+                                     "face_forget", "face_recognition",
+                                     tool_used=True, confidence=1.0)
+
+        # Default — identify (needs camera image from frontend)
+        return self._build_reply(
+            "Point the camera at someone and I'll tell you who they are. "
+            "Use the camera button and ask 'who is this?'",
+            "neutral", "face_identify_pending", "face_recognition",
+            tool_used=True, confidence=0.85
+        )

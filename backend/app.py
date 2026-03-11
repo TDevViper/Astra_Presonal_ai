@@ -26,6 +26,7 @@ from api.model import model_bp
 from api.execute import execute_bp
 from api.voice import voice_bp
 from api.vision import vision_bp
+from api.face import face_bp
 from api.multimodal import multimodal_bp
 from api.chat_stream import stream_bp
 from api.realtime import realtime_bp
@@ -81,6 +82,7 @@ app.register_blueprint(model_bp)
 app.register_blueprint(execute_bp)
 app.register_blueprint(voice_bp)
 app.register_blueprint(vision_bp)
+app.register_blueprint(face_bp)
 app.register_blueprint(multimodal_bp)
 app.register_blueprint(stream_bp)
 app.register_blueprint(realtime_bp)

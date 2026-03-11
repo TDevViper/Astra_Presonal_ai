@@ -11,6 +11,7 @@ _DEFAULTS = {
     "git":               True,
     "python_sandbox":    True,
     "system_controller": True,   # OS/app control
+    "face_recognition":  True,   # offline face ID
     "smart_home":        False,  # requires Philips Hue / TinyTuya setup
     "screen_watcher":    False,  # resource intensive
     "device_discovery":  False,  # network scan

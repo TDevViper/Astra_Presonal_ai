@@ -116,3 +116,23 @@ class VisionEngine:
 
 # Singleton
 vision_engine = VisionEngine()
+
+    # ── Face Recognition ──────────────────────────────────────
+
+    def identify_faces(self, image_b64: str) -> Dict:
+        """Who is in this image?"""
+        from vision.face_recognition_engine import identify_faces
+        return identify_faces(image_b64)
+
+    def learn_face(self, name: str, image_b64: str) -> Dict:
+        """Remember this person."""
+        from vision.face_recognition_engine import learn_face
+        return learn_face(name, image_b64)
+
+    def list_known_faces(self) -> Dict:
+        from vision.face_recognition_engine import list_known_faces
+        return list_known_faces()
+
+    def forget_face(self, name: str) -> Dict:
+        from vision.face_recognition_engine import forget_face
+        return forget_face(name)
