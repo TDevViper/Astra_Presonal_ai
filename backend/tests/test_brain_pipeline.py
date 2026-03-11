@@ -82,6 +82,17 @@ def _brain_with_mocks():
         post.process.side_effect = lambda reply, *a, **kw: reply
         brain._post = post
 
+        from core.llm_engine import LLMEngine
+        llm = MagicMock(spec=LLMEngine)
+        llm.try_react.return_value = ""
+        llm.call.return_value = "This is a test reply."
+        # stream yields tokens then a __full_reply__ sentinel
+        llm.stream.return_value = iter([
+            {"token": "This "}, {"token": "is "}, {"token": "a test reply."},
+            {"__full_reply__": "This is a test reply."}
+        ])
+        brain._llm = llm
+
         brain.conversation_history = []
         return brain
 
@@ -90,10 +101,9 @@ def _brain_with_mocks():
 
 class TestHappyPath(unittest.TestCase):
 
-    @patch("ollama.chat")
-    def test_simple_query_returns_reply(self, mock_chat):
-        mock_chat.return_value = _fake_ollama_response("Python is a programming language.")
+    def test_simple_query_returns_reply(self):
         brain = _brain_with_mocks()
+        brain._llm.call.return_value = "Python is a programming language."
         result = brain.process("What is Python?")
         self.assertIn("reply", result)
         self.assertIn("Python", result["reply"])
@@ -212,10 +222,9 @@ class TestWebSearch(unittest.TestCase):
 
 class TestPostProcessor(unittest.TestCase):
 
-    @patch("ollama.chat")
-    def test_post_processor_called_with_reply(self, mock_chat):
-        mock_chat.return_value = _fake_ollama_response("Raw LLM reply.")
+    def test_post_processor_called_with_reply(self):
         brain = _brain_with_mocks()
+        brain._llm.call.return_value = "Raw LLM reply."
         brain.process("explain neural networks")
         brain._post.process.assert_called_once()
         self.assertEqual(brain._post.process.call_args[0][0], "Raw LLM reply.")
