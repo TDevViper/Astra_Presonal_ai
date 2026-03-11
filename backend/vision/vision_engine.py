@@ -113,10 +113,6 @@ class VisionEngine:
         path = os.path.join(SNAPSHOTS_DIR, f"last_{source}.jpg")
         save_base64_image(b64, path)
 
-
-# Singleton
-vision_engine = VisionEngine()
-
     # ── Face Recognition ──────────────────────────────────────
 
     def identify_faces(self, image_b64: str) -> Dict:
@@ -136,3 +132,7 @@ vision_engine = VisionEngine()
     def forget_face(self, name: str) -> Dict:
         from vision.face_recognition_engine import forget_face
         return forget_face(name)
+
+
+# Singleton
+vision_engine = VisionEngine()
