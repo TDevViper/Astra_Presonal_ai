@@ -442,11 +442,14 @@ export default function App() {
           if (!line.startsWith("data:")) continue;
           try {
             const data = JSON.parse(line.slice(5));
-            if (data.token) {
-              buffer += data.token;
-              setStreamBuffer(buffer);
+            if (data.type === "token") {
+              const tok = data.text ?? data.token ?? "";
+              if (tok) { buffer += tok; setStreamBuffer(buffer); }
             }
-            if (data.done) break;
+            if (data.type === "done") {
+              if (!buffer && data.full) { buffer = data.full; setStreamBuffer(buffer); }
+              break;
+            }
           } catch {}
         }
       }
@@ -785,6 +788,9 @@ export default function App() {
           )}
         </div>
 
+        {/* Agent Trace */}
+        <AgentTrace messages={messages} />
+
         {/* Sidebar */}
         {tab === "chat" && (
           <SystemSidebar
@@ -796,7 +802,6 @@ export default function App() {
       </div>
 
       {/* Proactive alerts */}
-      <AgentTrace messages={messages} />
       <ProactiveAlerts />
       
     </div>

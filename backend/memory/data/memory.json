@@ -81,14 +81,9 @@
     "last_emotion": {
       "label": "neutral",
       "score": 0.0,
-      "timestamp": "2026-03-10T14:51:30.284784"
+      "timestamp": "2026-03-11T17:28:29.942217"
     },
     "history": [
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T09:48:00.293868"
-      },
       {
         "label": "neutral",
         "score": 0.0,
@@ -233,11 +228,16 @@
         "label": "neutral",
         "score": 0.0,
         "timestamp": "2026-03-10T14:51:30.284791"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-11T17:28:29.942220"
       }
     ],
     "emotion_stats": {
       "neutral": {
-        "count": 124,
+        "count": 125,
         "avg_score": 0.0
       },
       "sad": {

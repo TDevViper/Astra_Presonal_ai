@@ -46,7 +46,7 @@ class MemoryManager:
                                 user_name: str) -> Tuple[Optional[Dict], Dict]:
         try:
             from memory.memory_extractor import extract_user_fact
-            fact = extract_user_fact(user_input, user_name)
+            fact = extract_user_fact(user_input)
             if fact:
                 memory.setdefault("user_facts", []).append(fact)
                 try:

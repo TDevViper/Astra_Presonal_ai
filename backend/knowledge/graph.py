@@ -48,7 +48,7 @@ def _load_graph() -> nx.DiGraph:
             G.add_edge(edge["src"], edge["dst"],
                        relation=edge["relation"],
                        weight=edge.get("weight", 1.0),
-                       ts=edge.get("ts", datetime.utcnow().isoformat()))
+                       ts=edge.get("ts", datetime.now(datetime.UTC).isoformat()))
         log_event(system_logger, "graph_loaded",
                   nodes=G.number_of_nodes(),
                   edges=G.number_of_edges())
@@ -72,7 +72,7 @@ def save_graph() -> bool:
                     "dst":      v,
                     "relation": d.get("relation", "related_to"),
                     "weight":   d.get("weight", 1.0),
-                    "ts":       d.get("ts", datetime.utcnow().isoformat()),
+                    "ts":       d.get("ts", datetime.now(datetime.UTC).isoformat()),
                 }
                 for u, v, d in G.edges(data=True)
             ],
@@ -100,12 +100,12 @@ def add_entity(name: str, entity_type: str = "concept",
 
     if G.has_node(node_id):
         G.nodes[node_id].update(attrs)
-        G.nodes[node_id]["updated_at"] = datetime.utcnow().isoformat()
+        G.nodes[node_id]["updated_at"] = datetime.now(datetime.UTC).isoformat()
     else:
         G.add_node(node_id,
                    label       = name,
                    entity_type = entity_type,
-                   created_at  = datetime.utcnow().isoformat(),
+                   created_at  = datetime.now(datetime.UTC).isoformat(),
                    **attrs)
 
     log_event(system_logger, "graph_add_entity",
@@ -134,13 +134,13 @@ def add_relation(subject: str, relation: str, obj: str,
         existing = G[src][dst]
         if existing.get("relation") == relation:
             G[src][dst]["weight"] = min(existing["weight"] + 0.1, 2.0)
-            G[src][dst]["ts"]     = datetime.utcnow().isoformat()
+            G[src][dst]["ts"]     = datetime.now(datetime.UTC).isoformat()
             return True
 
     G.add_edge(src, dst,
                relation = relation,
                weight   = weight,
-               ts       = datetime.utcnow().isoformat())
+               ts       = datetime.now(datetime.UTC).isoformat())
 
     log_event(system_logger, "graph_add_relation",
               src=src, relation=relation, dst=dst)

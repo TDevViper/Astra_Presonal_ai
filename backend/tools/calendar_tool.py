@@ -41,7 +41,7 @@ def morning_briefing_text():
         return ""
 
 
-def reminder_check_text():
+def reminder_check_text(user_name=None):
     if not IS_MACOS:
         return ""
     try:

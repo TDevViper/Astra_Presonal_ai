@@ -14,7 +14,7 @@ CHAT_LOG   = os.path.join(LOG_DIR, "chat.log")
 class JSONFormatter(logging.Formatter):
     def format(self, record):
         log = {
-            "ts":      datetime.utcnow().isoformat(),
+            "ts":      datetime.now(datetime.UTC).isoformat(),
             "level":   record.levelname,
             "logger":  record.name,
             "msg":     record.getMessage(),

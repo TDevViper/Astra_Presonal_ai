@@ -24,7 +24,7 @@ class ContextBuilder:
             system_prompt = build_system_prompt(
                 user_name=user_name,
                 memory=memory,
-                emotion_label=emotion_label,
+                emotion=emotion_label,
                 query_intent=query_intent,
                 semantic_ctx=semantic_ctx,
                 episodic_ctx=episodic_ctx,
