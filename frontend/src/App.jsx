@@ -3,7 +3,6 @@ import LiveVision from "./components/LiveVision";
 import KnowledgeGraph from "./components/KnowledgeGraph";
 import ProactiveAlerts from "./components/ProactiveAlerts";
 import AgentTrace from "./components/AgentTrace";
-import AgentTrace from "./components/AgentTrace";
 import API from "./config";
 
 const agentLabel = (a) => {
@@ -738,7 +737,7 @@ export default function App() {
       {/* Proactive alerts */}
       <AgentTrace messages={messages} />
       <ProactiveAlerts />
-      <AgentTrace messages={messages} />
+      
     </div>
   );
 }
