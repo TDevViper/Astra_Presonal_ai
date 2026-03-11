@@ -4,6 +4,7 @@ import KnowledgeGraph from "./components/KnowledgeGraph";
 import ProactiveAlerts from "./components/ProactiveAlerts";
 import AgentTrace from "./components/AgentTrace";
 import API from "./config";
+import { useAstraWS } from "./hooks/useAstraWS";
 
 const agentLabel = (a) => {
   if (a?.includes("mistral")) return "MISTRAL";
