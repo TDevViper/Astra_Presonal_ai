@@ -14,9 +14,9 @@ def stats():
 
 
 @knowledge_bp.route("/knowledge/entity/<name>", methods=["GET"])
-def entity(name):
+def entity(n):
     depth = int(request.args.get("depth", 1))
-    return jsonify(get_relations(name, depth=depth))
+    return jsonify(get_relations(n, depth=depth))
 
 
 @knowledge_bp.route("/knowledge/query", methods=["GET"])

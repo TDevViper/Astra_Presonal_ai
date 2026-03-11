@@ -70,11 +70,18 @@ sock.init_app(app)
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    default_limits=["200 per minute"],
+    default_limits=["500 per minute"],
     storage_uri="memory://"
 )
 
-CORS(app, origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000"])
+# Exclude WebSocket endpoint from rate limiting
+@app.before_request
+def exempt_ws():
+    from flask import request as _req
+    if _req.path == "/ws":
+        limiter.exempt(exempt_ws)
+
+CORS(app, origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:3001"])
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(memory_bp)

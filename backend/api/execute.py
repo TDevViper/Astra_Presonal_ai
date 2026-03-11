@@ -10,6 +10,7 @@ execute_bp = Blueprint("execute", __name__)
 def get_capabilities():
     """Get current system capabilities."""
     from core.brain_singleton import get_brain
+    brain = get_brain()
     return jsonify(brain.capabilities.get_status())
 
 
@@ -18,6 +19,7 @@ def toggle_capability(capability: str):
     """Enable or disable a capability."""
     try:
         from core.brain_singleton import get_brain
+        brain = get_brain()
         data = request.get_json()
         enabled = data.get("enabled", False)
 

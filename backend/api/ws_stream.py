@@ -126,13 +126,16 @@ def _handle_chat(ws, user_input: str, image_b64=None):
             return
 
         # Text — full streaming pipeline
+        done_sent = False
         for item in brain.process_stream(user_input):
             if "token" in item:
                 ws.send(json.dumps({"type": "token", "data": item["token"]}))
-
             elif "meta" in item:
                 ws.send(json.dumps({"type": "meta", "data": item["meta"]}))
                 ws.send(json.dumps({"type": "done"}))
+                done_sent = True
+        if not done_sent:
+            ws.send(json.dumps({"type": "done"}))
 
     except Exception as e:
         logger.error("WS _handle_chat error: %s", e, exc_info=True)

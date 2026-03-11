@@ -25,6 +25,7 @@ def get_model():
         # Try to get current from brain
         try:
             from core.brain_singleton import get_brain
+            brain = get_brain()
             current = brain.model_manager.current_model
         except Exception:
             pass  # TODO: handle
@@ -41,6 +42,7 @@ def set_model():
         return jsonify({"error": "no model specified"}), 400
     try:
         from core.brain_singleton import get_brain
+        brain = get_brain()
         brain.model_manager.current_model = model
         return jsonify({"status": "ok", "model": model})
     except Exception as e:

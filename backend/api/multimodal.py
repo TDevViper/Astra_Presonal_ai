@@ -44,9 +44,6 @@ def talk():
         from core.brain_singleton import get_brain
         result = get_brain().process(prompt, vision_mode=True)
         reply  = result.get("reply", "").strip()
-        words = reply.split()
-        if len(words) > 40:
-            reply = " ".join(words[:40]) + "."
         # Cap at 40 words for conversational feel
         words = reply.split()
         if len(words) > 40:

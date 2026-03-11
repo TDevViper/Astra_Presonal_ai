@@ -41,6 +41,7 @@ def chat_stream():
         client = _ollama.Client(host=base_url)
 
         # Get model + context from brain
+        brain          = get_brain()
         query_intent   = brain.model_manager.classify_query_intent(user_input)
         selected_model = brain.model_manager.select_model(user_input, query_intent)
 

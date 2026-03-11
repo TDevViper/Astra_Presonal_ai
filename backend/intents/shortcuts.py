@@ -15,6 +15,13 @@ HOW_HINDI        = "Main bilkul theek hoon! Aap sunao?"
 CAN_DO_HINDI     = "Main baat kar sakta hoon, web search kar sakta hoon, cheezein yaad rakh sakta hoon. Kya chahiye?"
 
 INTENTS = {
+    "what are you":        "I'm ASTRA, your personal AI assistant.",
+    "who are you":         "I'm ASTRA, your personal AI assistant.",
+    "what is astra":       "I'm ASTRA, your personal AI assistant.",
+    "who made you":        "{user_name} built me. Pretty awesome, right?",
+    "who built you":       "{user_name} built me. Pretty awesome, right?",
+    "who created you":     "{user_name} built me. Pretty awesome, right?",
+
     # ── CREATOR (English) ──────────────────────────────────
     "did arnav":           CREATOR_RESPONSE,
     "arnav build":         CREATOR_RESPONSE,
@@ -67,7 +74,6 @@ INTENTS = {
     "hello":               HOW_ARE_YOU,
     "hey":                 "Hey! What can I do for you?",
     "sup":                 "All good. What do you need?",
-    "yo":                 "Here. What do you need?",
 
     # ── CAPABILITIES (English) ─────────────────────────────
     "what you can do":     WHAT_CAN_YOU_DO,
@@ -121,8 +127,18 @@ def detect_intent(user_message: str, user_name: str = None) -> str:
         return f"Current time: {now.strftime('%I:%M %p')}"
 
     # ── NORMAL SHORTCUT MATCHING ───────────────────
-    sorted_intents = sorted(INTENTS.items(), key=lambda x: len(x[0]), reverse=True)
+    EXACT_ONLY = {"what are you", "who are you", "yo", "hi", "hey", "sup", "bye", "cya"}
+    if text in EXACT_ONLY:
+        response = INTENTS.get(text)
+        if response:
+            if user_name and "{user_name}" in response:
+                response = response.replace("{user_name}", user_name)
+            return response
 
+    sorted_intents = sorted(
+        [(k, v) for k, v in INTENTS.items() if len(k) > 3 and k not in EXACT_ONLY],
+        key=lambda x: len(x[0]), reverse=True
+    )
     for trigger, response in sorted_intents:
         if trigger in text:
             if user_name and "{user_name}" in response:
