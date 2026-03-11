@@ -20,6 +20,7 @@ class ToolExecutor:
             "task_manager":   self._task_manager,
             "git":            self._git,
             "python_sandbox": self._python_sandbox,
+            "system_controller": self._system_controller,
         }.get(tool)
         if handler:
             return handler(user_input, memory, user_name)
@@ -186,3 +187,18 @@ class ToolExecutor:
                 "intent": "python_execution_proposal", "agent": "python_sandbox",
                 "tool_used": True, "confidence": 1.0,
                 "approval_required": True, "proposal": propose_python_execution(code)}
+
+    # ── System controller ─────────────────────────────────────────────────
+
+    def _system_controller(self, user_input: str, memory: Dict, user_name: str) -> Dict:
+        from tools.system_controller import handle_system_command
+        try:
+            result = handle_system_command(user_input)
+            if result:
+                return self._build_reply(result, "neutral", "system_control",
+                                         "system_controller", tool_used=True, confidence=0.95)
+        except Exception as e:
+            logger.warning("system_controller failed: %s", e)
+        return self._build_reply("I couldn't execute that system command.",
+                                 "neutral", "system_control", "system_controller",
+                                 tool_used=True, confidence=0.3)

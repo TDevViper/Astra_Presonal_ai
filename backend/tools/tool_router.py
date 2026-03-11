@@ -5,7 +5,7 @@
 from .file_reader import read_file
 from .api_caller  import call_api
 
-TOOLS             = ["file_reader", "system_monitor", "task_manager", "git", "python_sandbox", "screen_watcher", "smart_home", "device_discovery"]
+TOOLS             = ["file_reader", "system_monitor", "task_manager", "git", "python_sandbox", "screen_watcher", "smart_home", "device_discovery", "system_controller"]
 APPROVAL_REQUIRED = ["git", "python_sandbox"]
 
 FILE_TRIGGERS = [
@@ -83,6 +83,9 @@ def detect_tool(user_input: str) -> str | None:
         return "system_monitor"
     if any(t in text for t in FILE_TRIGGERS):
         return "file_reader"
+    from tools.system_controller import is_system_command
+    if is_system_command(text):
+        return "system_controller"
 
     return None
 
