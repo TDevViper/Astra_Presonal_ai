@@ -63,3 +63,10 @@ logs/
 # -------------------------
 .vscode/
 .idea/
+# Large model files — never commit these
+*.pth
+*.gguf
+*.bin
+*.safetensors
+*.onnx
+*.pt
