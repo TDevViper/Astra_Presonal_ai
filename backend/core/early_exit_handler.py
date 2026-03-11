@@ -12,7 +12,7 @@ class EarlyExitHandler:
             mode = detect_mode_switch(user_input)
             if mode:
                 set_mode(mode)
-                return get_mode_banner(mode)
+                return get_mode_banner()
         except Exception as e:
             logger.warning("check_mode_switch failed: %s", e)
         return None
@@ -30,7 +30,8 @@ class EarlyExitHandler:
     def check_briefing(self, memory: dict) -> Optional[str]:
         try:
             from core.proactive import get_session_summary
-            return get_session_summary(memory)
+            user_name = memory.get("preferences", {}).get("name", "Arnav") if isinstance(memory, dict) else "Arnav"
+            return get_session_summary(user_name)
         except Exception as e:
             logger.debug("check_briefing failed: %s", e)
         return None
@@ -60,3 +61,4 @@ class EarlyExitHandler:
         except Exception as e:
             logger.debug("check_self_query failed: %s", e)
         return None
+    

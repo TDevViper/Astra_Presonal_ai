@@ -356,4 +356,3 @@ class Brain:
         return self.model_manager.get_model_info()
 
 
-brain = Brain()

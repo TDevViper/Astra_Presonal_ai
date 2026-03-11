@@ -49,7 +49,7 @@ def realtime_talk():
         # If image is provided and question is visual — always use vision
         image_b64 = image if (image and _wants_vision(user_text)) else None
 
-        result = _rt_brain.process(user_text, image=image_b64) if image_b64 else _rt_brain.process(user_text)
+        result = _rt_brain.process(user_text, vision_mode=bool(image_b64))
         reply  = result.get("reply", "Say that again?")
 
         logger.info(f"🤖 [{result.get('agent')}] {reply[:80]}")

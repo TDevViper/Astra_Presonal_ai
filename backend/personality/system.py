@@ -117,6 +117,7 @@ def build_system_prompt(
     semantic_ctx:          str = "",
     lang_instruction:      str = "",
     conversation_history:  List[Dict] = None,
+    addon:                 str = "",
 ) -> str:
     facts     = memory.get("user_facts", [])
     prefs     = memory.get("preferences", {})
@@ -169,6 +170,11 @@ USER: {user_name}"""
 
     if semantic_ctx:
         prompt += f"\n\nSEMANTIC CONTEXT:\n{semantic_ctx}"
+
+    if addon:
+        prompt += f"
+
+{addon}"
 
     prompt += f"""
 

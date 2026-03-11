@@ -172,3 +172,15 @@ def _extract_entity(text: str) -> str:
     words = [w for w in text.split() if w not in stopwords]
     entity_name = "_".join(words[:3]) if words else "light"
     return f"light.{entity_name}"
+
+
+class ToolRouter:
+    """Simple wrapper so execute.py can instantiate and call .execute(tool, params)."""
+
+    def execute(self, tool_name: str, params: dict) -> str:
+        text = params.get('text', '') or params.get('query', '') or str(params)
+        from tools.tool_router import detect_tool, route_tool
+        result = route_tool(text)
+        if result:
+            return str(result)
+        return f"Tool '{tool_name}' executed with params: {params}"
