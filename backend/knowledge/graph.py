@@ -8,7 +8,7 @@ import os
 import json
 import logging
 import networkx as nx
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 
 from utils.logger import system_logger, log_event
@@ -20,6 +20,11 @@ GRAPH_FILE   = os.path.join(_BACKEND_DIR, "memory", "data", "knowledge_graph.jso
 
 # Singleton graph
 _graph: Optional[nx.DiGraph] = None
+
+
+def _utcnow() -> str:
+    """Return current UTC time as ISO string. Works on Python 3.8+."""
+    return datetime.now(timezone.utc).isoformat()
 
 
 # ══════════════════════════════════════════
@@ -48,7 +53,7 @@ def _load_graph() -> nx.DiGraph:
             G.add_edge(edge["src"], edge["dst"],
                        relation=edge["relation"],
                        weight=edge.get("weight", 1.0),
-                       ts=edge.get("ts", datetime.now(datetime.UTC).isoformat()))
+                       ts=edge.get("ts", _utcnow()))
         log_event(system_logger, "graph_loaded",
                   nodes=G.number_of_nodes(),
                   edges=G.number_of_edges())
@@ -72,7 +77,7 @@ def save_graph() -> bool:
                     "dst":      v,
                     "relation": d.get("relation", "related_to"),
                     "weight":   d.get("weight", 1.0),
-                    "ts":       d.get("ts", datetime.now(datetime.UTC).isoformat()),
+                    "ts":       d.get("ts", _utcnow()),
                 }
                 for u, v, d in G.edges(data=True)
             ],
@@ -100,12 +105,12 @@ def add_entity(name: str, entity_type: str = "concept",
 
     if G.has_node(node_id):
         G.nodes[node_id].update(attrs)
-        G.nodes[node_id]["updated_at"] = datetime.now(datetime.UTC).isoformat()
+        G.nodes[node_id]["updated_at"] = _utcnow()
     else:
         G.add_node(node_id,
                    label       = name,
                    entity_type = entity_type,
-                   created_at  = datetime.now(datetime.UTC).isoformat(),
+                   created_at  = _utcnow(),
                    **attrs)
 
     log_event(system_logger, "graph_add_entity",
@@ -134,13 +139,13 @@ def add_relation(subject: str, relation: str, obj: str,
         existing = G[src][dst]
         if existing.get("relation") == relation:
             G[src][dst]["weight"] = min(existing["weight"] + 0.1, 2.0)
-            G[src][dst]["ts"]     = datetime.now(datetime.UTC).isoformat()
+            G[src][dst]["ts"]     = _utcnow()
             return True
 
     G.add_edge(src, dst,
                relation = relation,
                weight   = weight,
-               ts       = datetime.now(datetime.UTC).isoformat())
+               ts       = _utcnow())
 
     log_event(system_logger, "graph_add_relation",
               src=src, relation=relation, dst=dst)
@@ -208,8 +213,9 @@ def get_relations(entity: str, depth: int = 1) -> List[Dict]:
     return results
 
 
-def query_graph(subject: str = None, relation: str = None,
-                obj: str = None) -> List[Dict]:
+def query_graph(subject: Optional[str] = None,
+                relation: Optional[str] = None,
+                obj: Optional[str] = None) -> List[Dict]:
     """
     Flexible graph query — any combination of subject/relation/object.
     Pass None to match anything.
@@ -246,7 +252,7 @@ def build_graph_context(user_input: str,
         return ""
 
     words   = [w.lower().strip(".,?!") for w in user_input.split() if len(w) > 3]
-    hits    = []
+    hits: List[Dict] = []
 
     for word in words:
         node_id = word.replace(" ", "_")
@@ -283,12 +289,16 @@ def get_stats() -> Dict:
         r = data.get("relation", "related_to")
         relation_counts[r] = relation_counts.get(r, 0) + 1
 
+    degrees = {n: val for n, val in G.degree()}
+    top_nodes = sorted(
+        [{"node": n, "degree": degrees[n]} for n in G.nodes],
+        key=lambda x: x["degree"],
+        reverse=True
+    )[:5]
+
     return {
         "nodes":      G.number_of_nodes(),
         "edges":      G.number_of_edges(),
         "relations":  relation_counts,
-        "top_nodes":  sorted(
-            [{"node": n, "degree": G.degree(n)} for n in G.nodes],
-            key=lambda x: x["degree"], reverse=True
-        )[:5],
-    }
+        "top_nodes":  top_nodes,
+}
