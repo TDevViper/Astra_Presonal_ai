@@ -9,15 +9,15 @@ model_bp = Blueprint("model", __name__)
 @model_bp.route("/model/info", methods=["GET"])
 def model_info():
     """Get current model manager status."""
-    from core.brain import brain
-    return jsonify(brain.get_model_info())
+    from core.brain_singleton import get_brain
+    return jsonify(get_brain().get_model_info())
 
 
 @model_bp.route("/model/switch", methods=["POST"])
 def force_switch_model():
     """Force switch to a specific model."""
     try:
-        from core.brain import brain
+        from core.brain_singleton import get_brain
         data = request.get_json()
         model = data.get("model")
 

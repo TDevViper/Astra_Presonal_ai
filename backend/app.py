@@ -118,7 +118,12 @@ set_broadcast(_ws_broadcast)
 
 
 from core.gpu_health import start as _start_gpu_health
+from core.brain_singleton import get_brain, teardown_brain
 _start_gpu_health()
+
+@app.teardown_appcontext
+def _teardown_brain(exc):
+    teardown_brain(exc)
 
 if __name__ == "__main__":
     print("\n" + "=" * 60)

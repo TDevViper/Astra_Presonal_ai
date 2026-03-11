@@ -9,7 +9,7 @@ execute_bp = Blueprint("execute", __name__)
 @execute_bp.route("/capabilities", methods=["GET"])
 def get_capabilities():
     """Get current system capabilities."""
-    from core.brain import brain
+    from core.brain_singleton import get_brain
     return jsonify(brain.capabilities.get_status())
 
 
@@ -17,7 +17,7 @@ def get_capabilities():
 def toggle_capability(capability: str):
     """Enable or disable a capability."""
     try:
-        from core.brain import brain
+        from core.brain_singleton import get_brain
         data = request.get_json()
         enabled = data.get("enabled", False)
 
@@ -45,7 +45,7 @@ def toggle_capability(capability: str):
 def execute_tool():
     """Execute a tool with approval check."""
     try:
-        from core.brain import brain
+        from core.brain_singleton import get_brain
         data = request.get_json()
 
         tool_name = data.get("tool")

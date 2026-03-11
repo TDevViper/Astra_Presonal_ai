@@ -41,8 +41,8 @@ def talk():
             return jsonify({"error": "No input provided"}), 400
 
         # ── Step 3: Get reply from brain ──────────────────────
-        from core.brain import brain
-        result = brain.process(prompt, vision_mode=True)
+        from core.brain_singleton import get_brain
+        result = get_brain().process(prompt, vision_mode=True)
         reply  = result.get("reply", "").strip()
         words = reply.split()
         if len(words) > 40:

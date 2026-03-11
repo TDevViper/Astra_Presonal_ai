@@ -16,7 +16,7 @@ stream_bp = Blueprint("stream_api", __name__)
 def chat_stream():
     """Streaming chat endpoint — word by word response."""
     try:
-        from core.brain import brain
+        from core.brain_singleton import get_brain
         from memory.memory_engine import load_memory
         from core.model_manager import _check_server
 
@@ -65,7 +65,7 @@ def chat_stream():
         )
 
         messages = [{"role": "system", "content": context}]
-        for h in brain.conversation_history[-6:]:
+        for h in get_brain().conversation_history[-6:]:
             messages.append(h)
         messages.append({"role": "user", "content": user_input})
 
@@ -101,10 +101,10 @@ def chat_stream():
                 yield f"data: {done}\n\n"
 
                 # Store in history
-                brain.conversation_history.append({"role": "user",      "content": user_input})
-                brain.conversation_history.append({"role": "assistant",  "content": full_reply})
-                if len(brain.conversation_history) > 10:
-                    brain.conversation_history = brain.conversation_history[-10:]
+                get_brain().conversation_history.append({"role": "user",      "content": user_input})
+                get_brain().conversation_history.append({"role": "assistant",  "content": full_reply})
+                if len(get_brain().conversation_history) > 10:
+                    get_brain().conversation_history = get_brain().conversation_history[-10:]
 
                 # Store episode
                 from memory.episodic import store_episode

@@ -24,7 +24,7 @@ def get_model():
         current = names[0] if names else "phi3:mini"
         # Try to get current from brain
         try:
-            from core.brain import brain
+            from core.brain_singleton import get_brain
             current = brain.model_manager.current_model
         except Exception:
             pass  # TODO: handle
@@ -40,7 +40,7 @@ def set_model():
     if not model:
         return jsonify({"error": "no model specified"}), 400
     try:
-        from core.brain import brain
+        from core.brain_singleton import get_brain
         brain.model_manager.current_model = model
         return jsonify({"status": "ok", "model": model})
     except Exception as e:

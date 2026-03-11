@@ -42,7 +42,7 @@ def chat_stream():
 
             meta_payload = None
 
-            for chunk in brain.process_stream(user_input):
+            for chunk in get_brain().process_stream(user_input):
                 if "meta" in chunk:
                     meta_payload = chunk["meta"]
                     continue
