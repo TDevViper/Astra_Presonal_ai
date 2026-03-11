@@ -1,35 +1,31 @@
 import logging
 from flask import Blueprint, request, jsonify
 
-logger = logging.getLogger(__name__)
+logger   = logging.getLogger(__name__)
+chat_bp  = Blueprint("chat_api", __name__)
 
 MAX_INPUT_CHARS = 4000
-
-chat_bp = Blueprint("chat", __name__)
 
 
 @chat_bp.route("/chat", methods=["POST"])
 def chat():
     try:
-        from core.brain_singleton import get_brain
-        data = request.get_json()
+        data       = request.get_json()
+        user_input = data.get("message", "").strip()
 
-        if not data:
-            return jsonify({"error": "No JSON data provided"}), 400
+        if not user_input or len(user_input) > MAX_INPUT_CHARS:
+            return jsonify({"error": f"Message must be 1-{MAX_INPUT_CHARS} characters"}), 400
 
-        user_input = data.get("message", "")
-    if not user_input or len(user_input) > MAX_INPUT_CHARS:
-        return jsonify({"error": f"Message must be 1-{MAX_INPUT_CHARS} characters"}), 400
-
-        if not user_input:
-            return jsonify({"error": "No message provided"}), 400
-
-        logger.info(f"💬 User: {user_input[:50]}...")
+        logger.info("💬 User: %s", user_input[:50])
         result = get_brain().process(user_input)
-        logger.info(f"🤖 ASTRA: {result['reply'][:50]}...")
-
+        logger.info("🤖 ASTRA: %s", result["reply"][:50])
         return jsonify(result)
 
     except Exception as e:
-        logger.error(f"❌ Error in chat endpoint: {e}", exc_info=True)
-        return jsonify({"error": "Internal server error", "message": str(e)}), 500
+        logger.error("chat endpoint error: %s", e)
+        return jsonify({"error": str(e)}), 500
+
+
+def get_brain():
+    from core.brain_singleton import get_brain as _get
+    return _get()
