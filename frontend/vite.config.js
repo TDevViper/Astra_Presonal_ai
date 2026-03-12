@@ -16,6 +16,8 @@ export default defineConfig({
       '/vision':    { target: 'http://127.0.0.1:5050', changeOrigin: true },
       '/knowledge': { target: 'http://127.0.0.1:5050', changeOrigin: true },
       '/realtime':  { target: 'http://127.0.0.1:5050', changeOrigin: true },
+      '/system':    { target: 'http://127.0.0.1:5050', changeOrigin: true },
+      '/capabilities': { target: 'http://127.0.0.1:5050', changeOrigin: true },
       '/face':      { target: 'http://127.0.0.1:5050', changeOrigin: true },
       '/ws': {
         target: 'ws://127.0.0.1:5050',

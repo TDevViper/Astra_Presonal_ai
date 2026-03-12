@@ -37,7 +37,7 @@ const modeAccent = (id) => ({
 
 // ── Fonts injection ───────────────────────────────────────────────────────────
 const FONTS = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap');
 `;
 
 // ── Global styles ─────────────────────────────────────────────────────────────
@@ -86,7 +86,7 @@ function ThinkingDots() {
       {[0, 1, 2].map(i => (
         <div key={i} style={{
           width: 7, height: 7, borderRadius: "50%",
-          background: "rgba(148,163,184,0.5)",
+          background: "#4a6fa5",
           animation: `thinking 1.2s ease-in-out ${i * 0.16}s infinite`,
         }} />
       ))}
@@ -124,7 +124,7 @@ function AstraOrb({ active, accent = "#38bdf8", size = 36 }) {
         border: `1.5px solid ${accent}44`,
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: size * 0.36, fontWeight: 500,
-        color: accent, fontFamily: "'DM Mono', monospace",
+        color: accent, fontFamily: "'JetBrains Mono', monospace",
         backdropFilter: "blur(8px)",
         boxShadow: active ? `0 0 20px ${accent}30, inset 0 0 12px ${accent}10` : "none",
         transition: "box-shadow 0.4s ease",
@@ -142,14 +142,14 @@ function StatBar({ label, value = 0 }) {
     <div style={{ marginBottom: 10 }}>
       <div style={{
         display: "flex", justifyContent: "space-between",
-        fontSize: 10, fontFamily: "'DM Mono', monospace",
-        color: "rgba(148,163,184,0.55)", marginBottom: 4, letterSpacing: "0.05em",
+        fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
+        color: "#4a6fa5", marginBottom: 4, letterSpacing: "0.05em",
       }}>
         <span>{label}</span>
         <span style={{ color }}>{value.toFixed(0)}%</span>
       </div>
       <div style={{
-        height: 3, background: "rgba(148,163,184,0.08)",
+        height: 3, background: "#0d1f33",
         borderRadius: 2, overflow: "hidden",
       }}>
         <div style={{
@@ -201,7 +201,7 @@ function SystemSidebar({ health, memory, models, currentModel, onSwitchModel }) 
     <div style={{
       width: 200, flexShrink: 0,
       borderLeft: "1px solid rgba(148,163,184,0.07)",
-      background: "rgba(15,23,42,0.6)",
+      background: "#030912",
       backdropFilter: "blur(24px)",
       padding: "20px 14px",
       display: "flex", flexDirection: "column", gap: 0,
@@ -215,13 +215,13 @@ function SystemSidebar({ health, memory, models, currentModel, onSwitchModel }) 
       }}>
         <div style={{
           fontSize: 22, fontWeight: 300, letterSpacing: "0.12em",
-          fontFamily: "'DM Mono', monospace", color: "#e2e8f0",
+          fontFamily: "'JetBrains Mono', monospace", color: "#e2e8f0",
         }}>
           {time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}
         </div>
         <div style={{
           fontSize: 9, letterSpacing: "0.15em", marginTop: 4,
-          color: "rgba(148,163,184,0.35)", fontFamily: "'DM Mono', monospace",
+          color: "#2a4a6a", fontFamily: "'JetBrains Mono', monospace",
         }}>
           {time.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" }).toUpperCase()}
         </div>
@@ -230,8 +230,8 @@ function SystemSidebar({ health, memory, models, currentModel, onSwitchModel }) 
       {/* System stats */}
       <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid rgba(148,163,184,0.06)" }}>
         <div style={{
-          fontSize: 8, letterSpacing: "0.2em", color: "rgba(148,163,184,0.3)",
-          fontFamily: "'DM Mono', monospace", marginBottom: 12,
+          fontSize: 8, letterSpacing: "0.2em", color: "#1e3a5f",
+          fontFamily: "'JetBrains Mono', monospace", marginBottom: 12,
         }}>SYSTEM</div>
         <StatBar label="CPU"  value={cpu} />
         <StatBar label="RAM"  value={ram} />
@@ -241,15 +241,15 @@ function SystemSidebar({ health, memory, models, currentModel, onSwitchModel }) 
       {/* Services */}
       <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid rgba(148,163,184,0.06)" }}>
         <div style={{
-          fontSize: 8, letterSpacing: "0.2em", color: "rgba(148,163,184,0.3)",
-          fontFamily: "'DM Mono', monospace", marginBottom: 12,
+          fontSize: 8, letterSpacing: "0.2em", color: "#1e3a5f",
+          fontFamily: "'JetBrains Mono', monospace", marginBottom: 12,
         }}>SERVICES</div>
         {services.map(({ name, ok }) => (
           <div key={name} style={{
             display: "flex", justifyContent: "space-between", alignItems: "center",
             marginBottom: 8,
           }}>
-            <span style={{ fontSize: 10, color: "rgba(148,163,184,0.45)", fontFamily: "'DM Mono', monospace", letterSpacing: "0.05em" }}>
+            <span style={{ fontSize: 10, color: "#2a4a6a", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.05em" }}>
               {name}
             </span>
             <div style={{
@@ -265,18 +265,18 @@ function SystemSidebar({ health, memory, models, currentModel, onSwitchModel }) 
       {/* Models */}
       <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid rgba(148,163,184,0.06)" }}>
         <div style={{
-          fontSize: 8, letterSpacing: "0.2em", color: "rgba(148,163,184,0.3)",
-          fontFamily: "'DM Mono', monospace", marginBottom: 12,
+          fontSize: 8, letterSpacing: "0.2em", color: "#1e3a5f",
+          fontFamily: "'JetBrains Mono', monospace", marginBottom: 12,
         }}>MODELS</div>
         {(models || ["phi3:mini"]).map(m => {
           const active = m === currentModel;
           return (
             <div key={m} onClick={() => onSwitchModel?.(m)} style={{
               padding: "6px 9px", marginBottom: 4, borderRadius: 6,
-              fontSize: 9, fontFamily: "'DM Mono', monospace", letterSpacing: "0.05em",
+              fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.05em",
               cursor: "pointer",
               background: active ? "rgba(56,189,248,0.1)" : "transparent",
-              color: active ? "#38bdf8" : "rgba(148,163,184,0.35)",
+              color: active ? "#38bdf8" : "#2a4a6a",
               border: `1px solid ${active ? "rgba(56,189,248,0.2)" : "transparent"}`,
               transition: "all 0.18s ease",
             }}>
@@ -289,8 +289,8 @@ function SystemSidebar({ health, memory, models, currentModel, onSwitchModel }) 
       {/* Memory core */}
       <div>
         <div style={{
-          fontSize: 8, letterSpacing: "0.2em", color: "rgba(148,163,184,0.3)",
-          fontFamily: "'DM Mono', monospace", marginBottom: 12,
+          fontSize: 8, letterSpacing: "0.2em", color: "#1e3a5f",
+          fontFamily: "'JetBrains Mono', monospace", marginBottom: 12,
         }}>MEMORY CORE</div>
         {[
           { label: "FACTS",  val: memory?.user_facts?.length ?? 0,                              color: "#38bdf8" },
@@ -301,11 +301,11 @@ function SystemSidebar({ health, memory, models, currentModel, onSwitchModel }) 
             display: "flex", justifyContent: "space-between", alignItems: "center",
             marginBottom: 7,
           }}>
-            <span style={{ fontSize: 10, color: "rgba(148,163,184,0.4)", fontFamily: "'DM Mono', monospace" }}>
+            <span style={{ fontSize: 10, color: "#2a4a6a", fontFamily: "'JetBrains Mono', monospace" }}>
               {label}
             </span>
             <span style={{
-              fontSize: 11, fontFamily: "'DM Mono', monospace",
+              fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
               color, fontWeight: 500,
             }}>{val}</span>
           </div>
@@ -334,11 +334,11 @@ function Message({ msg, isStreaming, accent }) {
         : (
           <div style={{
             width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
-            background: "rgba(148,163,184,0.06)",
+            background: "#0a1628",
             border: "1.5px solid rgba(148,163,184,0.12)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 12, color: "rgba(148,163,184,0.5)",
-            fontFamily: "'DM Mono', monospace",
+            fontSize: 12, color: "#4a6fa5",
+            fontFamily: "'JetBrains Mono', monospace",
           }}>U</div>
         )
       }
@@ -348,8 +348,8 @@ function Message({ msg, isStreaming, accent }) {
         <div style={{
           padding: "13px 17px",
           background: isUser
-            ? "rgba(56,189,248,0.06)"
-            : "rgba(255,255,255,0.04)",
+            ? "#0d1e35"
+            : "#080f1c",
           border: isUser
             ? "1px solid rgba(56,189,248,0.14)"
             : "1px solid rgba(255,255,255,0.07)",
@@ -360,7 +360,7 @@ function Message({ msg, isStreaming, accent }) {
             : "0 4px 24px rgba(0,0,0,0.25)",
           color: "rgba(226,232,240,0.92)",
           fontSize: 14, lineHeight: 1.7,
-          fontFamily: "'DM Sans', sans-serif",
+          fontFamily: "'Space Grotesk', sans-serif",
           whiteSpace: "pre-wrap", wordBreak: "break-word",
           position: "relative", overflow: "hidden",
         }}>
@@ -384,23 +384,23 @@ function Message({ msg, isStreaming, accent }) {
           }}>
             {msg.agent && (
               <span style={{
-                fontSize: 9, fontFamily: "'DM Mono', monospace",
-                color: "rgba(148,163,184,0.3)", letterSpacing: "0.08em",
+                fontSize: 9, fontFamily: "'JetBrains Mono', monospace",
+                color: "#1e3a5f", letterSpacing: "0.08em",
               }}>
                 {agentLabel(msg.agent)}
               </span>
             )}
             {msg.confidence && (
               <span style={{
-                fontSize: 9, fontFamily: "'DM Mono', monospace",
-                color: "rgba(148,163,184,0.25)",
+                fontSize: 9, fontFamily: "'JetBrains Mono', monospace",
+                color: "#1e3a5f",
               }}>
                 {Math.round(msg.confidence * 100)}%
               </span>
             )}
             {msg.intent && (
               <span style={{
-                fontSize: 9, fontFamily: "'DM Mono', monospace",
+                fontSize: 9, fontFamily: "'JetBrains Mono', monospace",
                 color: iColor, opacity: 0.7, letterSpacing: "0.05em",
               }}>
                 {msg.intent.toUpperCase()}
@@ -419,11 +419,11 @@ function ModePill({ mode, active, onClick }) {
   return (
     <button onClick={onClick} title={mode.description} style={{
       padding: "5px 12px", borderRadius: 20,
-      fontSize: 9, fontFamily: "'DM Mono', monospace",
+      fontSize: 9, fontFamily: "'JetBrains Mono', monospace",
       letterSpacing: "0.1em",
       background: active ? `${accent}18` : "transparent",
-      border: `1px solid ${active ? accent + "44" : "rgba(148,163,184,0.1)"}`,
-      color: active ? accent : "rgba(148,163,184,0.35)",
+      border: `1px solid ${active ? accent + "44" : "#0d1f33"}`,
+      color: active ? accent : "#2a4a6a",
       transition: "all 0.18s ease",
       boxShadow: active ? `0 0 12px ${accent}22` : "none",
     }}>
@@ -631,9 +631,9 @@ export default function App() {
   return (
     <div style={{
       height: "100vh", display: "flex", flexDirection: "column",
-      background: "linear-gradient(135deg, #060d1a 0%, #0a1628 40%, #0d1f3c 100%)",
+      background: "#04090f",
       color: "rgba(226,232,240,0.9)",
-      fontFamily: "'DM Sans', sans-serif",
+      fontFamily: "'Space Grotesk', sans-serif",
       overflow: "hidden",
       position: "relative",
     }}>
@@ -658,7 +658,7 @@ export default function App() {
       <header style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "0 24px", height: 58,
-        background: "rgba(6,13,26,0.7)",
+        background: "rgba(3,9,18,0.95)",
         backdropFilter: "blur(24px)",
         borderBottom: "1px solid rgba(148,163,184,0.07)",
         position: "relative", zIndex: 10, flexShrink: 0,
@@ -673,8 +673,8 @@ export default function App() {
             }}>ASTRA</div>
             <div style={{
               fontSize: 8, letterSpacing: "0.18em",
-              color: "rgba(148,163,184,0.35)",
-              fontFamily: "'DM Mono', monospace",
+              color: "#2a4a6a",
+              fontFamily: "'JetBrains Mono', monospace",
             }}>
               PERSONAL AI · {currentModel.toUpperCase()}
             </div>
@@ -688,9 +688,9 @@ export default function App() {
               padding: "6px 18px", borderRadius: 8,
               fontSize: 11, fontWeight: tab === t.id ? 500 : 400,
               letterSpacing: "0.06em",
-              background: tab === t.id ? "rgba(148,163,184,0.08)" : "transparent",
-              border: `1px solid ${tab === t.id ? "rgba(148,163,184,0.14)" : "transparent"}`,
-              color: tab === t.id ? "rgba(226,232,240,0.9)" : "rgba(148,163,184,0.35)",
+              background: tab === t.id ? "#0d1f33" : "transparent",
+              border: `1px solid ${tab === t.id ? "#1e3a5f" : "transparent"}`,
+              color: tab === t.id ? "rgba(226,232,240,0.9)" : "#2a4a6a",
               transition: "all 0.18s ease",
             }}>
               {t.label}
@@ -713,8 +713,8 @@ export default function App() {
             boxShadow: wsConnected ? "0 0 8px #34d39988" : "none",
           }} />
           <span style={{
-            fontSize: 9, fontFamily: "'DM Mono', monospace",
-            color: "rgba(148,163,184,0.3)", letterSpacing: "0.1em",
+            fontSize: 9, fontFamily: "'JetBrains Mono', monospace",
+            color: "#1e3a5f", letterSpacing: "0.1em",
           }}>
             {wsConnected ? "LIVE" : "SSE"}
           </span>
@@ -725,30 +725,38 @@ export default function App() {
       <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative", zIndex: 1 }}>
 
         {/* Main */}
+        {tab === "chat" && (
+          <SystemSidebar
+            health={health} memory={memory}
+            models={models} currentModel={currentModel}
+            onSwitchModel={switchModel}
+          />
+        )}
+
         <main style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
           {tab === "chat" && (
             <>
               {/* Messages */}
-              <div style={{ flex: 1, overflowY: "auto", padding: "28px 32px" }}>
+              <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px", background: "#040c18" }}>
                 {messages.length === 0 && (
                   <div style={{
                     height: "100%", display: "flex", flexDirection: "column",
                     alignItems: "center", justifyContent: "center", gap: 10,
-                    color: "rgba(148,163,184,0.15)",
+                    color: "#0d1f33",
                   }}>
                     <div style={{
                       fontSize: 56, fontWeight: 200, letterSpacing: "0.3em",
-                      color: "rgba(148,163,184,0.1)",
+                      color: "#0d1f33",
                     }}>ASTRA</div>
                     <div style={{
                       fontSize: 10, letterSpacing: "0.25em",
-                      fontFamily: "'DM Mono', monospace",
-                      color: "rgba(148,163,184,0.18)",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      color: "#0f2040",
                     }}>SYSTEMS READY · AWAITING INPUT</div>
                     <div style={{
                       marginTop: 24, display: "flex", gap: 24,
-                      fontSize: 11, color: "rgba(148,163,184,0.22)",
+                      fontSize: 11, color: "#0f2040",
                     }}>
                       {["Ask me anything", "Play music", "Send a message", "Check system"].map(hint => (
                         <div key={hint} onClick={() => setInput(hint)} style={{
@@ -757,8 +765,8 @@ export default function App() {
                           cursor: "pointer",
                           transition: "all 0.18s",
                         }}
-                          onMouseEnter={e => e.target.style.borderColor = "rgba(148,163,184,0.2)"}
-                          onMouseLeave={e => e.target.style.borderColor = "rgba(148,163,184,0.08)"}
+                          onMouseEnter={e => e.target.style.borderColor = "#0f2040"}
+                          onMouseLeave={e => e.target.style.borderColor = "#0d1f33"}
                         >
                           {hint}
                         </div>
@@ -798,8 +806,8 @@ export default function App() {
               }}>
                 <div style={{
                   display: "flex", alignItems: "center", gap: 12,
-                  background: "rgba(148,163,184,0.04)",
-                  border: `1px solid ${loading ? accent + "30" : "rgba(148,163,184,0.1)"}`,
+                  background: "rgba(4,12,24,0.9)",
+                  border: `1px solid ${loading ? accent + "30" : "#0d1f33"}`,
                   borderRadius: 14,
                   padding: "10px 14px",
                   transition: "border-color 0.3s ease",
@@ -810,7 +818,7 @@ export default function App() {
                     width: 2, height: 22, borderRadius: 2,
                     background: loading
                       ? `linear-gradient(to bottom, ${accent}, ${accent}44)`
-                      : "rgba(148,163,184,0.12)",
+                      : "#1e3a5f",
                     transition: "background 0.3s ease",
                     flexShrink: 0,
                   }} />
@@ -825,18 +833,18 @@ export default function App() {
                     style={{
                       flex: 1, background: "transparent", border: "none",
                       color: "rgba(226,232,240,0.9)", fontSize: 14,
-                      resize: "none", fontFamily: "'DM Sans', sans-serif",
+                      resize: "none", fontFamily: "'Space Grotesk', sans-serif",
                       lineHeight: 1.5, minHeight: 24, maxHeight: 120, padding: 0,
                     }}
                   />
 
                   {/* Stream toggle */}
                   <button onClick={() => setUseStream(s => !s)} style={{
-                    fontSize: 9, fontFamily: "'DM Mono', monospace",
+                    fontSize: 9, fontFamily: "'JetBrains Mono', monospace",
                     letterSpacing: "0.1em", padding: "4px 8px", borderRadius: 6,
                     background: useStream ? `${accent}18` : "transparent",
-                    border: `1px solid ${useStream ? accent + "40" : "rgba(148,163,184,0.1)"}`,
-                    color: useStream ? accent : "rgba(148,163,184,0.3)",
+                    border: `1px solid ${useStream ? accent + "40" : "#0d1f33"}`,
+                    color: useStream ? accent : "#1e3a5f",
                     transition: "all 0.18s",
                   }}>
                     {useStream ? "STREAM" : "STATIC"}
@@ -845,7 +853,7 @@ export default function App() {
                   {streaming ? (
                     <button onClick={stopStream} style={{
                       padding: "7px 16px", borderRadius: 8, fontSize: 11,
-                      fontFamily: "'DM Mono', monospace", letterSpacing: "0.08em",
+                      fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em",
                       background: "rgba(248,113,113,0.12)",
                       border: "1px solid rgba(248,113,113,0.25)",
                       color: "#f87171",
@@ -853,10 +861,10 @@ export default function App() {
                   ) : (
                     <button onClick={send} disabled={!input.trim() || loading} style={{
                       padding: "7px 18px", borderRadius: 8, fontSize: 11,
-                      fontFamily: "'DM Mono', monospace", letterSpacing: "0.08em",
+                      fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em",
                       background: input.trim() ? `${accent}18` : "rgba(148,163,184,0.05)",
-                      border: `1px solid ${input.trim() ? accent + "40" : "rgba(148,163,184,0.08)"}`,
-                      color: input.trim() ? accent : "rgba(148,163,184,0.25)",
+                      border: `1px solid ${input.trim() ? accent + "40" : "#0d1f33"}`,
+                      color: input.trim() ? accent : "#1e3a5f",
                       transition: "all 0.18s ease",
                     }}>SEND</button>
                   )}
@@ -865,8 +873,8 @@ export default function App() {
                 <div style={{
                   display: "flex", justifyContent: "space-between",
                   marginTop: 7, paddingLeft: 4,
-                  fontSize: 9, fontFamily: "'DM Mono', monospace",
-                  color: "rgba(148,163,184,0.2)", letterSpacing: "0.08em",
+                  fontSize: 9, fontFamily: "'JetBrains Mono', monospace",
+                  color: "#0f2040", letterSpacing: "0.08em",
                 }}>
                   <span>↵ ENTER to send · ⇧ENTER newline</span>
                   <span>{currentMode.toUpperCase()} MODE · {currentModel.toUpperCase()}</span>
@@ -891,14 +899,7 @@ export default function App() {
         {/* Agent trace */}
         <AgentTrace messages={messages} />
 
-        {/* System sidebar */}
-        {tab === "chat" && (
-          <SystemSidebar
-            health={health} memory={memory}
-            models={models} currentModel={currentModel}
-            onSwitchModel={switchModel}
-          />
-        )}
+
       </div>
 
       <ProactiveAlerts />
