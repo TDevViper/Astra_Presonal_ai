@@ -3,14 +3,14 @@ import re
 INTENT_WORD_LIMITS = {
     "code":      450,
     "debug":     450,
-    "technical": 400,
-    "explain":   300,
+    "technical": 200,
+    "explain":   180,
     "research":  280,
     "search":    250,
     "list":      200,
-    "casual":    50,
+    "casual":    40,
     "greeting":  20,
-    "default":   150,
+    "default":   60,
 }
 
 TECHNICAL_KEYWORDS = [

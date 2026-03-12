@@ -98,6 +98,18 @@ INTENTS = {
     "talk in english":        "Of course! What would you like to know?",
 }
 
+def _get_reminders(user_name):
+    try:
+        from memory.memory_engine import load_memory
+        mem = load_memory()
+        tasks = [t for t in mem.get("tasks", []) if t.get("status") == "todo"]
+        if not tasks:
+            return "You have no pending reminders or tasks."
+        lines = ["• " + t.get("text", t.get("title", str(t))) for t in tasks[:5]]
+        return "Your reminders:\n" + "\n".join(lines)
+    except Exception as e:
+        return f"Could not load reminders: {e}"
+
 def detect_intent(user_message: str, user_name: str = None) -> str:
     """
     Check if message matches any predefined intent.
@@ -127,7 +139,18 @@ def detect_intent(user_message: str, user_name: str = None) -> str:
         return f"Current time: {now.strftime('%I:%M %p')}"
 
     # ── NORMAL SHORTCUT MATCHING ───────────────────
-    EXACT_ONLY = {"what are you", "who are you", "yo", "hi", "hey", "sup", "bye", "cya"}
+    # Block shortcuts from firing on tool commands
+    # Game/chat requests — not music
+    tl = text.lower()
+    if any(p in tl for p in ["play game", "play a game", "lets play", "play with me", "play together"]):
+        return "I can't play games yet, but I can chat, answer questions, or help with tasks!"
+
+    if any(p in tl for p in ["my reminders", "show reminders", "my tasks", "what are my tasks", "do i have reminders"]):
+        return _get_reminders(user_name)
+    TOOL_PREFIXES = ["send", "message", "whatsapp", "play", "open", "close", "add task", "remind", "git", "run", "execute", "read file", "search"]
+    if any(text.startswith(p) for p in TOOL_PREFIXES):
+        return None
+    EXACT_ONLY = {"what are you", "who are you", "yo", "hi", "hey", "sup", "bye", "cya", "hello", "hii", "hiii", "ok", "okay", "yess", "yes", "no", "nope"}
     if text in EXACT_ONLY:
         response = INTENTS.get(text)
         if response:
@@ -145,4 +168,8 @@ def detect_intent(user_message: str, user_name: str = None) -> str:
                 response = response.replace("{user_name}", user_name)
             return response
 
+    # Vague catch-all
+    vague = ["tell me things", "tell me something", "say something", "talk to me"]
+    if any(text == v for v in vague):
+        return "What do you want to know? Ask me something specific."
     return None

@@ -8,9 +8,11 @@ import ollama
 logger = logging.getLogger(__name__)
 
 _HARD_STOP = (
-    "CRITICAL: 1) Never start with Hey/Hi/Sure/Certainly/Of course. "
-    "2) Answer ONLY what was asked. 3) No suggestions unless asked. "
-    "4) Stop when done. 5) First word must be content, not filler."
+    "CRITICAL RULES — follow exactly: "
+    "1) Answer ONLY what was asked. No additions, no suggestions, no examples unless asked. "
+    "2) Never say: sure/certainly/of course/as an AI/as an artificial intelligence. "
+    "3) If you do not know something, say so in one sentence. Do not invent facts. "
+    "4) Stop the moment you have answered. No follow-up offers."
 )
 
 _TOKEN_BUDGETS = {"coding": 600, "technical": 500, "reasoning": 450, "research": 400}
@@ -45,7 +47,7 @@ class LLMEngine:
             logger.warning("reasoner failed: %s", e)
             processed = user_input
 
-        injected     = processed + " (Reply directly, no greeting, no filler.)"
+        injected     = processed
         messages     = ([{"role": "system", "content": _HARD_STOP + "\n\n" + system_prompt}]
                         + history
                         + [{"role": "user", "content": injected}])

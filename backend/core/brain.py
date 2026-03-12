@@ -21,7 +21,7 @@ from intents.classifier import is_question_like
 from personality.modes import get_token_budget, get_temperature
 from utils.cleaner import clean_text
 from websearch.search_agent import WebSearchAgent
-from tools.tool_router import detect_tool
+from tools.tool_router import detect_tool, detect_compound
 
 logger = logging.getLogger(__name__)
 
@@ -120,6 +120,9 @@ class Brain:
                 return self._build_reply(self_reply, emotion_label, "self_awareness", "self", confidence=1.0)
 
             # Tool dispatch
+            compound = detect_compound(user_input)
+            if compound:
+                return {"reply": compound, "agent": "system_controller", "intent": "shortcut"}
             tool = detect_tool(user_input)
             if tool and self.capabilities.is_enabled(tool):
                 tool_resp = self._tools.execute(tool, user_input, memory, user_name)
@@ -170,6 +173,7 @@ class Brain:
                 query_intent, self.conversation_history
             )
 
+            self._add_to_history("user", user_input)
             reply = self._llm.try_react(user_input, selected_model, system_prompt, user_name)
             if not reply:
                 reply = self._llm.call(user_input, system_prompt, selected_model,

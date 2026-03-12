@@ -116,9 +116,12 @@ def build_system_prompt(
     episodic_ctx:          str = "",
     semantic_ctx:          str = "",
     lang_instruction:      str = "",
-    conversation_history:  List[Dict] = None,
+    conversation_history:  Optional[List[Dict]] = None,
     addon:                 str = "",
 ) -> str:
+    if conversation_history is None:
+        conversation_history = []
+
     facts     = memory.get("user_facts", [])
     prefs     = memory.get("preferences", {})
     summaries = memory.get("conversation_summary", [])
@@ -158,7 +161,7 @@ USER: {user_name}"""
             date = s.get("timestamp", "")[:10]
             prompt += f"\n• [{date}] {s['summary']}"
 
-    # Recent conversation turns — this is the 10x ingredient
+    # Recent conversation turns
     if conversation_history:
         recent_ctx = _get_recent_exchanges(conversation_history, n=3)
         if recent_ctx:
@@ -172,9 +175,7 @@ USER: {user_name}"""
         prompt += f"\n\nSEMANTIC CONTEXT:\n{semantic_ctx}"
 
     if addon:
-        prompt += f"
-
-{addon}"
+        prompt += f"\n\n{addon}"
 
     prompt += f"""
 

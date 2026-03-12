@@ -30,6 +30,10 @@ def health():
     except Exception:
         pass  # TODO: handle
 
+    status["brain"]  = status.get("brain", {}).get("status") == "ok"
+    status["memory"] = status.get("memory", {}).get("status") == "ok"
+    status["voice"]  = status.get("voice", {}).get("status") in ("ok", "warning")
+    status["ollama"] = status.get("ollama", {}).get("status") == "ok"
     return jsonify(status), 200 if status["status"] == "ok" else 207
 
 

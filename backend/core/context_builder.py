@@ -25,7 +25,7 @@ class ContextBuilder:
                 user_name=user_name,
                 memory=memory,
                 emotion=emotion_label,
-                query_intent=query_intent,
+                intent=query_intent,
                 semantic_ctx=semantic_ctx,
                 episodic_ctx=episodic_ctx,
                 addon=addon,

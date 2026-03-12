@@ -116,13 +116,16 @@ class ModelManager:
         q = query.lower()
         if any(w in q for w in ["code", "debug", "function", "algorithm", "implement", "syntax", "error", "bug", "class"]):
             return "coding"
-        if any(w in q for w in ["explain", "how does", "what is", "difference between", "compare", "architecture"]):
+        if any(w in q for w in ["explain", "how does", "what is", "difference between", "compare", "architecture", "tell me about", "what are", "who is", "how do", "how can", "optimize", "system info", "capital", "country", "history"]):
             return "technical"
-        if any(w in q for w in ["search", "find", "latest", "news", "current", "today", "recent"]):
+        if any(w in q for w in ["search", "find", "latest", "news", "current", "today", "recent", "price", "weather"]):
             return "research"
         if any(w in q for w in ["why", "reason", "analyze", "think", "step by step", "pros and cons"]):
             return "reasoning"
-        return "casual"
+        # short non-question messages = casual
+        if len(q.split()) <= 6 and "?" not in q and not any(w in q for w in ["what", "how", "why", "when", "where", "tell", "explain", "show", "list"]):
+            return "casual"
+        return "technical"
 
     def get_model_info(self) -> Dict:
         return {

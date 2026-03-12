@@ -90,7 +90,7 @@ class MemoryManager:
         try:
             from memory.summarizer import should_summarize, summarize_conversation, store_summary
             if should_summarize(history):
-                summary = summarize_conversation(history, user_name, model=selected_model)
+                summary = summarize_conversation(history, memory, user_name, model=selected_model)
                 store_summary(summary, memory)
                 self.save(memory)
         except Exception as e:

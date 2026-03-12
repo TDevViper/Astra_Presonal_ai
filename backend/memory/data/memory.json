@@ -81,104 +81,9 @@
     "last_emotion": {
       "label": "neutral",
       "score": 0.0,
-      "timestamp": "2026-03-11T17:28:29.942217"
+      "timestamp": "2026-03-12T03:51:32.897733"
     },
     "history": [
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T09:48:33.034138"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T09:49:56.986516"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T09:50:54.437662"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T09:52:44.797512"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T09:53:49.835379"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T09:54:42.154524"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T10:00:47.547789"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T10:04:12.063767"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T10:13:19.724729"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T10:14:18.758543"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T13:40:08.307203"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T13:40:14.410259"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T13:41:55.011862"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T13:42:37.926064"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T14:45:25.373143"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T14:45:34.947326"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T14:59:44.329620"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T14:59:48.298960"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-08T14:59:57.540342"
-      },
       {
         "label": "neutral",
         "score": 0.0,
@@ -233,11 +138,106 @@
         "label": "neutral",
         "score": 0.0,
         "timestamp": "2026-03-11T17:28:29.942220"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-11T20:56:00.828300"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-11T20:59:27.178916"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-11T20:59:41.493494"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-11T20:59:48.992518"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-11T21:08:47.610505"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-12T03:39:34.729727"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-12T03:39:50.669648"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-12T03:48:38.789647"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-12T03:48:47.712336"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-12T03:48:53.602830"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-12T03:49:08.437764"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-12T03:49:16.759088"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-12T03:49:40.155992"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-12T03:49:55.260904"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-12T03:50:07.489225"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-12T03:50:29.011257"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-12T03:50:46.190359"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-12T03:51:01.570753"
+      },
+      {
+        "label": "neutral",
+        "score": 0.0,
+        "timestamp": "2026-03-12T03:51:32.897761"
       }
     ],
     "emotion_stats": {
       "neutral": {
-        "count": 125,
+        "count": 144,
         "avg_score": 0.0
       },
       "sad": {
@@ -251,11 +251,11 @@
     {
       "id": "00ccc4ab",
       "title": "finish RAG pipeline",
-      "status": "todo",
+      "status": "done",
       "priority": "medium",
       "deadline": null,
       "created_at": "2026-03-08T10:00:47.547942",
-      "completed_at": null
+      "completed_at": "2026-03-12T03:39:50.669679"
     },
     {
       "id": "a595f2b2",

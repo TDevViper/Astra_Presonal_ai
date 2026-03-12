@@ -91,7 +91,7 @@ app.register_blueprint(voice_bp)
 app.register_blueprint(vision_bp)
 app.register_blueprint(face_bp)
 app.register_blueprint(multimodal_bp)
-app.register_blueprint(stream_bp)
+# app.register_blueprint(stream_bp)  # disabled: duplicate
 app.register_blueprint(realtime_bp)
 app.register_blueprint(health_bp)
 app.register_blueprint(knowledge_bp)

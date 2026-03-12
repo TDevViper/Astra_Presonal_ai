@@ -11,6 +11,9 @@ CONTACTS = {
     "dad":   "Dad",
     "mom":   "Mom",
     "papa":  "Papa",
+    "arnav": "Arnav",
+    "bro":   "Bro",
+    "friend": "Friend",
 }
 
 # STRICT triggers — must have both "send/message" AND a contact name
@@ -41,6 +44,8 @@ def handle_whatsapp_command(text: str) -> Optional[str]:
             # Get message after contact name
             idx     = t.index(alias) + len(alias)
             message = text[idx:].strip().lstrip(",:- ")
+            import re as _re
+            message = _re.sub(r"^(say|saying|says|tell them|tell him|tell her)\s+", "", message, flags=_re.IGNORECASE)
             break
 
     if not contact:

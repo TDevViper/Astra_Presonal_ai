@@ -289,7 +289,7 @@ def get_stats() -> Dict:
         r = data.get("relation", "related_to")
         relation_counts[r] = relation_counts.get(r, 0) + 1
 
-    degrees = {n: val for n, val in G.degree()}
+    degrees: Dict[str, int] = dict(G.degree())
     top_nodes = sorted(
         [{"node": n, "degree": degrees[n]} for n in G.nodes],
         key=lambda x: x["degree"],

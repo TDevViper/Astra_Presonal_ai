@@ -33,6 +33,7 @@ def get_model():
     except Exception as e:
         return jsonify({"current": "phi3:mini", "available": ["phi3:mini"], "error": str(e)})
 
+@stats_bp.route("/model/set", methods=["POST", "OPTIONS"])
 @stats_bp.route("/model", methods=["POST"])
 def set_model():
     from flask import request

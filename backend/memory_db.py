@@ -2,7 +2,8 @@ import sqlite3
 import os
 from datetime import datetime
 
-DB_PATH = os.getenv("MEMORY_DB", "astra_memory.db")
+import os as _os
+DB_PATH = os.getenv("MEMORY_DB", _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "astra_memory.db"))
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)

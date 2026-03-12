@@ -22,7 +22,7 @@ class PostProcessor:
             lambda r: self._polish(r),
             lambda r: self._limit(r, user_input),
             lambda r: self._emotion_prefix(r, emotion_label, emotion_score, user_name, memory),
-            lambda r: self._proactive(r, user_input, memory, user_name),
+            # proactive disabled — was appending to every reply
         ]:
             try: reply = step(reply)
             except Exception as e: logger.warning("post_processor step failed: %s", e)

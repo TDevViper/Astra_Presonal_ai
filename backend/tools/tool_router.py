@@ -1,3 +1,14 @@
+
+def detect_compound(user_input: str):
+    """Handle compound commands like open whatsapp and send message to X saying Y."""
+    t = user_input.lower()
+    if ("whatsapp" in t or ("message" in t and "send" in t)) and ("send" in t or "say" in t):
+        from tools.whatsapp_tool import handle_whatsapp_command
+        result = handle_whatsapp_command(user_input)
+        if result:
+            return result
+    return None
+
 # ==========================================
 # tools/tool_router.py
 # ==========================================

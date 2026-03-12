@@ -50,7 +50,7 @@ def store_episode(user_msg: str, astra_reply: str,
         "emotion":    emotion,
         "user_name":  user_name
     })
-    _auto_extract_after_store(user_msg, reply)
+    _auto_extract_after_store(user_msg, astra_reply) 
     _save_episodes(episodes)
     logger.debug(f"📼 Episode stored: {user_msg[:40]}")
     try:

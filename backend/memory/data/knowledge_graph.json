@@ -6,7 +6,7 @@
         "label": "Arnav",
         "entity_type": "person",
         "created_at": "2026-03-07T12:20:46.632985",
-        "updated_at": "2026-03-10T04:20:17.843505"
+        "updated_at": "2026-03-12T03:56:43.179035+00:00"
       }
     },
     {
@@ -38,7 +38,8 @@
       "attrs": {
         "label": "User",
         "entity_type": "person",
-        "created_at": "2026-03-10T04:18:43.112860"
+        "created_at": "2026-03-10T04:18:43.112860",
+        "updated_at": "2026-03-11T21:03:18.146954+00:00"
       }
     },
     {
@@ -56,6 +57,232 @@
         "entity_type": "concept",
         "created_at": "2026-03-10T04:18:43.113009",
         "updated_at": "2026-03-10T04:20:17.843474"
+      }
+    },
+    {
+      "id": "me_capable_of?\"_let's_try_again!_\ud83d\udca1_you_h",
+      "attrs": {
+        "label": "me capable of?\" let's try again! \ud83d\udca1 you h",
+        "entity_type": "concept",
+        "created_at": "2026-03-11T20:35:03.152819+00:00"
+      }
+    },
+    {
+      "id": "ai",
+      "attrs": {
+        "label": "AI",
+        "entity_type": "tech",
+        "created_at": "2026-03-11T20:35:05.072532+00:00",
+        "updated_at": "2026-03-12T03:55:18.138004+00:00"
+      }
+    },
+    {
+      "id": "me_capable_of?\"_let's_try_again!_remembe",
+      "attrs": {
+        "label": "me capable of?\" let's try again! remembe",
+        "entity_type": "concept",
+        "created_at": "2026-03-11T20:35:27.777971+00:00"
+      }
+    },
+    {
+      "id": "me_capable_of?\"_let's_try_again!_great_j",
+      "attrs": {
+        "label": "me capable of?\" let's try again! great j",
+        "entity_type": "concept",
+        "created_at": "2026-03-11T20:36:23.550946+00:00"
+      }
+    },
+    {
+      "id": "me_capable_of?\"_let's_try_again!_need_he",
+      "attrs": {
+        "label": "me capable of?\" let's try again! need he",
+        "entity_type": "concept",
+        "created_at": "2026-03-11T20:54:46.818049+00:00"
+      }
+    },
+    {
+      "id": "india_cap",
+      "attrs": {
+        "label": "India Cap",
+        "entity_type": "concept",
+        "created_at": "2026-03-11T20:55:28.791427+00:00"
+      }
+    },
+    {
+      "id": "asia",
+      "attrs": {
+        "label": "Asia",
+        "entity_type": "place",
+        "created_at": "2026-03-11T20:55:28.792224+00:00"
+      }
+    },
+    {
+      "id": "artificial_intelligence",
+      "attrs": {
+        "label": "artificial intelligence",
+        "entity_type": "tech",
+        "created_at": "2026-03-11T20:59:19.088293+00:00"
+      }
+    },
+    {
+      "id": "interaction_and_assistance_purposes",
+      "attrs": {
+        "label": "interaction and assistance purposes",
+        "entity_type": "concept",
+        "created_at": "2026-03-11T20:59:19.088333+00:00"
+      }
+    },
+    {
+      "id": "ethical_guidelines",
+      "attrs": {
+        "label": "ethical guidelines",
+        "entity_type": "concept",
+        "created_at": "2026-03-11T20:59:19.088357+00:00"
+      }
+    },
+    {
+      "id": "march_2023",
+      "attrs": {
+        "label": "March 2023",
+        "entity_type": "date",
+        "created_at": "2026-03-11T20:59:19.088380+00:00"
+      }
+    },
+    {
+      "id": "whatsapp",
+      "attrs": {
+        "label": "WhatsApp",
+        "entity_type": "tech",
+        "created_at": "2026-03-11T21:00:40.623616+00:00"
+      }
+    },
+    {
+      "id": "message",
+      "attrs": {
+        "label": "message",
+        "entity_type": "concept",
+        "created_at": "2026-03-11T21:00:40.624854+00:00"
+      }
+    },
+    {
+      "id": "you_(implied_sender)",
+      "attrs": {
+        "label": "you (implied sender)",
+        "entity_type": "concept",
+        "created_at": "2026-03-11T21:00:40.624987+00:00"
+      }
+    },
+    {
+      "id": "whatsapp_message",
+      "attrs": {
+        "label": "WhatsApp message",
+        "entity_type": "concept",
+        "created_at": "2026-03-11T21:00:40.625016+00:00"
+      }
+    },
+    {
+      "id": "you/implied_sender",
+      "attrs": {
+        "label": "You/Implied Sender",
+        "entity_type": "concept",
+        "created_at": "2026-03-11T21:00:40.625734+00:00"
+      }
+    },
+    {
+      "id": "greeting",
+      "attrs": {
+        "label": "Greeting",
+        "entity_type": "concept",
+        "created_at": "2026-03-11T21:07:48.974920+00:00"
+      }
+    },
+    {
+      "id": "you",
+      "attrs": {
+        "label": "You",
+        "entity_type": "concept",
+        "created_at": "2026-03-11T21:08:20.190606+00:00",
+        "updated_at": "2026-03-12T02:21:47.849149+00:00"
+      }
+    },
+    {
+      "id": "hello_there!_i'm_here_and_ready_to_help_you_with_your_tasks.",
+      "attrs": {
+        "label": "Hello there! I'm here and ready to help you with your tasks.",
+        "entity_type": "concept",
+        "created_at": "2026-03-11T21:08:20.190671+00:00"
+      }
+    },
+    {
+      "id": "assistant",
+      "attrs": {
+        "label": "assistant",
+        "entity_type": "tool",
+        "created_at": "2026-03-12T02:21:47.849181+00:00"
+      }
+    },
+    {
+      "id": "i",
+      "attrs": {
+        "label": "I",
+        "entity_type": "concept",
+        "created_at": "2026-03-12T02:21:47.849212+00:00"
+      }
+    },
+    {
+      "id": "nn",
+      "attrs": {
+        "label": "NN",
+        "entity_type": "tech",
+        "created_at": "2026-03-12T03:38:01.720302+00:00"
+      }
+    },
+    {
+      "id": "deep_learning",
+      "attrs": {
+        "label": "Deep Learning",
+        "entity_type": "concept",
+        "created_at": "2026-03-12T03:38:01.720334+00:00"
+      }
+    },
+    {
+      "id": "artificial_neural_networks",
+      "attrs": {
+        "label": "Artificial Neural Networks",
+        "entity_type": "tech",
+        "created_at": "2026-03-12T03:38:01.720357+00:00"
+      }
+    },
+    {
+      "id": "rag_pipeline",
+      "attrs": {
+        "label": "rag pipeline",
+        "entity_type": "tech",
+        "created_at": "2026-03-12T03:39:11.944635+00:00"
+      }
+    },
+    {
+      "id": "astra_v3.0",
+      "attrs": {
+        "label": "ASTRA v3.0",
+        "entity_type": "tech|project|concept",
+        "created_at": "2026-03-12T03:47:15.796226+00:00"
+      }
+    },
+    {
+      "id": "you_(speaker)",
+      "attrs": {
+        "label": "you (speaker)",
+        "entity_type": "concept",
+        "created_at": "2026-03-12T03:56:43.179876+00:00"
+      }
+    },
+    {
+      "id": "you_(sender's_name_implied_in_the_text,_not_explicitly_mentioned_but_inferred_from_context_as_'arnav')",
+      "attrs": {
+        "label": "You (sender's name implied in the text, not explicitly mentioned but inferred from context as 'arnav')",
+        "entity_type": "concept",
+        "created_at": "2026-03-12T03:56:43.181006+00:00"
       }
     }
   ],
@@ -96,6 +323,41 @@
       "ts": "2026-03-10T04:20:17.843527"
     },
     {
+      "src": "arnav",
+      "dst": "me_capable_of?\"_let's_try_again!_\ud83d\udca1_you_h",
+      "relation": "likes",
+      "weight": 1.0,
+      "ts": "2026-03-11T20:35:03.152860+00:00"
+    },
+    {
+      "src": "arnav",
+      "dst": "me_capable_of?\"_let's_try_again!_remembe",
+      "relation": "likes",
+      "weight": 1.0,
+      "ts": "2026-03-11T20:35:27.778007+00:00"
+    },
+    {
+      "src": "arnav",
+      "dst": "me_capable_of?\"_let's_try_again!_great_j",
+      "relation": "likes",
+      "weight": 1.0,
+      "ts": "2026-03-11T20:36:23.551022+00:00"
+    },
+    {
+      "src": "arnav",
+      "dst": "me_capable_of?\"_let's_try_again!_need_he",
+      "relation": "likes",
+      "weight": 1.0,
+      "ts": "2026-03-11T20:54:46.818125+00:00"
+    },
+    {
+      "src": "arnav",
+      "dst": "astra_v3.0",
+      "relation": "creator",
+      "weight": 1.0,
+      "ts": "2026-03-12T03:47:15.796300+00:00"
+    },
+    {
       "src": "user",
       "dst": "python",
       "relation": "uses",
@@ -108,6 +370,69 @@
       "relation": "uses",
       "weight": 1.0,
       "ts": "2026-03-10T04:18:43.113329"
+    },
+    {
+      "src": "you_(implied_sender)",
+      "dst": "whatsapp_message",
+      "relation": "sending_medium",
+      "weight": 1.0,
+      "ts": "2026-03-11T21:00:40.625050+00:00"
+    },
+    {
+      "src": "you_(implied_sender)",
+      "dst": "arnav",
+      "relation": "send_a_WhatsApp_message_to",
+      "weight": 1.0,
+      "ts": "2026-03-11T21:08:20.189657+00:00"
+    },
+    {
+      "src": "you/implied_sender",
+      "dst": "arnav",
+      "relation": "recipient",
+      "weight": 1.0,
+      "ts": "2026-03-11T21:00:40.625762+00:00"
+    },
+    {
+      "src": "you",
+      "dst": "hello_there!_i'm_here_and_ready_to_help_you_with_your_tasks.",
+      "relation": "saying_hello",
+      "weight": 1.0,
+      "ts": "2026-03-11T21:08:20.190693+00:00"
+    },
+    {
+      "src": "i",
+      "dst": "you",
+      "relation": "speaker",
+      "weight": 1.0,
+      "ts": "2026-03-12T02:21:47.849237+00:00"
+    },
+    {
+      "src": "i",
+      "dst": "assistant",
+      "relation": "user",
+      "weight": 1.0,
+      "ts": "2026-03-12T02:21:47.849658+00:00"
+    },
+    {
+      "src": "i",
+      "dst": "arnav",
+      "relation": "helps_with_projects_and_tasks_efficiently_and_effectively.",
+      "weight": 1.0,
+      "ts": "2026-03-12T03:55:18.138078+00:00"
+    },
+    {
+      "src": "you_(speaker)",
+      "dst": "whatsapp_message",
+      "relation": "sending_via",
+      "weight": 1.0,
+      "ts": "2026-03-12T03:56:43.179977+00:00"
+    },
+    {
+      "src": "you_(sender's_name_implied_in_the_text,_not_explicitly_mentioned_but_inferred_from_context_as_'arnav')",
+      "dst": "arnav",
+      "relation": "person",
+      "weight": 1.0,
+      "ts": "2026-03-12T03:56:43.181041+00:00"
     }
   ]
 }

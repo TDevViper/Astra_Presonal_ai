@@ -47,6 +47,16 @@ APP_ALIASES = {
     "finder": "Finder",
     "claude": "Claude",
     "ollama": "Ollama",
+    "photo": "Photos",
+    "photos": "Photos",
+    "camera": "Camera",
+    "docker": "Docker",
+    "xcode": "Xcode",
+    "slack": "Slack",
+    "zoom": "Zoom",
+    "figma": "Figma",
+    "postman": "Postman",
+    "discord": "Discord",
 }
 
 # Music apps with AppleScript support
@@ -374,6 +384,15 @@ def get_battery() -> str:
 
 def get_wifi_status() -> str:
     try:
+        # Get connected SSID
+        ssid_result = subprocess.run(
+            ["/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport", "-I"],
+            capture_output=True, text=True
+        )
+        for line in ssid_result.stdout.split("\n"):
+            if " SSID:" in line:
+                ssid = line.split("SSID:")[-1].strip()
+                return f"Connected to Wi-Fi: {ssid}"
         result = subprocess.run(
             ["networksetup", "-getairportpower", "en0"],
             capture_output=True, text=True

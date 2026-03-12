@@ -23,7 +23,7 @@ def _needs_review(reply: str, intent: str) -> bool:
     if len(reply.strip()) < _MIN_REVIEW_LEN:
         return False
     r = reply.lower()
-    return any(r.startswith(f) for f in _FILLER_STARTERS) or len(reply.split()) > 300
+    return (any(r.startswith(f) for f in _FILLER_STARTERS) or len(reply.split()) > 300) and len(reply.split()) > 15
 
 
 def _fast_fix(reply: str) -> str:
@@ -40,39 +40,9 @@ def _fast_fix(reply: str) -> str:
 def critic_review(reply, user_name, memory, user_input="", model=None, intent="general"):
     if not reply or len(reply.strip()) < 5:
         return reply
-    if not _needs_review(reply, intent):
-        return reply
-
+    # Only do fast filler-strip — no LLM critic call (causes hallucinations)
     fixed = _fast_fix(reply)
     if fixed != reply and len(fixed) > 20:
-        logger.info("Critic: filler stripped (no LLM)")
+        logger.info("Critic: filler stripped")
         return fixed
-
-    selected_model = model or "phi3:mini"
-    try:
-        prompt = f"""Review this AI reply. Fix ONLY if clearly padded or wrong. Return unchanged if fine.
-
-Question: {user_input[:150]}
-Reply: {reply[:500]}
-
-Output ONLY the final reply text, no preamble:"""
-
-        response = ollama.chat(
-            model=selected_model,
-            messages=[{"role": "user", "content": prompt}],
-            options={"temperature": 0.1, "num_predict": 200},
-        )
-        result = response["message"]["content"].strip()
-        if not result or len(result) < 5:
-            return reply
-
-        orig_words   = set(reply.lower().split())
-        result_words = set(result.lower().split())
-        overlap      = len(orig_words & result_words) / max(len(orig_words), 1)
-        if overlap < 0.3:
-            return reply
-
-        return result
-    except Exception as e:
-        logger.warning(f"Critic failed ({e})")
-        return reply
+    return reply

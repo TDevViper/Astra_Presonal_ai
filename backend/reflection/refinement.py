@@ -54,8 +54,6 @@ def refine_reply(text: str, memory: dict, user_name: str) -> str:
     if not is_technical and not is_long and not has_name and not ends_with_q:
         # Only add name ~30% of the time for casual responses
         import random
-        if random.random() < 0.3:
-            reply = reply.rstrip('.!') + f", {user_name}!"
 
     # 6. FINAL POLISH
     reply = limit_words(reply, intent="casual")

@@ -1,7 +1,7 @@
 import logging
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone, timezone
 
 LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -14,7 +14,7 @@ CHAT_LOG   = os.path.join(LOG_DIR, "chat.log")
 class JSONFormatter(logging.Formatter):
     def format(self, record):
         log = {
-            "ts":      datetime.now(datetime.UTC).isoformat(),
+            "ts":      datetime.now(timezone.utc).isoformat(),
             "level":   record.levelname,
             "logger":  record.name,
             "msg":     record.getMessage(),

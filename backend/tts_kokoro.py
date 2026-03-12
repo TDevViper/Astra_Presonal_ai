@@ -43,12 +43,14 @@ class KokoroTTS:
             subprocess.run(["say", text])
             return
         try:
+            import numpy as np
             voicepack = _load_voice(voice)
             generator = _pipeline(text, voice=voicepack, speed=speed)
-            for _, _, audio in generator:
-                if audio is not None and len(audio) > 0:
-                    sd.play(audio, samplerate=24000)
-                    sd.wait()
+            chunks = [audio for _, _, audio in generator if audio is not None and len(audio) > 0]
+            if chunks:
+                full_audio = np.concatenate(chunks)
+                sd.play(full_audio, samplerate=24000)
+                sd.wait()
         except Exception as e:
             print(f"[KokoroTTS] speak error: {e}")
             import subprocess
