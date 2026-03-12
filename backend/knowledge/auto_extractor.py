@@ -93,5 +93,5 @@ def extract_and_store(text: str, user_name: str = "User"):
 
 
 def extract_from_exchange(user_msg: str, assistant_msg: str, user_name: str = "User"):
-    combined = f"User said: {user_msg}\nAssistant replied: {assistant_msg}"
-    extract_and_store(combined, user_name)
+    # Only extract from user messages — assistant replies cause garbage
+    extract_and_store(user_msg, user_name)

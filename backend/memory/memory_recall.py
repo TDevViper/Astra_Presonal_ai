@@ -17,7 +17,7 @@ def memory_recall(user_message: str, memory: dict, user_name: str) -> str:
         return None
 
     # NAME RECALL
-    if any(phrase in text for phrase in ["what's my name", "who am i", "do you know my name"]):
+    if any(phrase in text for phrase in ["what's my name", "what is my name", "whats my name", "who am i", "do you know my name"]):
         name = memory.get("preferences", {}).get("name", user_name)
         return f"Your name is {name}!"
 

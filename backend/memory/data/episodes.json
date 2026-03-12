@@ -808,5 +808,68 @@
     "intent": "technical",
     "emotion": "",
     "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T08:40:53.214458",
+    "date": "2026-03-12",
+    "user": "my favorite language is python",
+    "astra": "Your preference for Python as a programming language has been established, Arnav. If you'd like to stay updated on the latest news and developments related to Python, I can help set up relevant news sources or feeds for you.",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T13:31:28.514038",
+    "date": "2026-03-12",
+    "user": "what is my name?",
+    "astra": "I apologize, but as an AI developed by Microsoft with a focus on providing information and assistance within ethical guidelines, I don't have the ability to recall personal data unless it has been shared during our conversation for specific purposes.",
+    "intent": "casual",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T13:31:55.762951",
+    "date": "2026-03-12",
+    "user": "what is a python list?",
+    "astra": "A Python list is a built-in data structure for storing a collection of items in an ordered and mutable manner. You can think of it as a container that holds multiple values, each accessible by its position indexed from 0.",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T13:37:41.937817",
+    "date": "2026-03-12",
+    "user": "what is a python list?",
+    "astra": "A Python list is an ordered collection of items that can contain different data types. It's a flexible and powerful tool in Python programming. For example, you can create a list like this: `my_list = [1, \"apple\", True, [2, 3]]`.",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T13:38:42.447180",
+    "date": "2026-03-12",
+    "user": "what is a python list?",
+    "astra": "A Python list is an ordered collection of items that can contain different data types. For example: `my_list = [1, \"apple\", True, [2, 3]]`. This list contains four elements\u2014an integer, a string, a Boolean, and another nested list.",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T13:39:01.995962",
+    "date": "2026-03-12",
+    "user": "what is a python list?",
+    "astra": "A Python list is an ordered collection of items that can contain different data types. For example, you can create a list like this: `my_list = [1, \"apple\", True, [2, 3]]`.",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T13:41:18.458110",
+    "date": "2026-03-12",
+    "user": "what is a python list?",
+    "astra": "A Python list is an ordered collection of items that can contain different data types. For example: `my_list = [1, \"apple\", True, [2, 3]]`. This list contains four elements\u2014an integer, a string, a Boolean, and another nested list.",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
   }
 ]

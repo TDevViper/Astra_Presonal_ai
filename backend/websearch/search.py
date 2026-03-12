@@ -2,7 +2,10 @@
 def duckduckgo_search(query: str, num_results: int = 5) -> list:
     """Free search fallback — no API key needed."""
     try:
-        from duckduckgo_search import DDGS
+        try:
+            from ddgs import DDGS
+        except ImportError:
+            from duckduckgo_search import DDGS
     except ImportError:
         logger.error("duckduckgo-search not installed. Run: pip install duckduckgo-search")
         return []

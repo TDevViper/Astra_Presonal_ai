@@ -63,6 +63,7 @@ handler.setFormatter(ColoredFormatter())
 logger.addHandler(handler)
 
 app = Flask(__name__)
+app.config["JSON_AS_ASCII"] = False
 sock.init_app(app)
 limiter = Limiter(
     app=app,

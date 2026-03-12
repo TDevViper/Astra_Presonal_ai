@@ -1,3 +1,9 @@
+import logging
+logger = logging.getLogger(__name__)
+
+
+import logging
+logger = logging.getLogger(__name__)
 
 def detect_compound(user_input: str):
     """Handle compound commands like open whatsapp and send message to X saying Y."""
@@ -186,17 +192,6 @@ def _extract_entity(text: str) -> str:
 
 
 class ToolRouter:
-    """Simple wrapper so execute.py can instantiate and call .execute(tool, params)."""
-
-    def execute(self, tool_name: str, params: dict) -> str:
-        text = params.get('text', '') or params.get('query', '') or str(params)
-        from tools.tool_router import detect_tool, route_tool
-        result = route_tool(text)
-        if result:
-            return str(result)
-        return f"Tool '{tool_name}' executed with params: {params}"
-
-class ToolRouter:
     """Properly routes tool_name + params to the correct implementation."""
 
     def execute(self, tool_name: str, params: dict) -> str:
@@ -218,18 +213,17 @@ class ToolRouter:
                 return f"Error: {result.get('error')}"
 
             if tool_name == "system_monitor":
-                from tools.system_monitor import get_system_stats
-                return str(get_system_stats())
+                from tools.system_monitor import get_system_info
+                return str(get_system_info())
 
             if tool_name == "task_manager":
-                from tools.task_manager import handle_task_command
+                from tools.task_manager import TaskManager
                 text = params.get("text", params.get("query", ""))
-                return handle_task_command(text) or "Task operation done."
+                return TaskManager().process(text) or "Task operation done."
 
             if tool_name == "git":
-                from tools.git_tool import handle_git_command
-                text = params.get("text", params.get("query", ""))
-                result = handle_git_command(text)
+                from tools.git_tool import git_status
+                result = git_status()
                 return str(result) if result else "Git command executed."
 
             if tool_name == "web_search":

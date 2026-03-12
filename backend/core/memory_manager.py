@@ -48,6 +48,12 @@ class MemoryManager:
             from memory.memory_extractor import extract_user_fact
             fact = extract_user_fact(user_input)
             if fact:
+                # Check if already stored — still return fact so brain can ack
+                existing = [f for f in memory.get("user_facts", [])
+                            if f.get("subtype") == fact.get("subtype")
+                            and str(f.get("value","")).lower() == str(fact.get("value","")).lower()]
+                if existing:
+                    return fact, memory  # already stored, but still ack it
                 existing = memory.setdefault("user_facts", [])
                 is_dup = any(
                     e.get("subtype") == fact.get("subtype") and
@@ -57,7 +63,7 @@ class MemoryManager:
                 if not is_dup:
                     existing.append(fact)
                 else:
-                    return None, memory
+                    return fact, memory  # dup but still ack
                 try:
                     from memory.semantic_recall import index_user_fact
                     index_user_fact(fact, user_name)

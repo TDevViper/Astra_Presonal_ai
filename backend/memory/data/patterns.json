@@ -1,28 +1,28 @@
 {
   "topics": {
-    "building": 7,
+    "python": 11,
     "whatsapp": 5,
+    "favorite": 5,
+    "language": 5,
     "message": 4,
     "arnav": 3,
-    "whatss": 2,
-    "completed": 2,
     "things": 2,
     "hello": 2,
     "check": 2,
     "system": 2
   },
-  "last_session": "2026-03-12T07:23:39.498122",
+  "last_session": "2026-03-12T13:40:56.082910",
   "pending_tasks": [],
   "top_topics": [
-    "building",
+    "python",
     "whatsapp",
-    "message",
-    "arnav",
-    "whatss"
+    "favorite",
+    "language",
+    "message"
   ],
   "top_intents": [
-    "casual",
-    "technical"
+    "technical",
+    "casual"
   ],
-  "episode_count": 80
+  "episode_count": 96
 }
