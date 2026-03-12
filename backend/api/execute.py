@@ -1,89 +1,55 @@
 import logging
 from flask import Blueprint, request, jsonify
 
-logger = logging.getLogger(__name__)
-
+logger     = logging.getLogger(__name__)
 execute_bp = Blueprint("execute", __name__)
-
 
 @execute_bp.route("/capabilities", methods=["GET"])
 def get_capabilities():
-    """Get current system capabilities."""
     try:
         from core.brain_singleton import get_brain
-        brain = get_brain()
-        return jsonify(brain.capabilities.get_status())
+        return jsonify(get_brain().capabilities.get_status())
     except Exception as e:
-        logger.error("get_capabilities error: %s", e)
         return jsonify({"error": str(e)}), 500
-
 
 @execute_bp.route("/capabilities/<capability>", methods=["PUT"])
 def toggle_capability(capability: str):
-    """Enable or disable a capability."""
     try:
         from core.brain_singleton import get_brain
-        brain = get_brain()
-        data = request.get_json()
+        brain   = get_brain()
+        data    = request.get_json() or {}
         enabled = data.get("enabled", False)
-
-        if enabled:
-            success = brain.capabilities.enable(capability)
-        else:
-            success = brain.capabilities.disable(capability)
-
+        success = brain.capabilities.enable(capability) if enabled else brain.capabilities.disable(capability)
         if success:
-            logger.info(f"⚙️  Capability '{capability}' set to {enabled}")
-            return jsonify({
-                "capability": capability,
-                "enabled": enabled,
-                "status": "updated"
-            })
-
-        return jsonify({"error": f"Unknown capability: {capability}"}), 404
-
+            return jsonify({"capability": capability, "enabled": enabled, "status": "updated"})
+        return jsonify({"error": f"Unknown capability: {capability}", "valid": list(brain.capabilities.all_flags().keys())}), 404
     except Exception as e:
-        logger.error(f"❌ Error toggling capability: {e}")
         return jsonify({"error": str(e)}), 500
-
 
 @execute_bp.route("/execute", methods=["POST"])
 def execute_tool():
-    """Execute a tool with approval check."""
     try:
-        from core.brain_singleton import get_brain
-        data = request.get_json()
-
+        data      = request.get_json() or {}
         tool_name = data.get("tool")
-        params = data.get("params", {})
-        approved = data.get("approved", False)
+        params    = data.get("params", {})
+        approved  = data.get("approved", False)
+
+        # Shortcut: {"code": "print(1+1)"} runs python directly
+        if not tool_name and "code" in data:
+            tool_name = "python_sandbox"
+            params    = {"code": data["code"]}
+            approved  = True
 
         if not tool_name:
-            return jsonify({"error": "No tool specified"}), 400
+            return jsonify({"error": "No tool specified",
+                            "hint": '{"tool":"python_sandbox","params":{"code":"print(1+1)"},"approved":true}'}), 400
 
-        # Tools that require explicit approval
-        DANGEROUS_TOOLS = {"python_sandbox", "git_tool", "file_reader"}
+        DANGEROUS = {"python_sandbox", "git_tool", "file_reader"}
+        if tool_name in DANGEROUS and not approved:
+            return jsonify({"status":"approval_required","tool":tool_name,"message":"Send with 'approved':true"}), 202
 
-        if tool_name in DANGEROUS_TOOLS and not approved:
-            return jsonify({
-                "status": "approval_required",
-                "tool": tool_name,
-                "params": params,
-                "message": f"Tool '{tool_name}' requires explicit approval. Send again with approved: true"
-            }), 202
-
-        # Execute via tool router
         from tools.tool_router import ToolRouter
-        router = ToolRouter()
-        result = router.execute(tool_name, params)
-
-        logger.info(f"🔧 Tool executed: {tool_name}")
-        return jsonify({
-            "status": "success",
-            "tool": tool_name,
-            "result": result
-        })
-
+        result = ToolRouter().execute(tool_name, params)
+        return jsonify({"status": "success", "tool": tool_name, "result": result})
     except Exception as e:
-        logger.error(f"❌ Tool execution error: {e}")
         return jsonify({"error": str(e)}), 500

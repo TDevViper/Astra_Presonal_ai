@@ -6,7 +6,7 @@
         "label": "Arnav",
         "entity_type": "person",
         "created_at": "2026-03-07T12:20:46.632985",
-        "updated_at": "2026-03-12T03:56:43.179035+00:00"
+        "updated_at": "2026-03-12T08:15:58.602103+00:00"
       }
     },
     {
@@ -39,7 +39,7 @@
         "label": "User",
         "entity_type": "person",
         "created_at": "2026-03-10T04:18:43.112860",
-        "updated_at": "2026-03-11T21:03:18.146954+00:00"
+        "updated_at": "2026-03-12T07:53:20.379248+00:00"
       }
     },
     {
@@ -56,7 +56,7 @@
         "label": "Python",
         "entity_type": "concept",
         "created_at": "2026-03-10T04:18:43.113009",
-        "updated_at": "2026-03-10T04:20:17.843474"
+        "updated_at": "2026-03-12T08:10:05.555679+00:00"
       }
     },
     {
@@ -153,7 +153,8 @@
       "attrs": {
         "label": "WhatsApp",
         "entity_type": "tech",
-        "created_at": "2026-03-11T21:00:40.623616+00:00"
+        "created_at": "2026-03-11T21:00:40.623616+00:00",
+        "updated_at": "2026-03-12T07:22:21.062591+00:00"
       }
     },
     {
@@ -202,7 +203,7 @@
         "label": "You",
         "entity_type": "concept",
         "created_at": "2026-03-11T21:08:20.190606+00:00",
-        "updated_at": "2026-03-12T02:21:47.849149+00:00"
+        "updated_at": "2026-03-12T07:44:36.626228+00:00"
       }
     },
     {
@@ -283,6 +284,86 @@
         "label": "You (sender's name implied in the text, not explicitly mentioned but inferred from context as 'arnav')",
         "entity_type": "concept",
         "created_at": "2026-03-12T03:56:43.181006+00:00"
+      }
+    },
+    {
+      "id": "apologies",
+      "attrs": {
+        "label": "Apologies",
+        "entity_type": "concept",
+        "created_at": "2026-03-12T07:20:04.247604+00:00"
+      }
+    },
+    {
+      "id": "business",
+      "attrs": {
+        "label": "business",
+        "entity_type": "place|concept",
+        "created_at": "2026-03-12T07:20:04.247637+00:00"
+      }
+    },
+    {
+      "id": "tasks",
+      "attrs": {
+        "label": "tasks",
+        "entity_type": "project|event",
+        "created_at": "2026-03-12T07:20:04.247662+00:00"
+      }
+    },
+    {
+      "id": "accomplish",
+      "attrs": {
+        "label": "accomplish",
+        "entity_type": "action",
+        "created_at": "2026-03-12T07:20:04.247681+00:00"
+      }
+    },
+    {
+      "id": "helpfulness",
+      "attrs": {
+        "label": "helpfulness",
+        "entity_type": "concept",
+        "created_at": "2026-03-12T07:20:04.247701+00:00"
+      }
+    },
+    {
+      "id": "ipen",
+      "attrs": {
+        "label": "Ipen",
+        "entity_type": "person",
+        "created_at": "2026-03-12T07:21:55.430219+00:00"
+      }
+    },
+    {
+      "id": "send_command",
+      "attrs": {
+        "label": "send command",
+        "entity_type": "concept",
+        "created_at": "2026-03-12T07:21:55.432225+00:00"
+      }
+    },
+    {
+      "id": "function",
+      "attrs": {
+        "label": "function",
+        "entity_type": "concept",
+        "created_at": "2026-03-12T07:43:27.702009+00:00"
+      }
+    },
+    {
+      "id": "recursion",
+      "attrs": {
+        "label": "recursion",
+        "entity_type": "concept",
+        "created_at": "2026-03-12T07:43:27.702102+00:00"
+      }
+    },
+    {
+      "id": "fibonacci",
+      "attrs": {
+        "label": "Fibonacci",
+        "entity_type": "concept",
+        "created_at": "2026-03-12T07:43:30.897930+00:00"
       }
     }
   ],
@@ -372,6 +453,13 @@
       "ts": "2026-03-10T04:18:43.113329"
     },
     {
+      "src": "whatsapp",
+      "dst": "send_command",
+      "relation": "command_for_sending_messages",
+      "weight": 1.0,
+      "ts": "2026-03-12T07:21:55.432247+00:00"
+    },
+    {
       "src": "you_(implied_sender)",
       "dst": "whatsapp_message",
       "relation": "sending_medium",
@@ -433,6 +521,48 @@
       "relation": "person",
       "weight": 1.0,
       "ts": "2026-03-12T03:56:43.181041+00:00"
+    },
+    {
+      "src": "apologies",
+      "dst": "helpfulness",
+      "relation": "expresses",
+      "weight": 1.0,
+      "ts": "2026-03-12T07:20:04.247720+00:00"
+    },
+    {
+      "src": "business",
+      "dst": "tasks",
+      "relation": "related_to",
+      "weight": 1.0,
+      "ts": "2026-03-12T07:20:04.248176+00:00"
+    },
+    {
+      "src": "accomplish",
+      "dst": "tasks",
+      "relation": "performs",
+      "weight": 1.0,
+      "ts": "2026-03-12T07:20:04.248551+00:00"
+    },
+    {
+      "src": "ipen",
+      "dst": "whatsapp",
+      "relation": "interested_in_using",
+      "weight": 1.0,
+      "ts": "2026-03-12T07:21:55.430843+00:00"
+    },
+    {
+      "src": "ipen",
+      "dst": "arnav",
+      "relation": "intending_to_send_a_message_to",
+      "weight": 1.0,
+      "ts": "2026-03-12T07:21:55.431792+00:00"
+    },
+    {
+      "src": "function",
+      "dst": "recursion",
+      "relation": "uses",
+      "weight": 1.0,
+      "ts": "2026-03-12T07:43:27.702155+00:00"
     }
   ]
 }

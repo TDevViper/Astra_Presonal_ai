@@ -195,3 +195,53 @@ class ToolRouter:
         if result:
             return str(result)
         return f"Tool '{tool_name}' executed with params: {params}"
+
+class ToolRouter:
+    """Properly routes tool_name + params to the correct implementation."""
+
+    def execute(self, tool_name: str, params: dict) -> str:
+        try:
+            if tool_name == "python_sandbox":
+                from tools.python_sandbox import execute_python
+                code = params.get("code", params.get("text", ""))
+                if not code:
+                    return "No code provided."
+                result = execute_python(code)
+                return result.get("output", str(result))
+
+            if tool_name == "file_reader":
+                from tools.file_reader import read_file
+                path = params.get("path", params.get("text", ""))
+                result = read_file(path)
+                if result.get("success"):
+                    return result["content"][:2000]
+                return f"Error: {result.get('error')}"
+
+            if tool_name == "system_monitor":
+                from tools.system_monitor import get_system_stats
+                return str(get_system_stats())
+
+            if tool_name == "task_manager":
+                from tools.task_manager import handle_task_command
+                text = params.get("text", params.get("query", ""))
+                return handle_task_command(text) or "Task operation done."
+
+            if tool_name == "git":
+                from tools.git_tool import handle_git_command
+                text = params.get("text", params.get("query", ""))
+                result = handle_git_command(text)
+                return str(result) if result else "Git command executed."
+
+            if tool_name == "web_search":
+                from websearch.search import serper_search, format_results_for_llm
+                query = params.get("query", params.get("text", ""))
+                results = serper_search(query, num_results=3)
+                return format_results_for_llm(results) if results else "No results found."
+
+            text = params.get("text", params.get("query", str(params)))
+            result = route_tool(text)
+            return str(result) if result else f"Tool '{tool_name}' has no handler."
+
+        except Exception as e:
+            logger.error("ToolRouter.execute error (%s): %s", tool_name, e)
+            return f"Tool error: {e}"

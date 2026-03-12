@@ -682,5 +682,131 @@
     "intent": "technical",
     "emotion": "",
     "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T07:19:59.220758",
+    "date": "2026-03-12",
+    "user": "hii",
+    "astra": "Apologies for not being more helpful earlier\u2014let's get down to business now! What tasks are you aiming to accomplish today?",
+    "intent": "casual",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T07:20:39.281550",
+    "date": "2026-03-12",
+    "user": "ok tell me abiut your self",
+    "astra": "I am I, a personal AI built by Arnav for specific tasks and projects. My identity, personality, response discipline, current context, previous sessions, relevant past, and response rules have been defined to ensure that I can effectively assist Arnav in.",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T07:21:51.467557",
+    "date": "2026-03-12",
+    "user": "ipen whatsapp",
+    "astra": "It seems that you're interested in sending a message via WhatsApp to Arnav. I can help with that! Here is the command to send a message: ```bash whatsapp send --to \"Arnav\" --message \"Hello there! I'm here and ready to help.",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T07:22:18.149458",
+    "date": "2026-03-12",
+    "user": "whatsapp send --to \"Arnav\" --message \"Hello there! I'm here and ready to help you\"",
+    "astra": "It seems that you have already asked me this question before, as you previously requested sending a message to Arnav through WhatsApp with the same content: \"Hello there! I'm here and ready to help you\".",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T07:40:41.506820",
+    "date": "2026-03-12",
+    "user": "hey what is up",
+    "astra": "Hello! I'm here and ready to help you with your tasks today. What can I assist you with specifically?",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T07:43:27.693846",
+    "date": "2026-03-12",
+    "user": "write a fibonacci function in python",
+    "astra": "Here is a simple Python function to calculate Fibonacci numbers: ```python def fib(n): if n <= 1: return n else: return fib(n - 1) + fib(n - 2) ``` This function uses recursion and calculates the `n`th Fibonacci number by.",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T07:44:32.154580",
+    "date": "2026-03-12",
+    "user": "hey what is up",
+    "astra": "I understand that you might want a response or assistance regarding something, but it seems like the question has been repeated without additional context.",
+    "intent": "casual",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T07:44:38.433744",
+    "date": "2026-03-12",
+    "user": "write a fibonacci function in python",
+    "astra": "Here is a simple Python function to calculate Fibonacci numbers: ```python def fib(n): if n <= 1: return n else: return fib(n-1) + fib(n-2) ```.",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T07:50:44.333074",
+    "date": "2026-03-12",
+    "user": "what is machine learning",
+    "astra": "Machine Learning (ML), a subset of artificial intelligence, involves the study and development of algorithms that allow computers to learn from data, identify patterns, make decisions, and improve over time without being explicitly programmed for each task.",
+    "intent": "casual",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T07:53:08.765519",
+    "date": "2026-03-12",
+    "user": "what is a neural network",
+    "astra": "A Neural Network (NN) is a machine learning algorithm inspired by the structure and function of the human brain's neurons. It consists of interconnected nodes, or artificial neurons, which process information using weights and biases to learn from data and.",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T07:53:18.065449",
+    "date": "2026-03-12",
+    "user": "my favorite language is python",
+    "astra": "I see that you have a preference for Python when it comes to programming. That's great! Let me know if there's anything specific about Python or your project that I can help with today.",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T08:10:01.486751",
+    "date": "2026-03-12",
+    "user": "my favorite language is python",
+    "astra": "Your preference for Python as a programming language is well known to me, Arnav. How may I assist you in utilizing it today?",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T08:15:52.560302",
+    "date": "2026-03-12",
+    "user": "my favorite language is python",
+    "astra": "Your preference for Python as a programming language has been established, Arnav. Is there a specific topic or question related to it you'd like to discuss today?",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T08:17:48.805226",
+    "date": "2026-03-12",
+    "user": "my favorite language is python",
+    "astra": "Your preference for Python as a programming language has been established, Arnav. If you'd like to stay updated on the latest news and developments related to Python, I can help set up relevant news sources or feeds for you.",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
   }
 ]

@@ -1,270 +1,91 @@
 {
   "user_facts": [
     {
-      "fact": "Uses react or vue for my project",
-      "type": "tech_stack",
-      "subtype": "tech_stack",
-      "value": [
-        "react",
-        "vue"
-      ],
-      "confidence": 0.85,
-      "added_at": "2026-03-02T06:53:32.483685"
-    },
-    {
-      "fact": "Name is Arnav",
-      "type": "identity",
-      "subtype": "name",
-      "value": "Arnav",
+      "fact": "Favorite programming language is Python",
+      "type": "preference",
+      "subtype": "favorite_language",
+      "value": "Python",
       "confidence": 0.95,
-      "added_at": "2026-03-08T07:02:55.524718"
+      "added_at": "2026-03-12T07:50:25.950020"
     }
   ],
   "preferences": {
-    "name": "Arnav",
-    "location": null,
-    "favorite_color": null
+    "name": "Arnav"
   },
-  "conversation_summary": [
-    {
-      "summary": "Arnav is building a personal assistant named Astra using Python and Flask, which includes completing the RAG pipeline as part of its development process. The conversation confirms that Arnav has decided to proceed with this project without any additional suggestions or greetings provided by either party.",
-      "timestamp": "2026-03-08T09:54:59.698074",
-      "message_count": 90
-    },
-    {
-      "summary": "Arnav inquires about building a Python and Flask-based personal assistant named Astra; he requests assistance with completing its RAG pipeline development task twice, although his second request was acknowledged as already completed by an Assistant who mistakenly referred to 'I' instead of Arnav. He also asked for confirmation on what his name is but received no specific answer regarding that in the context provided.",
-      "timestamp": "2026-03-08T13:41:17.016975",
-      "message_count": 100
-    },
-    {
-      "summary": "Arnav asked about completing the RAG pipeline and his name; ASTRA was tasked with finishing the RAG pipeline for I (not Arnav). The conversation did not result in any decisions made by either party. Yes is defined as a Boolean value that can be true or false, commonly used in programming contexts to represent truth values of logical expressions.",
-      "timestamp": "2026-03-08T13:42:11.496523",
-      "message_count": 110
-    },
-    {
-      "summary": "Arnav inquired about the completion of RAG pipeline development and his name, which was not provided; he also asked to see two pending tasks but only one specific task detail is mentioned. ASTRA confirmed that Arnav's name wasn't specified within their contextual conversation. The assistant then explained what 'Yes' means in programming terms as a Boolean value of either true or false and listed out the three main components for an AI assistant, which are scripts to set reminders (as per one pending task), respond with greetings based on time of day (not explicitly mentioned but implied by context), and manage tasks.",
-      "timestamp": "2026-03-08T13:43:31.374196",
-      "message_count": 110
-    },
-    {
-      "summary": "Arnav discussed: suggestions.), (reply, greeting,, pending, directly,.",
-      "timestamp": "2026-03-08T14:46:07.878598",
-      "message_count": 110
-    },
-    {
-      "summary": "Arnav discussed: filler,, suggestions.), (reply, whatss, directly,.",
-      "timestamp": "2026-03-08T15:00:17.449367",
-      "message_count": 110
-    },
-    {
-      "summary": "Arnav inquired about his name and later asked for information on neural networks. The conversation touched upon technical difficulties affecting the assistant, which is expected to resolve soon. Arnav received a concise explanation of artificial neural networks from AstroAI. No decisions were made during this exchange.",
-      "timestamp": "2026-03-09T07:16:43.293956",
-      "message_count": 110
-    },
-    {
-      "summary": "Arnav inquired about the current status and technical difficulties, then requested information on artificial neural networks (ANNs). ASTRA confirmed Arnav's unavailability due to issues but promised restoration soon. Following this, both engaged in a discussion wherein ASTRA provided an overview of ANNs as computational models inspired by biological brains used for pattern recognition and decision-making processes within machine learning contexts.",
-      "timestamp": "2026-03-09T07:24:20.677718",
-      "message_count": 110
-    },
-    {
-      "summary": "Arnav asked about artificial neural networks, and the assistant provided an overview explaining that they are computational models used in machine learning. No decisions were made during this conversation as it was purely informational.",
-      "timestamp": "2026-03-09T07:27:49.230492",
-      "message_count": 110
-    },
-    {
-      "summary": "Arnav inquired about neural networks, and the assistant provided an explanation that they are a type of machine learning algorithm inspired by biological neural networks. No decisions were made during this exchange as it was purely informational.",
-      "timestamp": "2026-03-09T07:52:32.633191",
-      "message_count": 110
-    }
-  ],
+  "conversation_summary": [],
   "emotional_patterns": {
     "last_emotion": {
       "label": "neutral",
       "score": 0.0,
-      "timestamp": "2026-03-12T03:51:32.897733"
+      "timestamp": "2026-03-12T08:17:50.590804"
     },
     "history": [
       {
         "label": "neutral",
         "score": 0.0,
-        "timestamp": "2026-03-08T16:05:02.022875"
+        "timestamp": "2026-03-12T07:46:18.475906"
       },
       {
         "label": "neutral",
         "score": 0.0,
-        "timestamp": "2026-03-08T16:05:13.186901"
+        "timestamp": "2026-03-12T07:46:18.508115"
       },
       {
         "label": "neutral",
         "score": 0.0,
-        "timestamp": "2026-03-09T07:15:10.166694"
+        "timestamp": "2026-03-12T07:47:34.252289"
       },
       {
         "label": "neutral",
         "score": 0.0,
-        "timestamp": "2026-03-09T07:15:26.820952"
+        "timestamp": "2026-03-12T07:50:25.948651"
       },
       {
         "label": "neutral",
         "score": 0.0,
-        "timestamp": "2026-03-09T07:15:39.633918"
+        "timestamp": "2026-03-12T07:50:31.080176"
       },
       {
         "label": "neutral",
         "score": 0.0,
-        "timestamp": "2026-03-09T07:22:58.342148"
+        "timestamp": "2026-03-12T07:50:31.837579"
       },
       {
         "label": "neutral",
         "score": 0.0,
-        "timestamp": "2026-03-09T07:23:08.482571"
+        "timestamp": "2026-03-12T07:50:31.897087"
       },
       {
         "label": "neutral",
         "score": 0.0,
-        "timestamp": "2026-03-09T07:26:53.474434"
+        "timestamp": "2026-03-12T08:10:01.790256"
       },
       {
         "label": "neutral",
         "score": 0.0,
-        "timestamp": "2026-03-09T07:51:52.078158"
+        "timestamp": "2026-03-12T08:15:52.659124"
       },
       {
         "label": "neutral",
         "score": 0.0,
-        "timestamp": "2026-03-10T14:51:30.284791"
+        "timestamp": "2026-03-12T08:16:01.240088"
       },
       {
         "label": "neutral",
         "score": 0.0,
-        "timestamp": "2026-03-11T17:28:29.942220"
+        "timestamp": "2026-03-12T08:17:49.067387"
       },
       {
         "label": "neutral",
         "score": 0.0,
-        "timestamp": "2026-03-11T20:56:00.828300"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-11T20:59:27.178916"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-11T20:59:41.493494"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-11T20:59:48.992518"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-11T21:08:47.610505"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-12T03:39:34.729727"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-12T03:39:50.669648"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-12T03:48:38.789647"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-12T03:48:47.712336"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-12T03:48:53.602830"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-12T03:49:08.437764"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-12T03:49:16.759088"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-12T03:49:40.155992"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-12T03:49:55.260904"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-12T03:50:07.489225"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-12T03:50:29.011257"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-12T03:50:46.190359"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-12T03:51:01.570753"
-      },
-      {
-        "label": "neutral",
-        "score": 0.0,
-        "timestamp": "2026-03-12T03:51:32.897761"
+        "timestamp": "2026-03-12T08:17:50.590810"
       }
     ],
     "emotion_stats": {
       "neutral": {
-        "count": 144,
+        "count": 12,
         "avg_score": 0.0
-      },
-      "sad": {
-        "count": 2,
-        "avg_score": 0.4
       }
     }
-  },
-  "last_briefing_date": "2026-03-09",
-  "tasks": [
-    {
-      "id": "00ccc4ab",
-      "title": "finish RAG pipeline",
-      "status": "done",
-      "priority": "medium",
-      "deadline": null,
-      "created_at": "2026-03-08T10:00:47.547942",
-      "completed_at": "2026-03-12T03:39:50.669679"
-    },
-    {
-      "id": "a595f2b2",
-      "title": "build RAG",
-      "status": "todo",
-      "priority": "medium",
-      "deadline": null,
-      "created_at": "2026-03-08T10:04:12.064121",
-      "completed_at": null
-    }
-  ]
+  }
 }

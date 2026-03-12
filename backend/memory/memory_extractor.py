@@ -50,12 +50,6 @@ def extract_user_fact(text: str) -> Optional[Dict]:
             "preference", "favorite_language", lang.title(), 0.95
         )
 
-    # ── FAVORITE LANGUAGE ─────────────────────────────────
-    m = re.search(r'my (?:fav(?:ou?rite)?|preferred)\s+(?:programming\s+)?language is\s+([A-Za-z+#]+)', t)
-    if m:
-        lang = m.group(1).strip()
-        return _fact(f"Favorite programming language is {lang.title()}", "preference", "favorite_language", lang.title(), 0.95)
-
     # ── FAVORITE COLOR ────────────────────────────────────
     m = re.search(r'(my (?:fav(?:ou?rite)?) color is|fav color:?)\s+(\w+)', t)
     if m:

@@ -1,8 +1,10 @@
+import os
+import ollama
 from flask import Blueprint, jsonify
 from core.proactive import get_welcome_back, analyze_patterns
-import ollama
 
-health_bp = Blueprint("health", __name__)
+health_bp   = Blueprint("health", __name__)
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
 
 @health_bp.route("/health", methods=["GET"])
@@ -19,33 +21,33 @@ def health():
     }
     if any(v.get("status") == "error" for v in status.values() if isinstance(v, dict)):
         status["status"] = "degraded"
-
     try:
-        from memory.memory_engine import load_memory as _lm_h; _mem_h=_lm_h(); welcome = get_welcome_back(user_name=_mem_h.get("preferences",{}).get("name","User"))
+        from memory.memory_engine import load_memory as _lm_h
+        _mem_h  = _lm_h()
+        welcome = get_welcome_back(user_name=_mem_h.get("preferences", {}).get("name", "User"))
         if welcome:
             status["welcome"] = welcome
         patterns = analyze_patterns()
         if patterns.get("top_topics"):
             status["frequent_topics"] = patterns["top_topics"][:3]
     except Exception:
-        pass  # TODO: handle
-
-    status["brain"]  = status.get("brain", {}).get("status") == "ok"
+        pass
+    status["brain"]  = status.get("brain",  {}).get("status") == "ok"
     status["memory"] = status.get("memory", {}).get("status") == "ok"
-    status["voice"]  = status.get("voice", {}).get("status") in ("ok", "warning")
+    status["voice"]  = status.get("voice",  {}).get("status") in ("ok", "warning")
     status["ollama"] = status.get("ollama", {}).get("status") == "ok"
     return jsonify(status), 200 if status["status"] == "ok" else 207
 
 
 def _check_ollama() -> dict:
-    """Only check localhost — never the GPU server which may be offline."""
     try:
-        client = ollama.Client(host="http://localhost:11434")
+        client = ollama.Client(host=OLLAMA_HOST)
         models = client.list()
         names  = [m.get("model", m.get("name", "")) for m in models.get("models", [])]
         return {"status": "ok", "models": names}
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return {"status": "error", "error": str(e),
+                "hint": "Run `ollama serve` to start Ollama"}
 
 
 def _check_memory() -> dict:
@@ -61,11 +63,8 @@ def _check_memory() -> dict:
 def _check_voice() -> dict:
     try:
         import importlib.util
-        spec = importlib.util.find_spec("kokoro")
-        if spec:
+        if importlib.util.find_spec("kokoro"):
             return {"status": "ok"}
-        # Check if tts_kokoro.py exists
-        import os
         tts_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "tts_kokoro.py")
         if os.path.exists(tts_path):
             return {"status": "ok"}

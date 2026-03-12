@@ -73,6 +73,14 @@ INTENTS = {
     "hi":                  "Hey! What do you need?",
     "hello":               HOW_ARE_YOU,
     "hey":                 "Hey! What can I do for you?",
+    "hey what is up":      "Not much! What's on your mind?",
+    "hey what's up":       "Not much! What do you need?",
+    "what is up":          "Not much! What do you need?",
+    "whats up":            "Not much! What do you need?",
+    "wassup":              "All good! What do you need?",
+    "how is it going":     "Going well! What can I help with?",
+    "how's everything":    "All systems nominal. What do you need?",
+    "heyy":                "Hey! What can I do for you?",
     "sup":                 "All good. What do you need?",
 
     # ── CAPABILITIES (English) ─────────────────────────────

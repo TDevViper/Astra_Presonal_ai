@@ -3,6 +3,10 @@ def duckduckgo_search(query: str, num_results: int = 5) -> list:
     """Free search fallback — no API key needed."""
     try:
         from duckduckgo_search import DDGS
+    except ImportError:
+        logger.error("duckduckgo-search not installed. Run: pip install duckduckgo-search")
+        return []
+    try:
         results = []
         with DDGS() as ddgs:
             for r in ddgs.text(query, max_results=num_results):
@@ -13,9 +17,11 @@ def duckduckgo_search(query: str, num_results: int = 5) -> list:
                     "type":    "organic"
                 })
         logger.info(f"🦆 DuckDuckGo: {len(results)} results for: {query}")
+        if not results:
+            logger.warning("DuckDuckGo returned 0 results — may be rate-limited")
         return results
     except Exception as e:
-        logger.error(f"DuckDuckGo failed: {e}")
+        logger.error(f"DuckDuckGo error ({type(e).__name__}): {e}")
         return []
 
 # astra_engine/websearch/search.py

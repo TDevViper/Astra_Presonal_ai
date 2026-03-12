@@ -1,12 +1,17 @@
 import logging
 import re
+import os
 import ollama
 from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-MAX_STEPS  = 5
-MAX_TOKENS = 500
+MAX_STEPS   = 5
+MAX_TOKENS  = 500
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+
+def _get_client():
+    return ollama.Client(host=OLLAMA_HOST)
 
 _REACT_TRIGGERS = [
     "why", "how does", "step by step", "walk me through",
@@ -32,13 +37,11 @@ Available tools — call them with Action: tool_name(argument)
 - calculate(expression)  evaluate a math expression safely
 """
 
-
 def needs_react(user_input: str) -> bool:
     t = user_input.lower()
     if any(t.startswith(s) or s == t for s in _SKIP_TRIGGERS):
         return False
     return any(trigger in t for trigger in _REACT_TRIGGERS)
-
 
 def _execute_tool(tool_name: str, arg: str, user_name: str = "User") -> str:
     tool_name = tool_name.strip().lower()
@@ -50,14 +53,12 @@ def _execute_tool(tool_name: str, arg: str, user_name: str = "User") -> str:
             if not results:
                 return "No results — SERPER_API_KEY may not be set."
             return format_results_for_llm(results, max_chars=800)
-
         elif tool_name == "read_file":
             from tools.file_reader import read_file as _read
             result = _read(arg)
             if result["success"]:
                 return f"{result['filepath']} ({result['lines']} lines):\n{result['content'][:1500]}"
             return f"Error: {result['error']}"
-
         elif tool_name == "run_python":
             import subprocess, sys
             result = subprocess.run(
@@ -66,13 +67,11 @@ def _execute_tool(tool_name: str, arg: str, user_name: str = "User") -> str:
             )
             out = result.stdout.strip() or result.stderr.strip()
             return out[:800] if out else "(no output)"
-
         elif tool_name == "memory_recall":
             from memory.vector_store import semantic_search
             facts, exchanges = semantic_search(arg, top_k=3)
             hits = [h["text"] for h in (facts + exchanges)[:4]]
             return "\n".join(hits) if hits else "Nothing found in memory."
-
         elif tool_name == "graph_lookup":
             from knowledge.graph import get_relations
             rels = get_relations(arg, depth=1)
@@ -81,7 +80,6 @@ def _execute_tool(tool_name: str, arg: str, user_name: str = "User") -> str:
             lines = [f"• {r['subject']} {r['relation'].replace('_',' ')} {r['object']}"
                      for r in rels[:6]]
             return "\n".join(lines)
-
         elif tool_name == "calculate":
             import ast, operator
             ops = {
@@ -97,12 +95,10 @@ def _execute_tool(tool_name: str, arg: str, user_name: str = "User") -> str:
                     return ops[type(node.op)](_eval(node.operand))
                 raise ValueError(f"Unsupported: {node}")
             return str(_eval(ast.parse(arg, mode='eval').body))
-
         else:
             return f"Unknown tool: {tool_name}"
     except Exception as e:
         return f"Tool error ({tool_name}): {e}"
-
 
 def _parse_action(text: str) -> Optional[tuple]:
     match = re.search(r'Action:\s*(\w+)\((.+?)\)', text, re.DOTALL)
@@ -113,11 +109,9 @@ def _parse_action(text: str) -> Optional[tuple]:
         return match2.group(1), match2.group(2).strip()
     return None
 
-
 def react_solve(user_input: str, model: str = "phi3:mini",
                 context: str = "", user_name: str = "User") -> Dict:
     logger.info(f"ReAct v3 starting: {user_input[:60]}")
-
     system_prompt = f"""You are ASTRA, {user_name}'s personal AI assistant.
 Solve this step by step using Thought -> Action -> Observation cycles.
 
@@ -138,20 +132,18 @@ Be concise. Max {MAX_STEPS} cycles."""
         {"role": "system", "content": system_prompt},
         {"role": "user",   "content": user_input},
     ]
-
     steps    = []
     full_out = ""
-
     try:
+        client = _get_client()
         for step in range(MAX_STEPS):
-            response = ollama.chat(
+            response = client.chat(
                 model=model,
                 messages=messages,
                 options={"temperature": 0.35, "num_predict": MAX_TOKENS}
             )
             output = response["message"]["content"].strip()
             full_out += output + "\n"
-
             for line in output.split("\n"):
                 line = line.strip()
                 if line.startswith("Thought:"):
@@ -160,10 +152,8 @@ Be concise. Max {MAX_STEPS} cycles."""
                     steps.append({"type": "action",  "content": line[7:].strip()})
                 elif line.startswith("Observation:"):
                     steps.append({"type": "observe",  "content": line[12:].strip()})
-
             if "Final Answer:" in output:
                 break
-
             parsed = _parse_action(output)
             if parsed:
                 tool_name, arg = parsed
@@ -171,10 +161,7 @@ Be concise. Max {MAX_STEPS} cycles."""
                 observation = _execute_tool(tool_name, arg, user_name)
                 steps.append({"type": "observe", "content": observation[:200]})
                 messages.append({"role": "assistant", "content": output})
-                messages.append({
-                    "role": "user",
-                    "content": f"Observation: {observation}\n\nContinue reasoning."
-                })
+                messages.append({"role": "user", "content": f"Observation: {observation}\n\nContinue reasoning."})
             else:
                 messages.append({"role": "assistant", "content": output})
                 messages.append({"role": "user", "content": "Continue."})
@@ -198,9 +185,11 @@ Be concise. Max {MAX_STEPS} cycles."""
         return {"answer": answer, "steps": steps, "success": True}
 
     except Exception as e:
+        if "Connection refused" in str(e) or "Errno 61" in str(e):
+            logger.error("Ollama not running — run: ollama serve")
+            return {"answer": "⚠️ Ollama is not running. Please run `ollama serve`.", "steps": [], "success": False}
         logger.error(f"ReAct failed: {e}")
         return {"answer": "", "steps": [], "success": False}
-
 
 def react(user_input: str, model: str = "phi3:mini",
           context: str = "", user_name: str = "User") -> str:

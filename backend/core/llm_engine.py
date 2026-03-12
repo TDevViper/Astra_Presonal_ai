@@ -1,11 +1,12 @@
-# core/llm_engine.py
-# LLM call logic extracted from Brain — _try_react, _llm_call, stream_response
-import logging, re, threading
+import logging, re, os, threading
 from typing import Generator, List, Dict
-
 import ollama
 
 logger = logging.getLogger(__name__)
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+
+def _client():
+    return ollama.Client(host=OLLAMA_HOST)
 
 _HARD_STOP = (
     "CRITICAL RULES — follow exactly: "
@@ -14,7 +15,6 @@ _HARD_STOP = (
     "3) If you do not know something, say so in one sentence. Do not invent facts. "
     "4) Stop the moment you have answered. No follow-up offers."
 )
-
 _TOKEN_BUDGETS = {"coding": 600, "technical": 500, "reasoning": 450, "research": 400}
 
 
@@ -47,13 +47,12 @@ class LLMEngine:
             logger.warning("reasoner failed: %s", e)
             processed = user_input
 
-        injected     = processed
         messages     = ([{"role": "system", "content": _HARD_STOP + "\n\n" + system_prompt}]
                         + history
-                        + [{"role": "user", "content": injected}])
+                        + [{"role": "user", "content": processed}])
         token_budget = _TOKEN_BUDGETS.get(query_intent, 300)
         try:
-            resp = ollama.chat(
+            resp = _client().chat(
                 model=selected_model,
                 messages=messages,
                 options={"temperature": 0.65, "num_predict": token_budget,
@@ -61,6 +60,9 @@ class LLMEngine:
             )
             return resp["message"]["content"]
         except Exception as e:
+            if "Connection refused" in str(e) or "Errno 61" in str(e):
+                logger.error("Ollama not running — run: ollama serve")
+                return "⚠️ Ollama is offline. Please run `ollama serve` in a terminal."
             logger.error("ollama.chat failed: %s", e)
             return "I can't reach my model right now."
 
@@ -93,9 +95,10 @@ class LLMEngine:
         threading.Thread(target=_tts_worker, daemon=True).start()
 
         try:
-            for chunk in ollama.chat(model=selected_model, messages=messages, stream=True,
-                                     options={"temperature": temperature,
-                                              "num_predict": token_budget}):
+            for chunk in _client().chat(
+                model=selected_model, messages=messages, stream=True,
+                options={"temperature": temperature, "num_predict": token_budget}
+            ):
                 token = chunk["message"]["content"]
                 if not token:
                     continue
@@ -115,8 +118,12 @@ class LLMEngine:
                 with tts_lock:
                     tts_queue.append(buffer.strip())
         except Exception as e:
-            logger.error("LLMEngine.stream ollama error: %s", e)
-            yield {"token": f"Error: {e}"}
+            if "Connection refused" in str(e) or "Errno 61" in str(e):
+                logger.error("Ollama not running — run: ollama serve")
+                yield {"token": "⚠️ Ollama is offline. Please run `ollama serve`."}
+            else:
+                logger.error("LLMEngine.stream ollama error: %s", e)
+                yield {"token": f"Error: {e}"}
         finally:
             tts_done.set()
 
@@ -125,16 +132,19 @@ class LLMEngine:
 
 def stream_response(user_input: str, system_prompt: str = "",
                     model: str = "phi3:mini") -> Generator:
-    """Standalone streaming helper used by app.py."""
     messages = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": user_input})
     try:
-        for chunk in ollama.chat(model=model, messages=messages, stream=True):
+        for chunk in _client().chat(model=model, messages=messages, stream=True):
             token = chunk["message"]["content"]
             if token:
                 yield token
     except Exception as e:
-        logger.error("stream_response error: %s", e)
-        yield f"Error: {e}"
+        if "Connection refused" in str(e) or "Errno 61" in str(e):
+            logger.error("Ollama not running — run: ollama serve")
+            yield "⚠️ Ollama is offline. Please run `ollama serve`."
+        else:
+            logger.error("stream_response error: %s", e)
+            yield f"Error: {e}"

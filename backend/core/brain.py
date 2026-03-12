@@ -153,7 +153,13 @@ class Brain:
                     and _needs_web_search(user_input)
                     and not _is_local_query(user_input)):
                 self.search_agent.model = self.model_manager.select_model(user_input, "research")
-                result = self.search_agent.run(user_input, user_name)
+                # Strip trigger words so "search python news" → "python news"
+                _search_query = user_input
+                for _trigger in ["search for ", "search ", "google ", "look up ", "find "]:
+                    if _search_query.lower().startswith(_trigger):
+                        _search_query = _search_query[len(_trigger):].strip()
+                        break
+                result = self.search_agent.run(_search_query, user_name)
                 self._add_to_history("user", user_input)
                 self._add_to_history("assistant", result["reply"])
                 self._mem.save(memory)

@@ -11,16 +11,16 @@ from vision.frame_buffer import FrameBuffer
 from vision.continuous_vision import ContinuousVision
 from api.ws_stream import sock, broadcast
 
-_frame_buffer = FrameBuffer(maxlen=10)
+_frame_buffer      = FrameBuffer(maxlen=10)
 _continuous_vision = ContinuousVision(
     broadcast_fn = broadcast,
     get_frame_fn = _frame_buffer.latest,
     interval     = 60
 )
-# _continuous_vision.start()  # disabled — starts only when vision tab opened
 
 from config import config
 from api.chat import chat_bp
+from api.chat_stream import stream_bp
 from api.memory import memory_bp
 from api.model import model_bp
 from api.execute import execute_bp
@@ -42,15 +42,13 @@ class ColoredFormatter(logging.Formatter):
     red      = "\x1b[31;21m"
     bold_red = "\x1b[31;1m"
     reset    = "\x1b[0m"
-
-    FORMATS = {
+    FORMATS  = {
         logging.DEBUG:    grey     + "%(levelname)s - %(message)s" + reset,
         logging.INFO:     green    + "%(levelname)s - %(message)s" + reset,
         logging.WARNING:  yellow   + "%(levelname)s - %(message)s" + reset,
         logging.ERROR:    red      + "%(levelname)s - %(message)s" + reset,
         logging.CRITICAL: bold_red + "%(levelname)s - %(message)s" + reset,
     }
-
     def format(self, record):
         return logging.Formatter(self.FORMATS.get(record.levelno)).format(record)
 
@@ -72,17 +70,14 @@ limiter = Limiter(
     default_limits=["500 per minute"],
     storage_uri="memory://"
 )
-
-# Exclude WebSocket endpoint from rate limiting
-@app.before_request
-def exempt_ws():
-    from flask import request as _req
-    if _req.path == "/ws":
-        limiter.exempt(exempt_ws)
-
-CORS(app, origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:3001"])
+CORS(app, origins=[
+    "http://localhost:3000", "http://localhost:3001",
+    "http://localhost:5173", "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001"
+])
 
 app.register_blueprint(chat_bp)
+app.register_blueprint(stream_bp)
 app.register_blueprint(memory_bp)
 app.register_blueprint(model_bp)
 app.register_blueprint(execute_bp)
@@ -117,12 +112,9 @@ def internal_error(e):
 
 
 from core.wake_word import start_wake_word_listener
-# start_wake_word_listener(_on_wake)  # disabled at startup
-
 from core.proactive import set_broadcast
 from api.ws_stream import broadcast as _ws_broadcast
 set_broadcast(_ws_broadcast)
-
 
 from core.gpu_health import start as _start_gpu_health
 from core.brain_singleton import get_brain, teardown_brain
@@ -136,15 +128,15 @@ if __name__ == "__main__":
     print("\n" + "=" * 60)
     print("🚀 ASTRA ENGINE STARTING")
     print("=" * 60)
-    print(f"📍 Model:       phi3:mini (default)")
+    print(f"📍 Model:       {config.default_model}")
     print(f"🌐 Server:      http://{config.host}:{config.port}")
     print(f"💾 Memory:      {config.enable_memory}")
     print(f"😊 Emotions:    {config.enable_emotions}")
+    print(f"🦙 Ollama:      {config.ollama_host}")
     print("=" * 60 + "\n")
 
     from voice.speaker import speak
     from proactive.proactive_engine import get_proactive_engine
-
     proactive = get_proactive_engine(speak_fn=speak)
     proactive.start()
 

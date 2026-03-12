@@ -4,6 +4,9 @@ from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
+_briefing_shown = False  # show once per session only
+
+
 class EarlyExitHandler:
 
     def check_mode_switch(self, user_input: str) -> Optional[str]:
@@ -27,17 +30,9 @@ class EarlyExitHandler:
             logger.debug("check_chain failed: %s", e)
         return None
 
-    def check_briefing(self, memory: dict) -> Optional[str]:
-        try:
-            from core.proactive import get_session_summary
-            user_name = memory.get("preferences", {}).get("name", "User") if isinstance(memory, dict) else "User"
-            return get_session_summary(user_name)
-        except Exception as e:
-            logger.debug("check_briefing failed: %s", e)
-        return None
-
+    def check_briefing(self, memory: dict):
+        return None  # disabled
     def check_quick_tools(self, user_input: str) -> Optional[Tuple[str, str, str]]:
-        """Returns (reply, intent, agent) or None."""
         try:
             from tools.quick_tools import handle_quick_tool
             return handle_quick_tool(user_input)
@@ -61,4 +56,3 @@ class EarlyExitHandler:
         except Exception as e:
             logger.debug("check_self_query failed: %s", e)
         return None
-    
