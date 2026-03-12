@@ -2,11 +2,13 @@
 # App-context managed Brain instance.
 # One Brain per app (not per request) but thread-safe conversation history.
 import logging
+import threading
 from flask import g
 
 logger = logging.getLogger(__name__)
 
 _brain_instance = None
+_brain_lock = threading.Lock()
 
 
 def get_brain():
@@ -14,13 +16,17 @@ def get_brain():
     Returns the Brain instance.
     Uses Flask's g object to give each request its own conversation context
     while sharing the expensive initialized components (models, cache, memory).
+    Thread-safe initialization via lock.
     """
     global _brain_instance
 
     if _brain_instance is None:
-        from core.brain import Brain
-        logger.info("Initializing Brain instance...")
-        _brain_instance = Brain()
+        with _brain_lock:
+            # Double-checked locking — re-check inside lock
+            if _brain_instance is None:
+                from core.brain import Brain
+                logger.info("Initializing Brain instance...")
+                _brain_instance = Brain()
 
     # Each request gets a fresh conversation snapshot
     # so concurrent requests don't corrupt each other's history

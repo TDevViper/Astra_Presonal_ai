@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5050";
 const WS_URL   = `ws://localhost:5050/ws`;
 
 const API = {
@@ -14,6 +14,13 @@ const API = {
   model:     `${BASE_URL}/model`,
   knowledge: `${BASE_URL}/knowledge/graph`,
 };
+
+API.modelList = `${BASE_URL}/model/list`;
+API.modelSet  = `${BASE_URL}/model/set`;
+API.modeList  = `${BASE_URL}/mode/list`;
+API.modeSet   = `${BASE_URL}/mode/set`;
+API.stats     = `${BASE_URL}/system/stats`;
+API.capabilities = `${BASE_URL}/capabilities`;
 
 export default API;
 export { WS_URL };

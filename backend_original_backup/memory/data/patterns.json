@@ -1,0 +1,29 @@
+{
+  "topics": {
+    "building": 7,
+    "whatsapp": 3,
+    "message": 3,
+    "completed": 2,
+    "things": 2,
+    "arnav": 2,
+    "hello": 2,
+    "check": 2,
+    "system": 2,
+    "apple": 1
+  },
+  "last_session": "2026-03-12T03:49:12.416187",
+  "pending_tasks": [],
+  "top_topics": [
+    "building",
+    "whatsapp",
+    "message",
+    "completed",
+    "things"
+  ],
+  "top_intents": [
+    "casual",
+    "technical",
+    "reasoning"
+  ],
+  "episode_count": 69
+}

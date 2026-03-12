@@ -30,7 +30,7 @@ class EarlyExitHandler:
     def check_briefing(self, memory: dict) -> Optional[str]:
         try:
             from core.proactive import get_session_summary
-            user_name = memory.get("preferences", {}).get("name", "Arnav") if isinstance(memory, dict) else "Arnav"
+            user_name = memory.get("preferences", {}).get("name", "User") if isinstance(memory, dict) else "User"
             return get_session_summary(user_name)
         except Exception as e:
             logger.debug("check_briefing failed: %s", e)

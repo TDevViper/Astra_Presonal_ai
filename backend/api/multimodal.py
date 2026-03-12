@@ -70,10 +70,16 @@ def talk():
         # ── Step 5: Speak ─────────────────────────────────────
         if speak and reply:
             clean = reply.replace('"', '').replace("'", "")[:300]
-            subprocess.Popen(
-                ["say", "-v", "Samantha", "-r", "185", clean],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-            )
+            try:
+                from voice.speaker import speak_async
+                speak_async(clean)
+            except Exception:
+                import platform
+                if platform.system() == "Darwin":
+                    subprocess.Popen(
+                        ["say", "-v", "Samantha", "-r", "185", clean],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                    )
 
         return jsonify({
             "reply":          reply,

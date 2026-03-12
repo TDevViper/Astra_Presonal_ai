@@ -17,7 +17,7 @@ MEMORY_FILE = os.path.join(BASE_DIR, "memory", "data", "memory.json")
 DEFAULT_MEMORY = {
     "user_facts": [],
     "preferences": {
-        "name": "Arnav",
+        "name": "User",
         "location": None,
         "favorite_color": None
     },

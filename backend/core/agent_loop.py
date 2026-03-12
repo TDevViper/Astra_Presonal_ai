@@ -176,9 +176,9 @@ def _act_memory(user_input: str, context: Dict) -> Tuple[str, float]:
         from memory.semantic_recall import build_semantic_context
 
         mem    = load_memory()
-        result = memory_recall(user_input, mem, context.get("user_name", "Arnav"))
+        result = memory_recall(user_input, mem, context.get("user_name", "User"))
         sem, boost = build_semantic_context(user_input,
-                                            user_name=context.get("user_name", "Arnav"))
+                                            user_name=context.get("user_name", "User"))
         combined = ""
         if result:
             combined += result

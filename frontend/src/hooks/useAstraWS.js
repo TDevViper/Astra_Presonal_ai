@@ -1,30 +1,42 @@
 // hooks/useAstraWS.js
-// Persistent WebSocket connection to ASTRA backend
 import { useEffect, useRef, useCallback, useState } from "react";
 import { WS_URL } from "../config";
 
-const RECONNECT_DELAY_MS = 2000;
-const MAX_RECONNECT      = 5;
+const RECONNECT_DELAY_MS = 3000;
+const MAX_RECONNECT      = 10;
 
 export function useAstraWS({ onToken, onMeta, onDone, onError, onProactive }) {
-  const ws          = useRef(null);
-  const reconnects  = useRef(0);
-  const pingTimer   = useRef(null);
+  const ws             = useRef(null);
+  const reconnects     = useRef(0);
+  const pingTimer      = useRef(null);
+  const reconnectTimer = useRef(null);
   const [connected, setConnected] = useState(false);
 
+  const onTokenRef     = useRef(onToken);
+  const onMetaRef      = useRef(onMeta);
+  const onDoneRef      = useRef(onDone);
+  const onErrorRef     = useRef(onError);
+  const onProactiveRef = useRef(onProactive);
+
+  useEffect(() => { onTokenRef.current     = onToken;     }, [onToken]);
+  useEffect(() => { onMetaRef.current      = onMeta;      }, [onMeta]);
+  useEffect(() => { onDoneRef.current      = onDone;      }, [onDone]);
+  useEffect(() => { onErrorRef.current     = onError;     }, [onError]);
+  useEffect(() => { onProactiveRef.current = onProactive; }, [onProactive]);
+
   const connect = useCallback(() => {
-    if (ws.current?.readyState === WebSocket.OPEN) return;
+    if (ws.current?.readyState === WebSocket.OPEN ||
+        ws.current?.readyState === WebSocket.CONNECTING) return;
 
     const socket = new WebSocket(WS_URL);
 
     socket.onopen = () => {
       reconnects.current = 0;
       setConnected(true);
-      // Keepalive ping every 25s
+      clearTimeout(reconnectTimer.current);
       pingTimer.current = setInterval(() => {
-        if (socket.readyState === WebSocket.OPEN) {
+        if (socket.readyState === WebSocket.OPEN)
           socket.send(JSON.stringify({ type: "ping" }));
-        }
       }, 25000);
     };
 
@@ -32,16 +44,14 @@ export function useAstraWS({ onToken, onMeta, onDone, onError, onProactive }) {
       try {
         const msg = JSON.parse(event.data);
         switch (msg.type) {
-          case "token":     onToken?.(msg.data);     break;
-          case "meta":      onMeta?.(msg.data);      break;
-          case "done":      onDone?.();              break;
-          case "error":     onError?.(msg.data);     break;
-          case "proactive": onProactive?.(msg.data); break;
+          case "token":     onTokenRef.current?.(msg.data);     break;
+          case "meta":      onMetaRef.current?.(msg.data);      break;
+          case "done":      onDoneRef.current?.();              break;
+          case "error":     onErrorRef.current?.(msg.data);     break;
+          case "proactive": onProactiveRef.current?.(msg.data); break;
           default: break;
         }
-      } catch (e) {
-        console.warn("WS parse error:", e);
-      }
+      } catch (e) { console.warn("WS parse error:", e); }
     };
 
     socket.onclose = () => {
@@ -49,22 +59,21 @@ export function useAstraWS({ onToken, onMeta, onDone, onError, onProactive }) {
       clearInterval(pingTimer.current);
       if (reconnects.current < MAX_RECONNECT) {
         reconnects.current++;
-        setTimeout(connect, RECONNECT_DELAY_MS * reconnects.current);
+        const delay = RECONNECT_DELAY_MS * Math.min(reconnects.current, 5);
+        reconnectTimer.current = setTimeout(connect, delay);
       }
     };
 
-    socket.onerror = (e) => {
-      console.warn("WebSocket error:", e);
-      setConnected(false);
-    };
-
+    socket.onerror = () => { setConnected(false); };
     ws.current = socket;
-  }, [onToken, onMeta, onDone, onError, onProactive]);
+  }, []);
 
   useEffect(() => {
     connect();
     return () => {
       clearInterval(pingTimer.current);
+      clearTimeout(reconnectTimer.current);
+      reconnects.current = MAX_RECONNECT;
       ws.current?.close();
     };
   }, [connect]);

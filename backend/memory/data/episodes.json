@@ -664,5 +664,23 @@
     "intent": "technical",
     "emotion": "",
     "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T06:11:49.526173",
+    "date": "2026-03-12",
+    "user": "hiii",
+    "astra": "",
+    "intent": "casual",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T06:11:56.520635",
+    "date": "2026-03-12",
+    "user": "what are yoy doing",
+    "astra": "",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
   }
 ]

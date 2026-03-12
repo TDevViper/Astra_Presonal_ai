@@ -180,11 +180,11 @@ def _detect_input_type(text: str, has_image: bool) -> Tuple[str, str]:
 
 
 def _build_context(user_input: str) -> Dict:
-    ctx = {"facts": "", "episodes": "", "user_name": "Arnav"}
+    mem_ctx = load_memory(); ctx = {"facts": "", "episodes": "", "user_name": mem_ctx.get("preferences", {}).get("name", "User")}
     try:
         from memory.memory_engine import load_memory
         mem = load_memory()
-        ctx["user_name"] = mem.get("preferences", {}).get("name", "Arnav")
+        ctx["user_name"] = mem.get("preferences", {}).get("name", "User")
         facts = mem.get("user_facts", [])
         if facts:
             ctx["facts"] = " | ".join(f["fact"] for f in facts[-5:])
@@ -308,7 +308,7 @@ User context: {context.get('facts', '')}
                 elif action_name == "recall_memory":
                     from memory.memory_recall import memory_recall
                     from memory.memory_engine import load_memory
-                    observation = memory_recall(user_input, load_memory(), "Arnav") or "Nothing found"
+                    mem_tmp = load_memory(); _uname_tmp = mem_tmp.get("preferences", {}).get("name", "User"); observation = memory_recall(user_input, mem_tmp, _uname_tmp) or "Nothing found"
                 elif action_name == "calculate":
                     observation = "Use math to compute the answer"
                 else:
@@ -420,7 +420,7 @@ def _truth_guard(reply: str) -> str:
 def _critic(reply: str, user_input: str) -> str:
     try:
         from agents.critic import critic_review
-        return critic_review(reply, "Arnav", {}, user_input=user_input)
+        mem_tmp2 = load_memory(); _uname_tmp2 = mem_tmp2.get("preferences", {}).get("name", "User"); return critic_review(reply, _uname_tmp2, {}, user_input=user_input)
     except Exception as e:
         log_event(system_logger, "critic_error", error=str(e))
     return reply
@@ -429,7 +429,7 @@ def _critic(reply: str, user_input: str) -> str:
 def _store(user_input: str, reply: str, intent: str):
     try:
         from memory.episodic import store_episode
-        store_episode(user_input, reply, intent=intent, user_name="Arnav")
+        mem_tmp3 = load_memory(); _uname_tmp3 = mem_tmp3.get("preferences", {}).get("name", "User"); store_episode(user_input, reply, intent=intent, user_name=_uname_tmp3)
     except Exception as e:
         log_event(system_logger, "memory_store_error", error=str(e))
 

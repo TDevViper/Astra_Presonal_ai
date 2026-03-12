@@ -9,9 +9,13 @@ execute_bp = Blueprint("execute", __name__)
 @execute_bp.route("/capabilities", methods=["GET"])
 def get_capabilities():
     """Get current system capabilities."""
-    from core.brain_singleton import get_brain
-    brain = get_brain()
-    return jsonify(brain.capabilities.get_status())
+    try:
+        from core.brain_singleton import get_brain
+        brain = get_brain()
+        return jsonify(brain.capabilities.get_status())
+    except Exception as e:
+        logger.error("get_capabilities error: %s", e)
+        return jsonify({"error": str(e)}), 500
 
 
 @execute_bp.route("/capabilities/<capability>", methods=["PUT"])

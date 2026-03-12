@@ -125,6 +125,6 @@ def get_episode_stats() -> Dict:
 def _auto_extract_after_store(user_msg: str, reply: str):
     try:
         from knowledge.auto_extractor import extract_and_store
-        extract_and_store(user_msg + " " + reply, user_name="Arnav")
+        from memory.memory_engine import load_memory as _lm; _m=_lm(); extract_and_store(user_msg + " " + reply, user_name=_m.get("preferences",{}).get("name","User"))
     except Exception:
         pass  # TODO: handle

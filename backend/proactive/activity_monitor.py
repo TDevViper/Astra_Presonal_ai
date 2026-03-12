@@ -319,7 +319,7 @@ if __name__ == "__main__":
 
     def speak_blocking(text):
         print(f"🔊 {text}")
-        subprocess.run(["say", "-v", "Samantha", "-r", "185", text])
+        import platform; (subprocess.run(["say", "-v", "Samantha", "-r", "185", text]) if platform.system() == "Darwin" else print(f"[TTS] {text[:80]}"))
 
     print("👁️ Testing ActivityMonitor...")
     monitor = ActivityMonitor(speak_fn=speak_blocking)
