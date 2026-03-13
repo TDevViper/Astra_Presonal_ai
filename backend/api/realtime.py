@@ -82,7 +82,7 @@ def realtime_status():
     except Exception as e:
         status["whisper"] = f"error: {e}"
     try:
-        client = ollama.Client(host=GPU_HOST)
+        client = ollama.Client(host=GPU_HOST or "http://localhost:11434")
         models = client.list()
         names  = [m.get("model", m.get("name", "")) for m in models.get("models", [])]
         status["gpu"]    = "ready"

@@ -1,10 +1,6 @@
 import logging
 logger = logging.getLogger(__name__)
 
-
-import logging
-logger = logging.getLogger(__name__)
-
 def detect_compound(user_input: str):
     """Handle compound commands like open whatsapp and send message to X saying Y."""
     t = user_input.lower()

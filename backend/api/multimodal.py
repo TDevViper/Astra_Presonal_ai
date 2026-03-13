@@ -36,13 +36,16 @@ def talk():
             # No question — just describe what's seen naturally
             prompt = f"hello"
         elif text:
-            prompt = f"Arnav says: '{text}'. Reply conversationally in 1-2 sentences max."
+            prompt = f"{user_name} says: '{text}'. Reply conversationally in 1-2 sentences max."
         else:
             return jsonify({"error": "No input provided"}), 400
 
         # ── Step 3: Get reply from brain ──────────────────────
         from core.brain_singleton import get_brain
-        result = get_brain().process(prompt, vision_mode=True)
+        _brain = get_brain()
+        from memory.memory_engine import load_memory
+        user_name = load_memory().get("preferences",{}).get("name","User")
+        result = _brain.process(prompt, vision_mode=True)
         reply  = result.get("reply", "").strip()
         # Cap at 40 words for conversational feel
         words = reply.split()

@@ -203,7 +203,7 @@ def get_proactive_engine(speak_fn: Callable[[str], None]) -> ProactiveEngine:
 
 if __name__ == "__main__":
     import sys, subprocess
-    sys.path.insert(0, "/Users/arnavyadav/Astra/backend")
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
     def speak_blocking(text):
         print(f"🔊 {text}")

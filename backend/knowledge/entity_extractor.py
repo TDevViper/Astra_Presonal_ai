@@ -22,24 +22,24 @@ KNOWN_RELATIONS = [
 # Rule-based patterns — fast, no LLM needed
 PATTERNS = [
     # "I am working on ASTRA"
-    (r"i(?:'m| am) working on (.+)",           "arnav", "works_on",   1),
-    (r"i(?:'m| am) building (.+)",             "arnav", "works_on",   1),
-    (r"i(?:'m| am) creating (.+)",             "arnav", "works_on",   1),
+    (r"i(?:'m| am) working on (.+)",           "__USER__", "works_on",   1),
+    (r"i(?:'m| am) building (.+)",             "__USER__", "works_on",   1),
+    (r"i(?:'m| am) creating (.+)",             "__USER__", "works_on",   1),
     # "I like / love / enjoy Python"
-    (r"i (?:like|love|enjoy|prefer) (.+)",     "arnav", "likes",      1),
-    (r"i (?:hate|dislike|don't like) (.+)",    "arnav", "dislikes",   1),
+    (r"i (?:like|love|enjoy|prefer) (.+)",     "__USER__", "likes",      1),
+    (r"i (?:hate|dislike|don't like) (.+)",    "__USER__", "dislikes",   1),
     # "I use FastAPI / VSCode"
-    (r"i use (.+)",                            "arnav", "uses",       1),
-    (r"i(?:'m| am) using (.+)",                "arnav", "uses",       1),
+    (r"i use (.+)",                            "__USER__", "uses",       1),
+    (r"i(?:'m| am) using (.+)",                "__USER__", "uses",       1),
     # "I live in Mumbai"
-    (r"i live in (.+)",                        "arnav", "lives_in",   1),
-    (r"i(?:'m| am) (?:from|in) (.+)",          "arnav", "lives_in",   1),
+    (r"i live in (.+)",                        "__USER__", "lives_in",   1),
+    (r"i(?:'m| am) (?:from|in) (.+)",          "__USER__", "lives_in",   1),
     # "I study / learn X"
-    (r"i(?:'m| am)? ?(?:studying|learning) (.+)", "arnav", "studies", 1),
+    (r"i(?:'m| am)? ?(?:studying|learning) (.+)", "__USER__", "studies", 1),
     # "I work at X"
-    (r"i work (?:at|for) (.+)",                "arnav", "works_at",   1),
+    (r"i work (?:at|for) (.+)",                "__USER__", "works_at",   1),
     # "My name is X"
-    (r"my name is (\w+)",                      "arnav", "is_a",       1),
+    (r"my name is (\w+)",                      "__USER__", "is_a",       1),
     # "X is built with Y"
     (r"(\w+) is built (?:with|using) (.+)",    None,    "built_with", None),
     # "X uses Y"

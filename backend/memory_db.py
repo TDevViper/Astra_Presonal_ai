@@ -72,4 +72,8 @@ def get_fact(key: str):
     conn.close()
     return row[0] if row else None
 
-init_db()
+if __name__ != "__main__":
+    try:
+        init_db()
+    except Exception:
+        pass
