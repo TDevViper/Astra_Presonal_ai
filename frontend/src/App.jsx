@@ -624,6 +624,43 @@ export default function App() {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
   };
 
+  useEffect(() => {
+    const handle = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.code === "Space") {
+        e.preventDefault(); inputRef.current?.focus();
+      }
+      if (e.key === "Escape" && (loading || streaming)) {
+        abortRef.current?.abort(); setStreaming(false); setLoading(false);
+      }
+    };
+    window.addEventListener("keydown", handle);
+    return () => window.removeEventListener("keydown", handle);
+  }, [loading, streaming]);
+
+  const exportChat = () => {
+    const lines = messages.map(m => {
+      const role = m.role === "user" ? "**You**" : "**ASTRA**";
+      const meta = m.role === "assistant" && m.agent
+        ? "
+*" + m.agent + " · " + (m.intent || "") + " · " + (m.confidence ? Math.round(m.confidence * 100) + "%" : "") + "*"
+        : "";
+      return role + "
+" + m.content + meta;
+    });
+    const md = "# ASTRA Conversation
+
+" + lines.join("
+
+---
+
+");
+    const blob = new Blob([md], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "astra-chat-" + Date.now() + ".md";
+    a.click(); URL.revokeObjectURL(url);
+  };
+
   const stopStream = () => { abortRef.current?.abort(); setStreaming(false); setLoading(false); };
 
   // ── Tabs ──────────────────────────────────────────────────────────────────
