@@ -29,13 +29,6 @@ def broadcast(message: str):
 
 @sock.route('/ws')
 def websocket_handler(ws):
-    # Wait for brain to be ready before accepting messages
-    import time
-    from core.brain_singleton import get_brain
-    try:
-        get_brain()  # ensure initialized
-    except Exception:
-        pass
     """
     Full-duplex WebSocket endpoint.
 
@@ -52,6 +45,12 @@ def websocket_handler(ws):
         {"type": "proactive", "data": "..."}
         {"type": "pong"}
     """
+    # Wait for brain to be ready before accepting messages
+    from core.brain_singleton import get_brain
+    try:
+        get_brain()  # ensure initialized
+    except Exception:
+        pass
     with _lock:
         _connected_clients.append(ws)
 

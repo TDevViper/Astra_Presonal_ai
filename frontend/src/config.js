@@ -1,5 +1,5 @@
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5050";
-const WS_URL   = `ws://localhost:5050/ws`;
+const WS_URL = (import.meta.env.VITE_API_URL || "ws://localhost:5050").replace("http", "ws") + "/ws";
 
 const API = {
   chat:      `${BASE_URL}/chat`,

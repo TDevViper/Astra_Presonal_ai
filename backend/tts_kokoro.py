@@ -4,7 +4,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 _BASE   = os.path.dirname(os.path.abspath(__file__))
-_MODEL  = os.path.join(_BASE, "kokoro-v1_0.pth")
+_MODEL  = os.path.join(_BASE, "kokoro-v0_19.onnx")
 _VOICES = os.path.join(_BASE, "voices")
 
 try:

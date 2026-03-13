@@ -871,5 +871,32 @@
     "intent": "technical",
     "emotion": "",
     "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T19:31:45.618824",
+    "date": "2026-03-12",
+    "user": "tell me about your capbilty",
+    "astra": "",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T19:32:19.534059",
+    "date": "2026-03-12",
+    "user": "done now tell me",
+    "astra": "Sure thing! Do let me know what else I can help with or assist you with today [1]. \ud83d\udcda Sources: [1] Python Lists \u2014 https://docs. python. org/3/tutorial/datastructures. html#lists.",
+    "intent": "casual",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-12T19:32:47.518267",
+    "date": "2026-03-12",
+    "user": "tell me about your capiblity",
+    "astra": "I'm equipped with capabilities in several areas such as providing information, solving problems and offering suggestions based on the data available to me up until my last update [1]. However, remember that I don't have real-time access or personal experiences.",
+    "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
   }
 ]

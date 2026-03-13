@@ -177,7 +177,7 @@ function SystemSidebar({ health, memory, models, currentModel, onSwitchModel }) 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const r = await fetch("http://localhost:5050/system/stats");
+        const r = await fetch(API.stats);
         if (r.ok) setSysInfo(await r.json());
       } catch {}
     };
@@ -466,10 +466,10 @@ export default function App() {
     const poll = async () => {
       try {
         const [h, m, mdl, modeData] = await Promise.all([
-          fetch(`/health`).then(r => r.json()).catch(() => ({})),
-          fetch(`/memory`).then(r => r.json()).catch(() => ({})),
-          fetch(`/model`).then(r => r.json()).catch(() => ({})),
-          fetch(`/mode/list`).then(r => r.json()).catch(() => ({})),
+          fetch(API.health).then(r => r.json()).catch(() => ({})),
+          fetch(API.memory).then(r => r.json()).catch(() => ({})),
+          fetch(API.model).then(r => r.json()).catch(() => ({})),
+          fetch(API.modeList).then(r => r.json()).catch(() => ({})),
         ]);
         setHealth(h);
         setMemory(m);
@@ -487,7 +487,7 @@ export default function App() {
   // Switch model
   const switchModel = useCallback(async (model) => {
     try {
-      await fetch(`/model/set`, {
+      await fetch(API.modelSet, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model }),
       });
@@ -498,7 +498,7 @@ export default function App() {
   // Switch mode
   const switchMode = useCallback(async (modeId) => {
     try {
-      const r = await fetch(`/mode/set`, {
+      const r = await fetch(API.modeSet, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mode: modeId }),
       });
@@ -516,7 +516,7 @@ export default function App() {
     try {
       const controller = new AbortController();
       abortRef.current = controller;
-      const res = await fetch(`/chat/stream`, {
+      const res = await fetch(API.stream, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text }), signal: controller.signal,
       });
@@ -555,7 +555,7 @@ export default function App() {
     setLoading(true);
     setMessages(prev => [...prev, { role: "user", content: text, id: Date.now() }]);
     try {
-      const r = await fetch(`/chat`, {
+      const r = await fetch(API.chat, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text }),
       });
@@ -738,7 +738,7 @@ export default function App() {
           {tab === "chat" && (
             <>
               {/* Messages */}
-              <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px", background: "#040c18" }}>
+              <div ref={chatBoxRef} style={{ flex: 1, overflowY: "auto", minHeight: 0, padding: "24px 28px", background: "#040c18" }}>
                 {messages.length === 0 && (
                   <div style={{
                     height: "100%", display: "flex", flexDirection: "column",
