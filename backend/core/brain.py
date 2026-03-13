@@ -372,6 +372,17 @@ RELEVANT KNOWLEDGE:
             except Exception as e:
                 logger.warning("save_exchange failed: %s", e)
         if len(self.conversation_history) > 12:
+            try:
+                from memory.summarizer import should_summarize, summarize_conversation, store_summary
+                if should_summarize(self.conversation_history):
+                    _mem = self._mem.load()
+                    _user = self._mem.user_name(_mem)
+                    _summary = summarize_conversation(self.conversation_history, _mem, _user)
+                    if _summary:
+                        _mem = store_summary(_mem, _summary)
+                        self._mem.save(_mem)
+            except Exception:
+                pass
             self.conversation_history = self.conversation_history[-12:]
 
     def _build_reply(self, reply, emotion, intent, agent,
