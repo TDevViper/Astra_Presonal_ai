@@ -1,6 +1,5 @@
 # -------------------------
 # Python
-# -------------------------
 __pycache__/
 *.pyc
 *.pyo
@@ -10,23 +9,14 @@ __pycache__/
 venv/
 venv311/
 .env
-
-# -------------------------
 # Databases (never commit)
-# -------------------------
 *.db
 *.sqlite
-
-# -------------------------
 # Backup files
-# -------------------------
 *.bak
 *.bak2
 *.bak3
-
-# -------------------------
 # AI / ML models
-# -------------------------
 *.pth
 *.pt
 *.bin
@@ -35,49 +25,26 @@ venv311/
 *.safetensors
 *.ppn
 models/
-
-# -------------------------
 # Vector DB / embeddings
-# -------------------------
 backend/memory/embedding_cache/
 backend/memory/vector_store/
-
-# -------------------------
 # OS files
-# -------------------------
 .DS_Store
-
-# -------------------------
 # Docker
-# -------------------------
 .dockerignore
-
-# -------------------------
 # Logs
-# -------------------------
 *.log
 logs/
-
-# -------------------------
 # IDE
-# -------------------------
 .vscode/
 .idea/
 # Large model files — never commit these
-*.pth
-*.gguf
-*.bin
-*.safetensors
-*.onnx
-*.pt
-
 # Coverage
 .coverage
 htmlcov/
 coverage.xml
-
 # Backup files (all variants)
 *.bak*
 *.orig
 frontend/node_modules/
-frontend/node_modules/
+backend_original_backup/

@@ -27,6 +27,8 @@ except Exception as e:
     KOKORO_AVAILABLE = False
 
 def _load_voice(voice: str):
+    if not KOKORO_AVAILABLE:
+        return voice
     if voice in _voice_cache:
         return _voice_cache[voice]
     import torch

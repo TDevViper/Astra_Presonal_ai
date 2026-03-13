@@ -69,7 +69,7 @@ limiter = Limiter(
     app=app,
     key_func=get_remote_address,
     default_limits=["500 per minute"],
-    storage_uri="memory://"
+    storage_uri=os.getenv("REDIS_URL", "redis://localhost:6379")
 )
 CORS(app, origins=[
     "http://localhost:3000", "http://localhost:3001",

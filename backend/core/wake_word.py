@@ -31,7 +31,8 @@ def start_wake_word_listener(callback=None):
             logger.warning("PICOVOICE_API_KEY not set — wake word disabled")
             return None
 
-        porcupine = pvporcupine.create(access_key=api_key, keywords=["hey siri"])
+        keyword_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Hey-ASTRA_en_mac_v4_0_0.ppn")
+        porcupine = pvporcupine.create(access_key=api_key, keyword_paths=[keyword_path])
         _stop_event = threading.Event()
 
         def _listen():
