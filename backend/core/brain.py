@@ -179,6 +179,18 @@ class Brain:
                 query_intent, self.conversation_history
             )
 
+            try:
+                from rag.rag_engine import query_rag, should_use_rag
+                if should_use_rag(user_input):
+                    rag_ctx = query_rag(user_input, top_k=3)
+                    if rag_ctx:
+                        system_prompt += f"
+
+RELEVANT KNOWLEDGE:
+{rag_ctx}"
+            except Exception:
+                pass
+
             self._add_to_history("user", user_input)
             reply = self._llm.try_react(user_input, selected_model, system_prompt, user_name)
             if not reply:
@@ -305,6 +317,19 @@ class Brain:
             user_input, user_name, memory, emotion_label,
             query_intent, self.conversation_history
         )
+
+        try:
+            from rag.rag_engine import query_rag, should_use_rag
+            if should_use_rag(user_input):
+                rag_ctx = query_rag(user_input, top_k=3)
+                if rag_ctx:
+                    system_prompt += f"
+
+RELEVANT KNOWLEDGE:
+{rag_ctx}"
+        except Exception:
+            pass
+
         self._add_to_history("user", user_input)
 
         full_reply = ""
