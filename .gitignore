@@ -80,3 +80,4 @@ coverage.xml
 *.bak*
 *.orig
 frontend/node_modules/
+frontend/node_modules/
