@@ -208,6 +208,11 @@ RELEVANT KNOWLEDGE:
                                        f"ollama/{selected_model}",
                                        memory_updated=memory_updated, confidence=final_conf)
             self._cache.set(user_input, result)
+            try:
+                from core.self_improve import log_response as _si_log
+                _si_log(user_input, reply, final_conf)
+            except Exception:
+                pass
             return result
 
         except Exception as e:
