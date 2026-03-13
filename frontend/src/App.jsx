@@ -437,6 +437,7 @@ function ModePill({ mode, active, onClick }) {
 // ══════════════════════════════════════════════════════════════════════════════
 export default function App() {
   const [messages,     setMessages]     = useState([]);
+  const [feedback,     setFeedback]     = useState({});
   const [input,        setInput]        = useState("");
   const [loading,      setLoading]      = useState(false);
   const [streaming,    setStreaming]     = useState(false);
@@ -598,6 +599,10 @@ export default function App() {
     },
   });
 
+  const handleFeedback = useCallback((msgId, value) => {
+    setMessages(prev => prev.map(m => m.id === msgId ? { ...m, feedback: value } : m));
+  }, []);
+
   const sendWS = useCallback((text) => {
     setLoading(true); setStreaming(true); setStreamBuffer("");
     wsBufferRef.current = ""; wsMetaRef.current = null;
@@ -704,6 +709,8 @@ export default function App() {
             <ModePill key={m.id} mode={m} active={m.id === currentMode} onClick={() => switchMode(m.id)} />
           ))}
         </div>
+
+        <button onClick={exportChat} title="Export chat as Markdown" style={{background:"none",border:"1px solid #1e3a5f",borderRadius:6,padding:"4px 10px",fontSize:9,fontFamily:"'JetBrains Mono',monospace",color:"#2a4a6a",cursor:"pointer",letterSpacing:"0.08em"}}>EXPORT</button>
 
         {/* Status dot */}
         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
