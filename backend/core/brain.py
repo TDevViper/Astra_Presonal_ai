@@ -28,8 +28,8 @@ logger = logging.getLogger(__name__)
 _LOCAL_QUERY_WORDS = {"my project","my code","in the project","my file","my folder","where is","which file","codebase"}
 import re as _re
 _SEARCH_PATTERN = _re.compile(
-    r'\b(search for|google|look up|find out|latest news|current (price|status|version)|'
-    r'news today|what.s happening|who is (the )?ceo|who (won|leads|runs)|'
+    r'\b(search for|google|look up|find out|latest|recent|current (price|status|version)|'
+    r'news today|news|what.s happening|who is (the )?ceo|who (won|leads|runs)|'
     r'weather (in|today|tomorrow)|price of|stock price|breaking news)\b',
     _re.IGNORECASE
 )
