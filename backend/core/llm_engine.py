@@ -15,7 +15,29 @@ _HARD_STOP = (
     "3) If you do not know something, say so in one sentence. Do not invent facts. "
     "4) Stop the moment you have answered. No follow-up offers."
 )
+
 _TOKEN_BUDGETS = {"coding": 600, "technical": 500, "reasoning": 450, "research": 400}
+
+# ── Global TTS worker (single persistent thread) ──
+import queue as _queue
+_tts_q = _queue.Queue()
+
+def _global_tts_worker():
+    try:
+        from tts_kokoro import speak
+    except Exception:
+        return
+    while True:
+        try:
+            sentence = _tts_q.get(timeout=1.0)
+            if sentence:
+                speak(sentence)
+            _tts_q.task_done()
+        except _queue.Empty:
+            continue
+
+import threading as _thr
+_thr.Thread(target=_global_tts_worker, daemon=True).start()
 
 
 class LLMEngine:
@@ -74,25 +96,7 @@ class LLMEngine:
         full_reply  = ""
         buffer      = ""
         sentence_re = re.compile(r'([^.!?\n]*[.!?\n]+)')
-        tts_queue: list = []
-        tts_lock  = threading.Lock()
-        tts_done  = threading.Event()
-
-        def _tts_worker():
-            try:
-                from tts_kokoro import speak
-                import time as t
-                while not tts_done.is_set() or tts_queue:
-                    with tts_lock:
-                        sentence = tts_queue.pop(0) if tts_queue else None
-                    if sentence:
-                        speak(sentence)
-                    else:
-                        t.sleep(0.05)
-            except Exception as e:
-                logger.warning("TTS worker error: %s", e)
-
-        threading.Thread(target=_tts_worker, daemon=True).start()
+        # TTS handled by global persistent worker thread
 
         try:
             for chunk in _client().chat(
@@ -112,8 +116,7 @@ class LLMEngine:
                     sentence = m.group(1).strip()
                     buffer   = buffer[m.end():]
                     if len(sentence) > 4:
-                        with tts_lock:
-                            tts_queue.append(sentence)
+                        _tts_q.put(sentence)
             if buffer.strip() and len(buffer.strip()) > 4:
                 with tts_lock:
                     tts_queue.append(buffer.strip())
@@ -125,7 +128,7 @@ class LLMEngine:
                 logger.error("LLMEngine.stream ollama error: %s", e)
                 yield {"token": f"Error: {e}"}
         finally:
-            tts_done.set()
+            pass
 
         yield {"__full_reply__": full_reply}
 

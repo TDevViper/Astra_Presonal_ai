@@ -1,23 +1,5 @@
 [
   {
-    "timestamp": "2026-03-02T14:14:35.522876",
-    "date": "2026-03-02",
-    "user": "explain neural networks",
-    "astra": "Neural networks are machine learning models inspired by the structure and function of the human brain. They consist of interconnected layers of nodes, or \"neurons,\" that process data using mathematical functions to learn patterns and make predictions about new data. In your project, you might use a ",
-    "intent": "technical",
-    "emotion": "neutral",
-    "user_name": "Arnav"
-  },
-  {
-    "timestamp": "2026-03-02T14:15:14.980327",
-    "date": "2026-03-02",
-    "user": "explain neural networks",
-    "astra": "Neural networks are a type of machine learning model inspired by the structure and function of the human brain. They consist of interconnected layers of nodes, or \"neurons,\" that process data using mathematical functions to learn patterns and make predictions about new data. In your project, you can",
-    "intent": "technical",
-    "emotion": "neutral",
-    "user_name": "Arnav"
-  },
-  {
     "timestamp": "2026-03-02T14:16:01.623148",
     "date": "2026-03-02",
     "user": "explain neural networks",
@@ -896,6 +878,24 @@
     "user": "tell me about your capiblity",
     "astra": "I'm equipped with capabilities in several areas such as providing information, solving problems and offering suggestions based on the data available to me up until my last update [1]. However, remember that I don't have real-time access or personal experiences.",
     "intent": "technical",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-14T13:36:41.022164",
+    "date": "2026-03-14",
+    "user": "hello astra",
+    "astra": "Hello! How can I assist you today? Whether it's information on Python programming language, helping with project troubleshooting, providing study resources for computer science fundamentals like algorithms and data structures [2], or anything else - I\u2019m here to help.",
+    "intent": "casual",
+    "emotion": "",
+    "user_name": "Arnav"
+  },
+  {
+    "timestamp": "2026-03-14T13:37:16.679651",
+    "date": "2026-03-14",
+    "user": "hii",
+    "astra": "Hello! How can I assist you today? Remember, no need for formalities here \u2014 just let it flow naturally as if we were old friends chatting over coffee [1]. \ud83d\udcda Sources: [1] Python Lists \u2014 https://docs. python. org/3/tutorial/datastructures.",
+    "intent": "casual",
     "emotion": "",
     "user_name": "Arnav"
   }

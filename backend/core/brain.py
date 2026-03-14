@@ -26,11 +26,35 @@ from tools.tool_router import detect_tool, detect_compound
 logger = logging.getLogger(__name__)
 
 _LOCAL_QUERY_WORDS = {"my project","my code","in the project","my file","my folder","where is","which file","codebase"}
-_SEARCH_TRIGGERS   = {"search","google","look up","find out","latest","current","news","today","recent","who is","when did","where is","price of","weather"}
+import re as _re
+_SEARCH_PATTERN = _re.compile(
+    r'\b(search for|google|look up|find out|latest news|current (price|status|version)|'
+    r'news today|what.s happening|who is (the )?ceo|who (won|leads|runs)|'
+    r'weather (in|today|tomorrow)|price of|stock price|breaking news)\b',
+    _re.IGNORECASE
+)
 
+
+def _sanitize_input(text: str) -> str:
+    """Block prompt injection attempts."""
+    import re
+    injection_patterns = [
+        r'(?i)ignore (all )?(previous|above|prior) instructions',
+        r'(?i)you are now',
+        r'(?i)new (persona|personality|role|instructions)',
+        r'(?i)act as (if )?you',
+        r'(?i)disregard your',
+        r'(?i)\*\*.*instructions.*\*\*',
+        r'(?i)system prompt',
+        r'(?i)jailbreak',
+    ]
+    for pattern in injection_patterns:
+        if re.search(pattern, text):
+            return "[blocked: prompt injection detected]"
+    return text
 
 def _needs_web_search(text: str) -> bool:
-    return any(t in text.lower() for t in _SEARCH_TRIGGERS)
+    return bool(_SEARCH_PATTERN.search(text))
 
 def _is_local_query(text: str) -> bool:
     return any(w in text.lower() for w in _LOCAL_QUERY_WORDS)
@@ -64,6 +88,7 @@ class Brain:
     def process(self, user_input: str, vision_mode: bool = False) -> Dict:
         try:
             user_input = clean_text(user_input)
+            user_input = _sanitize_input(user_input)
             if not user_input:
                 return self._error_reply("I didn't catch that. Try again?")
 
@@ -184,10 +209,7 @@ class Brain:
                 if should_use_rag(user_input):
                     rag_ctx = query_rag(user_input, top_k=3)
                     if rag_ctx:
-                        system_prompt += f"
-
-RELEVANT KNOWLEDGE:
-{rag_ctx}"
+                        system_prompt += f"\n\nRELEVANT KNOWLEDGE:\n{rag_ctx}"
             except Exception:
                 pass
 
@@ -328,10 +350,7 @@ RELEVANT KNOWLEDGE:
             if should_use_rag(user_input):
                 rag_ctx = query_rag(user_input, top_k=3)
                 if rag_ctx:
-                    system_prompt += f"
-
-RELEVANT KNOWLEDGE:
-{rag_ctx}"
+                                            system_prompt += f"\n\nRELEVANT KNOWLEDGE:\n{rag_ctx}"
         except Exception:
             pass
 
