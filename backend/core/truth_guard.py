@@ -65,7 +65,7 @@ class TruthGuard:
         safe = {
             "wrong_location":    f"I'm not sure where {self.user_name} lives — I'll wait until they confirm.",
             "wrong_city":        "I'm not certain about that location.",
-            "wrong_creator":     f"{self.user_name} created me, actually!",
+            "wrong_creator":     f"I'm ASTRA — a personal AI system built by {self.user_name}, running fully locally on your machine.",
             "name_hallucination": f"Your name is {self.user_name}.",
             "default":           "Let me be more careful with that answer.",
         }

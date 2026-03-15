@@ -15,8 +15,7 @@ def detect_compound(user_input: str):
 # tools/tool_router.py
 # ==========================================
 
-from .file_reader import read_file
-from .api_caller  import call_api
+# imports moved inside functions to avoid startup crashes
 
 
 FACE_TRIGGERS = [
@@ -125,8 +124,10 @@ def requires_approval(tool: str) -> bool:
 def route_tool(user_text: str):
     text = user_text.lower()
     if text.startswith("read "):
+        from tools.file_reader import read_file
         return read_file(user_text.replace("read ", "").strip())
     if text.startswith("api "):
+        from tools.api_caller import call_api
         return call_api(user_text.replace("api ", "").strip())
 
     tool = detect_tool(user_text)

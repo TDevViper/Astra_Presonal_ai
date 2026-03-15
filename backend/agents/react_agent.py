@@ -53,11 +53,9 @@ def _execute_tool(tool_name: str, arg: str, user_name: str = "User") -> str:
         if _reg_result is not None:
             return _reg_result
         if tool_name == "web_search":
-            from websearch.search import serper_search, format_results_for_llm
-            results = serper_search(arg, num_results=3)
-            if not results:
-                return "No results — SERPER_API_KEY may not be set."
-            return format_results_for_llm(results, max_chars=800)
+            from websearch.search_agent import WebSearchAgent
+            result = WebSearchAgent().run(arg)
+            return result.get("reply", "No results found.")
         elif tool_name == "read_file":
             from tools.file_reader import read_file as _read
             result = _read(arg)

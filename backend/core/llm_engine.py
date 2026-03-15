@@ -62,12 +62,14 @@ class LLMEngine:
     def call(self, user_input: str, system_prompt: str,
              selected_model: str, query_intent: str,
              history: List[Dict]) -> str:
-        try:
-            from agents.reasoner import reason
-            processed = reason(user_input, model=selected_model)
-        except Exception as e:
-            logger.warning("reasoner failed: %s", e)
-            processed = user_input
+        # Only run reasoner on intents that benefit from it
+        processed = user_input
+        if query_intent in ("reasoning", "technical", "coding", "analysis"):
+            try:
+                from agents.reasoner import reason
+                processed = reason(user_input, model=selected_model)
+            except Exception as e:
+                logger.warning("reasoner failed: %s", e)
 
         messages     = ([{"role": "system", "content": _HARD_STOP + "\n\n" + system_prompt}]
                         + history
@@ -118,8 +120,7 @@ class LLMEngine:
                     if len(sentence) > 4:
                         _tts_q.put(sentence)
             if buffer.strip() and len(buffer.strip()) > 4:
-                with tts_lock:
-                    tts_queue.append(buffer.strip())
+                _tts_q.put(buffer.strip())
         except Exception as e:
             if "Connection refused" in str(e) or "Errno 61" in str(e):
                 logger.error("Ollama not running — run: ollama serve")
