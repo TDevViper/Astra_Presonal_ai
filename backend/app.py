@@ -36,6 +36,7 @@ from api.mode_api import mode_bp as mode_api_bp
 from api.system_stats import stats_bp
 from api.ingest import ingest_bp
 from api.digest import digest_bp
+from api.debug_api import debug_bp
 
 
 class ColoredFormatter(logging.Formatter):
@@ -96,6 +97,7 @@ app.register_blueprint(mode_api_bp)
 app.register_blueprint(stats_bp)
 app.register_blueprint(ingest_bp)
 app.register_blueprint(digest_bp)
+app.register_blueprint(debug_bp)
 
 
 @app.route("/api/frame", methods=["POST"])
@@ -121,6 +123,13 @@ from core.wake_word import start_wake_word_listener
 from core.proactive import set_broadcast
 from api.ws_stream import broadcast as _ws_broadcast
 set_broadcast(_ws_broadcast)
+
+# Start ambient awareness (screen + error detection)
+try:
+    from core.ambient import start_ambient
+    start_ambient(broadcast_fn=_ws_broadcast)
+except Exception as _ae:
+    import logging; logging.getLogger(__name__).warning(f'Ambient awareness failed to start: {_ae}')
 
 from core.gpu_health import start as _start_gpu_health
 from core.brain_singleton import get_brain, teardown_brain
