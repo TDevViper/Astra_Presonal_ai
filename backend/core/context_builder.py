@@ -53,6 +53,15 @@ class ContextBuilder:
                 except Exception:
                     pass
 
+            # Inject adaptive personality style
+            try:
+                from core.adaptive_personality import get_style_addon
+                style_addon = get_style_addon()
+                if style_addon:
+                    system_prompt += f"\n\nSTYLE: {style_addon}"
+            except Exception:
+                pass
+
             # Inject live ambient context
             try:
                 from core.ambient import get_context_string

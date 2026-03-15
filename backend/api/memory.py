@@ -76,3 +76,114 @@ def get_summary():
     except Exception as e:
         logger.error("get_summary error: %s", e)
         return jsonify({"error": str(e)}), 500
+
+
+from flask import Blueprint as _B2
+_style_bp = Blueprint("style_api", __name__) if False else None
+
+# Attach to existing memory_bp
+from flask import request as _req
+
+@memory_bp.route("/api/style", methods=["GET"])
+def get_style():
+    try:
+        from core.adaptive_personality import _load_style, get_style_addon
+        style = _load_style()
+        return jsonify({"style": style, "addon": get_style_addon()})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@memory_bp.route("/api/style", methods=["POST"])
+def set_style():
+    try:
+        data = _req.get_json()
+        from core.adaptive_personality import update_style_manually
+        key, value = data.get("key"), data.get("value")
+        if update_style_manually(key, value):
+            return jsonify({"ok": True, "key": key, "value": value})
+        return jsonify({"error": f"Invalid key/value: {key}={value}"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@memory_bp.route("/api/style/refine", methods=["POST"])
+def force_refine():
+    try:
+        from core.adaptive_personality import maybe_refine
+        result = maybe_refine(force=True)
+        return jsonify({"refined": result is not None, "addon": result or ""})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+from flask import Blueprint as _B2
+_style_bp = Blueprint("style_api", __name__) if False else None
+
+# Attach to existing memory_bp
+from flask import request as _req
+
+@memory_bp.route("/api/style", methods=["GET"])
+def get_style():
+    try:
+        from core.adaptive_personality import _load_style, get_style_addon
+        style = _load_style()
+        return jsonify({"style": style, "addon": get_style_addon()})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@memory_bp.route("/api/style", methods=["POST"])
+def set_style():
+    try:
+        data = _req.get_json()
+        from core.adaptive_personality import update_style_manually
+        key, value = data.get("key"), data.get("value")
+        if update_style_manually(key, value):
+            return jsonify({"ok": True, "key": key, "value": value})
+        return jsonify({"error": f"Invalid key/value: {key}={value}"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@memory_bp.route("/api/style/refine", methods=["POST"])
+def force_refine():
+    try:
+        from core.adaptive_personality import maybe_refine
+        result = maybe_refine(force=True)
+        return jsonify({"refined": result is not None, "addon": result or ""})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+from flask import Blueprint as _B2
+_style_bp = Blueprint("style_api", __name__) if False else None
+
+# Attach to existing memory_bp
+from flask import request as _req
+
+@memory_bp.route("/api/style", methods=["GET"])
+def get_style():
+    try:
+        from core.adaptive_personality import _load_style, get_style_addon
+        style = _load_style()
+        return jsonify({"style": style, "addon": get_style_addon()})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@memory_bp.route("/api/style", methods=["POST"])
+def set_style():
+    try:
+        data = _req.get_json()
+        from core.adaptive_personality import update_style_manually
+        key, value = data.get("key"), data.get("value")
+        if update_style_manually(key, value):
+            return jsonify({"ok": True, "key": key, "value": value})
+        return jsonify({"error": f"Invalid key/value: {key}={value}"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@memory_bp.route("/api/style/refine", methods=["POST"])
+def force_refine():
+    try:
+        from core.adaptive_personality import maybe_refine
+        result = maybe_refine(force=True)
+        return jsonify({"refined": result is not None, "addon": result or ""})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
