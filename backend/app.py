@@ -35,6 +35,7 @@ from api.knowledge import knowledge_bp
 from api.mode_api import mode_bp as mode_api_bp
 from api.system_stats import stats_bp
 from api.ingest import ingest_bp
+from api.digest import digest_bp
 
 
 class ColoredFormatter(logging.Formatter):
@@ -94,6 +95,7 @@ app.register_blueprint(knowledge_bp)
 app.register_blueprint(mode_api_bp)
 app.register_blueprint(stats_bp)
 app.register_blueprint(ingest_bp)
+app.register_blueprint(digest_bp)
 
 
 @app.route("/api/frame", methods=["POST"])
