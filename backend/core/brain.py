@@ -24,6 +24,7 @@ from websearch.search_agent import WebSearchAgent
 from tools.tool_router import detect_tool, detect_compound
 
 logger = logging.getLogger(__name__)
+from core.request_trace import new_trace, step as _step, finish as _finish
 
 _LOCAL_QUERY_WORDS = {"my project","my code","in the project","my file","my folder","where is","which file","codebase"}
 import re as _re
@@ -87,6 +88,7 @@ class Brain:
 
     def process(self, user_input: str, vision_mode: bool = False) -> Dict:
         try:
+            _trace_id = new_trace(user_input)
             user_input = clean_text(user_input)
             user_input = _sanitize_input(user_input)
             if not user_input:
@@ -100,6 +102,7 @@ class Brain:
             if not vision_mode:
                 cached = self._cache.get(user_input)
                 if cached:
+                    _step('cache_hit')
                     return cached
 
             chain_reply = self._exit.check_chain(user_input, self)
@@ -174,6 +177,7 @@ class Brain:
                                          confidence=confidence_score("memory_recall", "memory_recall"))
 
             # Web search
+            _step('pre_llm', f'intent={self.model_manager.classify_query_intent(user_input)}')
             if (self.capabilities.is_enabled("web_search")
                     and _needs_web_search(user_input)
                     and not _is_local_query(user_input)):
@@ -230,6 +234,7 @@ class Brain:
                                        f"ollama/{selected_model}",
                                        memory_updated=memory_updated, confidence=final_conf)
             self._cache.set(user_input, result)
+            _finish(intent=result.get('intent',''), agent=result.get('agent',''))
             try:
                 from core.self_improve import log_response as _si_log
                 _si_log(user_input, reply, final_conf)

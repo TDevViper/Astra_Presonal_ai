@@ -138,6 +138,13 @@ try:
 except Exception as _ge:
     import logging; logging.getLogger(__name__).warning(f'Process guardian failed to start: {_ge}')
 
+# Start hot-reload plugin watcher
+try:
+    from tools.plugin_watcher import start as _start_plugins
+    _start_plugins()
+except Exception as _pe:
+    import logging; logging.getLogger(__name__).warning(f'Plugin watcher failed to start: {_pe}')
+
 from core.gpu_health import start as _start_gpu_health
 from core.brain_singleton import get_brain, teardown_brain
 _start_gpu_health()

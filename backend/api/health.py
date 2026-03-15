@@ -20,6 +20,7 @@ def health():
         "redis":   _check_redis(),
         "disk":    _check_disk(),
         "guardian": _check_guardian(),
+        "plugins":  _check_plugins(),
         "models":  ollama_result.get("models", []),
     }
     if any(v.get("status") == "error" for v in status.values() if isinstance(v, dict)):
@@ -76,6 +77,15 @@ def _check_voice() -> dict:
         return {"status": "warning", "error": "kokoro not found"}
     except Exception as e:
         return {"status": "warning", "error": str(e)}
+
+
+def _check_plugins() -> dict:
+    try:
+        from tools.plugin_watcher import list_plugins
+        plugins = list_plugins()
+        return {"status": "ok", "loaded": plugins, "count": len(plugins)}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
 
 
 def _check_guardian() -> dict:
