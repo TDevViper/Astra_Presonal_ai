@@ -71,5 +71,24 @@ def _autoload():
         except Exception as e:
             logger.debug(f"Autoload skipped {fname}: {e}")
 
+    # Load plugins/
+    import sys, importlib.util
+    plugins_dir = os.path.join(os.path.dirname(tools_dir), "plugins")
+    if os.path.isdir(plugins_dir):
+        for fname in sorted(os.listdir(plugins_dir)):
+            if fname.startswith("_") or not fname.endswith(".py"):
+                continue
+            fpath    = os.path.join(plugins_dir, fname)
+            mod_name = f"plugins.{fname[:-3]}"
+            try:
+                if mod_name not in sys.modules:
+                    spec = importlib.util.spec_from_file_location(mod_name, fpath)
+                    mod  = importlib.util.module_from_spec(spec)
+                    sys.modules[mod_name] = mod
+                    spec.loader.exec_module(mod)
+                    logger.info(f"Plugin loaded: {fname}")
+            except Exception as e:
+                logger.debug(f"Plugin skipped {fname}: {e}")
+
 
 _autoload()
