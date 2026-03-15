@@ -192,6 +192,12 @@ class ToolRouter:
 
     def execute(self, tool_name: str, params: dict) -> str:
         try:
+            # Check plugin registry first
+            from tools.registry import execute as _reg_execute
+            _arg = params.get("query", params.get("text", params.get("code", str(params))))
+            _reg_result = _reg_execute(tool_name, _arg)
+            if _reg_result is not None:
+                return _reg_result
             if tool_name == "python_sandbox":
                 from tools.python_sandbox import execute_python
                 code = params.get("code", params.get("text", ""))

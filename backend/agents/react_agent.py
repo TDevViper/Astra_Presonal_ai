@@ -47,6 +47,11 @@ def _execute_tool(tool_name: str, arg: str, user_name: str = "User") -> str:
     tool_name = tool_name.strip().lower()
     arg       = arg.strip().strip('"\'')
     try:
+        # Check plugin registry first — any @tool decorated function wins
+        from tools.registry import execute as _reg_execute
+        _reg_result = _reg_execute(tool_name, arg, user_name)
+        if _reg_result is not None:
+            return _reg_result
         if tool_name == "web_search":
             from websearch.search import serper_search, format_results_for_llm
             results = serper_search(arg, num_results=3)
@@ -60,13 +65,24 @@ def _execute_tool(tool_name: str, arg: str, user_name: str = "User") -> str:
                 return f"{result['filepath']} ({result['lines']} lines):\n{result['content'][:1500]}"
             return f"Error: {result['error']}"
         elif tool_name == "run_python":
-            import subprocess, sys
-            result = subprocess.run(
-                [sys.executable, "-c", arg],
-                capture_output=True, text=True, timeout=10
-            )
-            out = result.stdout.strip() or result.stderr.strip()
-            return out[:800] if out else "(no output)"
+            import os
+            if os.getenv("ALLOW_CODE_EXECUTION", "false").lower() != "true":
+                return "Code execution is disabled. Set ALLOW_CODE_EXECUTION=true in .env to enable."
+            import subprocess, sys, tempfile, resource
+            # Write to temp file instead of -c to avoid shell injection
+            with tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False) as tmp:
+                tmp.write(arg)
+                tmp_path = tmp.name
+            try:
+                result = subprocess.run(
+                    [sys.executable, tmp_path],
+                    capture_output=True, text=True, timeout=10,
+                    cwd=tempfile.gettempdir()  # restrict working dir
+                )
+                out = result.stdout.strip() or result.stderr.strip()
+                return out[:800] if out else "(no output)"
+            finally:
+                os.unlink(tmp_path)
         elif tool_name == "memory_recall":
             from memory.vector_store import semantic_search
             facts, exchanges = semantic_search(arg, top_k=3)
@@ -112,10 +128,16 @@ def _parse_action(text: str) -> Optional[tuple]:
 def react_solve(user_input: str, model: str = "phi3:mini",
                 context: str = "", user_name: str = "User") -> Dict:
     logger.info(f"ReAct v3 starting: {user_input[:60]}")
+    # Merge static tool descriptions with any registered plugin tools
+    from tools.registry import descriptions as _plugin_descs
+    _extra = _plugin_descs()
+    _all_tools = TOOL_DESCRIPTIONS + ("
+" + _extra if _extra else "")
+
     system_prompt = f"""You are ASTRA, {user_name}'s personal AI assistant.
 Solve this step by step using Thought -> Action -> Observation cycles.
 
-{TOOL_DESCRIPTIONS}
+{_all_tools}
 
 FORMAT (use exactly):
 Thought: what you're thinking

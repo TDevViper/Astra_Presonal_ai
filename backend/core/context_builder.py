@@ -21,6 +21,14 @@ class ContextBuilder:
             episodic_ctx           = build_episodic_context(user_input, user_name)
             addon                  = get_system_addon()
 
+            # Inject long-term conversation summaries
+            summary_ctx = ""
+            try:
+                from memory.summarizer import get_recent_context
+                summary_ctx = get_recent_context(memory, max_summaries=3)
+            except Exception:
+                pass
+
             system_prompt = build_system_prompt(
                 user_name=user_name,
                 memory=memory,
@@ -30,6 +38,10 @@ class ContextBuilder:
                 episodic_ctx=episodic_ctx,
                 addon=addon,
             )
+
+            if summary_ctx:
+                system_prompt = summary_ctx + "\n\n" + system_prompt
+
             return system_prompt, sem_conf
 
         except Exception as e:

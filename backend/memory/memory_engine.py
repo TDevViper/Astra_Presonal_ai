@@ -51,12 +51,10 @@ def load_memory() -> Dict[str, Any]:
     return DEFAULT_MEMORY.copy()
 
 
-def save_memory(memory: Dict[str, Any]) -> bool:
+def save_memory(memory: Dict[str, Any], history: list = None) -> bool:
     """Save memory to file with error handling."""
     try:
-        # Ensure directory exists
         os.makedirs(os.path.dirname(MEMORY_FILE), exist_ok=True)
-        
         with open(MEMORY_FILE, 'w', encoding='utf-8') as f:
             json.dump(memory, f, indent=2, ensure_ascii=False)
         return True

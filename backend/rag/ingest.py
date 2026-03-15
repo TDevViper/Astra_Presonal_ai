@@ -28,7 +28,7 @@ def ingest_file(path: str, tags: list = None):
     return ingest_text(text, source=source, tags=tags or [ext.strip(".")])
 
 def ingest_folder(folder: str, extensions: list = None, tags: list = None):
-    extensions = extensions or [".md", ".txt", ".py", ".pdf"]
+    extensions = extensions or [".md", ".txt", ".pdf"]  # .py excluded by default
     total = 0
     for root, _, files in os.walk(folder):
         for fname in files:

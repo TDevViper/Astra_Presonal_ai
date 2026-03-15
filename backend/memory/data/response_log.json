@@ -15,5 +15,14 @@
     "rating": null,
     "intent": "general",
     "h_score": 0.6
+  },
+  {
+    "ts": "2026-03-14T19:15:47.690361",
+    "input": "latest python news",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "search",
+    "h_score": 0.5
   }
 ]

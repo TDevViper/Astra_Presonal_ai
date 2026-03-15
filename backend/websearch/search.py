@@ -1,3 +1,14 @@
+# websearch/search.py
+import os
+import logging
+import requests
+from typing import Optional
+
+logger = logging.getLogger(__name__)
+
+SERPER_API_KEY = os.getenv("SERPER_API_KEY", "")
+SERPER_URL     = "https://google.serper.dev/search"
+
 
 def duckduckgo_search(query: str, num_results: int = 5) -> list:
     """Free search fallback — no API key needed."""
@@ -19,7 +30,7 @@ def duckduckgo_search(query: str, num_results: int = 5) -> list:
                     "source":  r.get("href", ""),
                     "type":    "organic"
                 })
-        logger.info(f"🦆 DuckDuckGo: {len(results)} results for: {query}")
+        logger.info(f"🦆 DuckDuckGo: {len(results)} results for: {query[:50]}")
         if not results:
             logger.warning("DuckDuckGo returned 0 results — may be rate-limited")
         return results
@@ -27,104 +38,75 @@ def duckduckgo_search(query: str, num_results: int = 5) -> list:
         logger.error(f"DuckDuckGo error ({type(e).__name__}): {e}")
         return []
 
-# astra_engine/websearch/search.py
 
-import os
-import logging
-import requests
-from typing import Optional
-
-logger = logging.getLogger(__name__)
-
-SERPER_API_KEY = os.getenv("SERPER_API_KEY", "")
-SERPER_URL = "https://google.serper.dev/search"
-
-
-def serper_search(query: str, num_results: int = 5) -> Optional[list]:
-    """Search Google via Serper API."""
+def serper_search(query: str, num_results: int = 5) -> list:
+    """
+    Search via Serper API (Google). Falls back to DuckDuckGo if:
+    - No SERPER_API_KEY set
+    - Serper times out or errors
+    """
     if not SERPER_API_KEY:
-        logger.warning("⚠️  No SERPER key — using DuckDuckGo")
+        logger.info("No SERPER_API_KEY — using DuckDuckGo")
         return duckduckgo_search(query, num_results)
 
     try:
         response = requests.post(
             SERPER_URL,
-            headers={
-                "X-API-KEY": SERPER_API_KEY,
-                "Content-Type": "application/json"
-            },
+            headers={"X-API-KEY": SERPER_API_KEY, "Content-Type": "application/json"},
             json={"q": query, "num": num_results},
             timeout=10
         )
         response.raise_for_status()
-        data = response.json()
-
+        data    = response.json()
         results = []
 
-        # Knowledge graph (instant answer)
         if "knowledgeGraph" in data:
             kg = data["knowledgeGraph"]
             results.append({
-                "title": kg.get("title", ""),
+                "title":   kg.get("title", ""),
                 "snippet": kg.get("description", ""),
-                "source": kg.get("website", "Google Knowledge Graph"),
-                "type": "knowledge_graph"
+                "source":  kg.get("website", "Google Knowledge Graph"),
+                "type":    "knowledge_graph"
             })
 
-        # Organic results
         for item in data.get("organic", [])[:num_results]:
             results.append({
-                "title": item.get("title", ""),
+                "title":   item.get("title", ""),
                 "snippet": item.get("snippet", ""),
-                "source": item.get("link", ""),
-                "type": "organic"
+                "source":  item.get("link", ""),
+                "type":    "organic"
             })
 
-        logger.info(f"🔍 Serper returned {len(results)} results for: {query}")
+        logger.info(f"🔍 Serper: {len(results)} results for: {query[:50]}")
         return results
 
     except requests.exceptions.Timeout:
-        logger.error("❌ Serper API timeout")
-        return None
+        logger.warning("Serper timeout — falling back to DuckDuckGo")
+        return duckduckgo_search(query, num_results)
     except requests.exceptions.RequestException as e:
-        logger.error(f"❌ Serper API error: {e}")
-        return None
+        logger.warning(f"Serper error ({e}) — falling back to DuckDuckGo")
+        return duckduckgo_search(query, num_results)
 
 
 def format_results_for_llm(results: list, max_chars: int = 2000) -> str:
     """Format search results into clean context for LLM."""
     if not results:
         return "No search results found."
-
-    formatted = "SEARCH RESULTS:\n"
+    formatted   = "SEARCH RESULTS:\n"
     total_chars = 0
-
     for i, r in enumerate(results, 1):
-        snippet = r.get("snippet", "").strip()
-        title   = r.get("title", "").strip()
-        source  = r.get("source", "").strip()
-
-        entry = f"\n[{i}] {title}\n{snippet}\nSource: {source}\n"
-
+        entry = f"\n[{i}] {r.get('title','').strip()}\n{r.get('snippet','').strip()}\nSource: {r.get('source','').strip()}\n"
         if total_chars + len(entry) > max_chars:
             break
-
-        formatted += entry
+        formatted   += entry
         total_chars += len(entry)
-
     return formatted
 
 
 def extract_citations(results: list) -> list:
     """Extract source URLs for citations."""
-    citations = []
-    for i, r in enumerate(results, 1):
-        source = r.get("source", "")
-        title  = r.get("title", "")
-        if source and source.startswith("http"):
-            citations.append({
-                "index": i,
-                "title": title,
-                "url": source
-            })
-    return citations
+    return [
+        {"index": i, "title": r.get("title", ""), "url": r.get("source", "")}
+        for i, r in enumerate(results, 1)
+        if r.get("source", "").startswith("http")
+    ]

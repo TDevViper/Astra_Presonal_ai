@@ -437,6 +437,7 @@ function ModePill({ mode, active, onClick }) {
 // ══════════════════════════════════════════════════════════════════════════════
 export default function App() {
   const [messages,     setMessages]     = useState([]);
+  const [proactiveAlerts, setProactiveAlerts] = useState([]);
   const [feedback,     setFeedback]     = useState({});
   const [input,        setInput]        = useState("");
   const [loading,      setLoading]      = useState(false);
@@ -454,6 +455,7 @@ export default function App() {
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
   const abortRef  = useRef(null);
+  const chatBoxRef = useRef(null);
 
   const accent = modeAccent(currentMode);
 
@@ -592,6 +594,11 @@ export default function App() {
       setStreamBuffer(""); wsBufferRef.current = ""; wsMetaRef.current = null;
       setStreaming(false); setLoading(false);
     },
+    onProactive: (msg) => {
+      const id = Date.now();
+      setProactiveAlerts(prev => [...prev.slice(-4), { id, text: msg }]);
+      setTimeout(() => setProactiveAlerts(prev => prev.filter(a => a.id !== id)), 6000);
+    },
     onError: (err) => {
       setMessages(prev => [...prev, { role: "assistant", content: `Error: ${err}`, id: Date.now() + 1 }]);
       setStreamBuffer(""); wsBufferRef.current = "";
@@ -641,19 +648,11 @@ export default function App() {
     const lines = messages.map(m => {
       const role = m.role === "user" ? "**You**" : "**ASTRA**";
       const meta = m.role === "assistant" && m.agent
-        ? "
-*" + m.agent + " · " + (m.intent || "") + " · " + (m.confidence ? Math.round(m.confidence * 100) + "%" : "") + "*"
+        ? `\n*${m.agent} · ${m.intent || ""} · ${m.confidence ? Math.round(m.confidence * 100) + "%" : ""}*`
         : "";
-      return role + "
-" + m.content + meta;
+      return role + "\n" + m.content + meta;
     });
-    const md = "# ASTRA Conversation
-
-" + lines.join("
-
----
-
-");
+    const md = "# ASTRA Conversation\n\n" + lines.join("\n\n---\n\n");
     const blob = new Blob([md], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

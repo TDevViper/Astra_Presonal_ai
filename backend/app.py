@@ -34,6 +34,7 @@ from api.health import health_bp
 from api.knowledge import knowledge_bp
 from api.mode_api import mode_bp as mode_api_bp
 from api.system_stats import stats_bp
+from api.ingest import ingest_bp
 
 
 class ColoredFormatter(logging.Formatter):
@@ -92,6 +93,7 @@ app.register_blueprint(health_bp)
 app.register_blueprint(knowledge_bp)
 app.register_blueprint(mode_api_bp)
 app.register_blueprint(stats_bp)
+app.register_blueprint(ingest_bp)
 
 
 @app.route("/api/frame", methods=["POST"])
@@ -122,6 +124,13 @@ from core.gpu_health import start as _start_gpu_health
 from core.brain_singleton import get_brain, teardown_brain
 _start_gpu_health()
 
+# Start doc watcher
+try:
+    from rag.watcher import start_watcher
+    start_watcher(interval=30)
+except Exception as _we:
+    import logging; logging.getLogger(__name__).warning(f'Doc watcher failed to start: {_we}')
+
 @app.teardown_appcontext
 def _teardown_brain(exc):
     teardown_brain(exc)
@@ -139,7 +148,19 @@ if __name__ == "__main__":
 
     from voice.speaker import speak
     from proactive.proactive_engine import get_proactive_engine
+    from briefing import should_give_briefing, generate_morning_brief
+    from memory.memory_engine import load_memory
     proactive = get_proactive_engine(speak_fn=speak)
     proactive.start()
+
+    # Morning briefing on startup
+    try:
+        mem = load_memory()
+        if should_give_briefing(mem):
+            brief = generate_morning_brief(mem)
+            logger.info(f"📋 Briefing: {brief}")
+            speak(brief)
+    except Exception as _e:
+        logger.warning(f"Briefing skipped: {_e}")
 
     app.run(debug=config.debug, host=config.host, port=config.port)
