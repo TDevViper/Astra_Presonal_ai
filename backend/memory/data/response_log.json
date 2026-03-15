@@ -24,5 +24,509 @@
     "rating": null,
     "intent": "search",
     "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:25:36.023662",
+    "input": "hello",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:25:55.910468",
+    "input": "What is Python?",
+    "response": "Python is a programming language.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "coding",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:25:56.214413",
+    "input": "tell me something",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:25:56.477032",
+    "input": "show me my code",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "coding",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:25:56.756725",
+    "input": "explain neural networks",
+    "response": "Raw LLM reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "reasoning",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:25:56.765216",
+    "input": "hello",
+    "response": "POLISHED: This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:25:56.779094",
+    "input": "hello",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:30:23.377722",
+    "input": "hello",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:30:34.746907",
+    "input": "What is Python?",
+    "response": "Python is a programming language.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "coding",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:30:35.036664",
+    "input": "tell me something",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:30:35.289464",
+    "input": "show me my code",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "coding",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:30:35.540856",
+    "input": "explain neural networks",
+    "response": "Raw LLM reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "reasoning",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:30:35.544343",
+    "input": "hello",
+    "response": "POLISHED: This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:30:35.552682",
+    "input": "hello",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:33:44.691473",
+    "input": "hello",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:33:55.259662",
+    "input": "What is Python?",
+    "response": "Python is a programming language.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "coding",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:33:55.551382",
+    "input": "tell me something",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:33:55.798339",
+    "input": "show me my code",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "coding",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:33:56.048958",
+    "input": "explain neural networks",
+    "response": "Raw LLM reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "reasoning",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:33:56.052992",
+    "input": "hello",
+    "response": "POLISHED: This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:33:56.061530",
+    "input": "hello",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:41:26.752818",
+    "input": "hello",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:41:38.037552",
+    "input": "What is Python?",
+    "response": "Python is a programming language.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "coding",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:41:38.339838",
+    "input": "tell me something",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:41:38.587407",
+    "input": "show me my code",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "coding",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:41:38.839230",
+    "input": "explain neural networks",
+    "response": "Raw LLM reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "reasoning",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:41:38.843608",
+    "input": "hello",
+    "response": "POLISHED: This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:41:38.852467",
+    "input": "hello",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:41:51.993802",
+    "input": "hello",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:42:02.490128",
+    "input": "What is Python?",
+    "response": "Python is a programming language.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "coding",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:42:02.778355",
+    "input": "tell me something",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:42:03.027625",
+    "input": "show me my code",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "coding",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:42:03.278675",
+    "input": "explain neural networks",
+    "response": "Raw LLM reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "reasoning",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:42:03.282369",
+    "input": "hello",
+    "response": "POLISHED: This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:42:03.290622",
+    "input": "hello",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:42:43.795650",
+    "input": "hello",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:42:53.182309",
+    "input": "What is Python?",
+    "response": "Python is a programming language.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "coding",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:42:53.464258",
+    "input": "tell me something",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:42:53.709543",
+    "input": "show me my code",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "coding",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:42:53.957232",
+    "input": "explain neural networks",
+    "response": "Raw LLM reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "reasoning",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:42:53.961129",
+    "input": "hello",
+    "response": "POLISHED: This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:42:53.967233",
+    "input": "hello",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:45:07.918833",
+    "input": "hello",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:45:16.557326",
+    "input": "What is Python?",
+    "response": "Python is a programming language.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "coding",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:45:16.839202",
+    "input": "tell me something",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:45:17.084457",
+    "input": "show me my code",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "coding",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:45:17.332349",
+    "input": "explain neural networks",
+    "response": "Raw LLM reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "reasoning",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:45:17.336370",
+    "input": "hello",
+    "response": "POLISHED: This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:45:17.342375",
+    "input": "hello",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:47:08.857978",
+    "input": "hello",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:47:17.663761",
+    "input": "What is Python?",
+    "response": "Python is a programming language.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "coding",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:47:17.946888",
+    "input": "tell me something",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:47:18.192400",
+    "input": "show me my code",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "coding",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:47:18.441513",
+    "input": "explain neural networks",
+    "response": "Raw LLM reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "reasoning",
+    "h_score": 0.35
+  },
+  {
+    "ts": "2026-03-15T09:47:18.445790",
+    "input": "hello",
+    "response": "POLISHED: This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
+  },
+  {
+    "ts": "2026-03-15T09:47:18.452202",
+    "input": "hello",
+    "response": "This is a test reply.",
+    "confidence": 0.6,
+    "rating": null,
+    "intent": "general",
+    "h_score": 0.5
   }
 ]
