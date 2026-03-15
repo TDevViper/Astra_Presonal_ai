@@ -101,7 +101,7 @@ User Input
  2. detect_mode_switch()   — focus / creative / precise mode
     │
     ▼
- 3. response_cache         — MD5 hash check (60s TTL, Redis)
+ 3. response_cache         — MD5 hash check (600s TTL, Redis)
     │
     ▼
  4. chain_planner          — detect multi-step queries
@@ -289,6 +289,7 @@ POST /model/switch      → Switch active Ollama model
 GET  /health            → System health + model list
 POST /execute           → System stats / tool execution
 GET  /knowledge/graph   → Knowledge graph data
+GET  /api/digest        → Daily digest (exchanges, summary, tasks, topics)
 ```
 
 ---
@@ -367,7 +368,7 @@ Measured on Mac M4 (16GB), all models local:
 
 ## Roadmap
 
-- [ ] WebSocket real-time streaming
+- [x] WebSocket real-time streaming
 - [ ] Temporal frame memory (last 10 frames context)
 - [ ] Prometheus + Grafana observability dashboard
 - [ ] Full pytest test suite
