@@ -19,6 +19,7 @@ def health():
         "voice":   _check_voice(),
         "redis":   _check_redis(),
         "disk":    _check_disk(),
+        "guardian": _check_guardian(),
         "models":  ollama_result.get("models", []),
     }
     if any(v.get("status") == "error" for v in status.values() if isinstance(v, dict)):
@@ -75,6 +76,19 @@ def _check_voice() -> dict:
         return {"status": "warning", "error": "kokoro not found"}
     except Exception as e:
         return {"status": "warning", "error": str(e)}
+
+
+def _check_guardian() -> dict:
+    try:
+        from core.process_guardian import get_state
+        state = get_state()
+        return {
+            "status":   "ok" if state["running"] else "stopped",
+            "restarts": state["restarts"],
+            "alerts":   state["alerts"][:3],
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
 
 
 def _check_redis() -> dict:

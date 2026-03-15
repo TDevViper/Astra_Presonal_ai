@@ -84,19 +84,23 @@ def _scan_once():
                     f"⚠️ I noticed an error on your screen: {error_text[:80]}. "
                     f"Want me to debug it?"
                 )
-            # Store in episodic memory
             try:
-                from memory.episodic import store_episode
-                store_episode(
-                    user_msg="[ambient scan]",
-                    astra_reply=f"Error detected: {error_text}",
-                    intent="ambient_error",
-                    emotion="alert"
-                )
+                from core.visual_memory import store_vision_episode
+                store_vision_episode(error_text, source="screen",
+                                     error_detected=True,
+                                     active_app=_live_context.get("active_app"))
             except Exception:
                 pass
         else:
             _live_context["error_text"] = None
+            # Store normal screen observation in visual memory
+            if summary and len(summary) > 10:
+                try:
+                    from core.visual_memory import store_vision_episode
+                    store_vision_episode(summary, source="screen",
+                                         active_app=_live_context.get("active_app"))
+                except Exception:
+                    pass
 
     except Exception as e:
         logger.debug("ambient scan skipped: %s", e)

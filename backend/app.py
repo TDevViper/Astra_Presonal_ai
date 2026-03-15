@@ -131,6 +131,13 @@ try:
 except Exception as _ae:
     import logging; logging.getLogger(__name__).warning(f'Ambient awareness failed to start: {_ae}')
 
+# Start process guardian (auto-restart services, disk/RAM alerts)
+try:
+    from core.process_guardian import start as _start_guardian
+    _start_guardian(broadcast_fn=_ws_broadcast)
+except Exception as _ge:
+    import logging; logging.getLogger(__name__).warning(f'Process guardian failed to start: {_ge}')
+
 from core.gpu_health import start as _start_gpu_health
 from core.brain_singleton import get_brain, teardown_brain
 _start_gpu_health()

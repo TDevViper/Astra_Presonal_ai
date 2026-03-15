@@ -42,6 +42,26 @@ class ContextBuilder:
             if summary_ctx:
                 system_prompt = summary_ctx + "\n\n" + system_prompt
 
+            # Inject visual memory context for vision-related queries
+            vision_keywords = ["screen", "see", "show", "camera", "error", "what's on"]
+            if any(w in user_input.lower() for w in vision_keywords):
+                try:
+                    from core.visual_memory import build_visual_context
+                    visual_ctx = build_visual_context(user_input)
+                    if visual_ctx:
+                        system_prompt += visual_ctx
+                except Exception:
+                    pass
+
+            # Inject live ambient context
+            try:
+                from core.ambient import get_context_string
+                ambient_ctx = get_context_string()
+                if ambient_ctx:
+                    system_prompt += f"\n\nCURRENT ENVIRONMENT: {ambient_ctx}"
+            except Exception:
+                pass
+
             return system_prompt, sem_conf
 
         except Exception as e:
