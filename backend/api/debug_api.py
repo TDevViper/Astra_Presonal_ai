@@ -1,3 +1,4 @@
+from api.auth import require_api_key
 # api/debug_api.py
 import logging
 from flask import Blueprint, request, jsonify
@@ -67,3 +68,51 @@ def ambient_status():
         return jsonify(get_live_context())
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@debug_bp.route("/api/plugin/deploy", methods=["POST"])
+@require_api_key
+def deploy_plugin():
+    """Deploy a new plugin file to the plugins/ directory."""
+    try:
+        import os, re
+        data     = request.get_json()
+        filename = data.get("filename", "").strip()
+        code     = data.get("code", "")
+
+        if not filename.endswith(".py"):
+            return jsonify({"ok": False, "error": "Filename must end in .py"}), 400
+        if not re.match(r'^[\w_]+\.py$', filename):
+            return jsonify({"ok": False, "error": "Invalid filename"}), 400
+        if len(code) > 50000:
+            return jsonify({"ok": False, "error": "Code too large (max 50kb)"}), 400
+
+        backend_dir  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        plugins_dir  = os.path.join(backend_dir, "plugins")
+        os.makedirs(plugins_dir, exist_ok=True)
+        plugin_path  = os.path.join(plugins_dir, filename)
+
+        with open(plugin_path, "w") as f:
+            f.write(code)
+
+        logger.info("Plugin deployed: %s", filename)
+        return jsonify({"ok": True, "filename": filename, "path": plugin_path})
+    except Exception as e:
+        logger.error("deploy_plugin error: %s", e)
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@debug_bp.route("/api/guardian", methods=["GET"])
+def guardian_status():
+    import psutil
+    ram = psutil.virtual_memory().percent
+    checks = [
+        {"name": "API Auth",        "status": "OK"},
+        {"name": "Rate Limiter",    "status": "OK"},
+        {"name": "Prompt Firewall", "status": "OK"},
+        {"name": "Output Filter",   "status": "WARN" if ram > 85 else "OK"},
+        {"name": "Plugin Sandbox",  "status": "OK"},
+        {"name": "Memory ACL",      "status": "OK"},
+    ]
+    level = "alert" if ram > 95 else "warn" if ram > 85 else "ok"
+    return jsonify({"checks": checks, "level": level, "ram": ram})

@@ -8,16 +8,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from vision.frame_buffer import FrameBuffer
-from vision.continuous_vision import ContinuousVision
+# from vision.frame_buffer import FrameBuffer
+# from vision.continuous_vision import ContinuousVision
 from api.ws_stream import sock, broadcast
 
-_frame_buffer      = FrameBuffer(maxlen=10)
-_continuous_vision = ContinuousVision(
-    broadcast_fn = broadcast,
-    get_frame_fn = _frame_buffer.latest,
-    interval     = 60
-)
+# _frame_buffer      = FrameBuffer(maxlen=10)
+# _continuous_vision = ContinuousVision(
+#     broadcast_fn = broadcast,
+#     get_frame_fn = _frame_buffer.latest,
+#     interval     = 60
+# )
 
 from config import config
 from api.chat import chat_bp
@@ -124,12 +124,10 @@ from core.proactive import set_broadcast
 from api.ws_stream import broadcast as _ws_broadcast
 set_broadcast(_ws_broadcast)
 
-# Start ambient awareness (screen + error detection)
-try:
-    from core.ambient import start_ambient
-    start_ambient(broadcast_fn=_ws_broadcast)
-except Exception as _ae:
-    import logging; logging.getLogger(__name__).warning(f'Ambient awareness failed to start: {_ae}')
+# # Start ambient awareness (screen + error detection)
+# try:
+#     from core.ambient import start_ambient
+#     start_ambient(broadcast_fn=_ws_broadcast)
 
 # Start process guardian (auto-restart services, disk/RAM alerts)
 try:

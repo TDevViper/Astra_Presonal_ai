@@ -9,7 +9,7 @@ vision_bp = Blueprint("vision", __name__)
 
 # Snapshot directory (defined once globally)
 from config import config as _cfg
-SNAP_DIR = os.path.join(_cfg.BASE_DIR, "data", "snapshots")
+SNAP_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "snapshots")
 os.makedirs(SNAP_DIR, exist_ok=True)
 
 

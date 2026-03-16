@@ -21,7 +21,7 @@ class ProactiveEngine:
             _m = json.load(open("memory.json"))
             global USER_NAME
             USER_NAME = _m.get("preferences", {}).get("name", "User")
-        except Exception:
+        except Exception as e:
             logger.warning("ProactiveEngine: calendar tool unavailable: %s", e)
         self._running = False
         self._thread: Optional[threading.Thread] = None
@@ -113,7 +113,7 @@ class ProactiveEngine:
                 msg += f"You have {len(events)} event{'s' if len(events) > 1 else ''} today. First up: {events[0]['title']} at {events[0]['time']}. "
             else:
                 msg += "Clear calendar today. "
-        except Exception:
+        except Exception as e:
             logger.warning("ProactiveEngine: calendar tool unavailable: %s", e)
 
         if tasks:
