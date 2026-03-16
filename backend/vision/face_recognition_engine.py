@@ -18,7 +18,7 @@ def _load_db() -> Dict:
     try:
         if os.path.exists(_ENCODINGS_DB):
             with open(_ENCODINGS_DB) as _f:
-        return json.load(_f)
+                return json.load(_f)
     except Exception as e:
         logger.warning("face_db load failed: %s", e)
     return {}
