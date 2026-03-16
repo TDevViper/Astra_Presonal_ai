@@ -24,3 +24,11 @@ API.capabilities = `${BASE_URL}/capabilities`;
 
 export default API;
 export { WS_URL };
+API.ambient = `${BASE_URL}/system/stats`;
+API.debug       = `${BASE_URL}/api/debug/screen`;
+API.shell       = `${BASE_URL}/api/debug/shell`;
+API.pluginDeploy= `${BASE_URL}/api/plugin/deploy`;
+API.digest      = `${BASE_URL}/api/digest`;
+API.styleGet    = `${BASE_URL}/api/style`;
+API.styleSet    = `${BASE_URL}/api/style`;
+API.styleRefine = `${BASE_URL}/api/style/refine`;

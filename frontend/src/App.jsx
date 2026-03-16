@@ -3,6 +3,10 @@ import LiveVision from "./components/LiveVision";
 import KnowledgeGraph from "./components/KnowledgeGraph";
 import ProactiveAlerts from "./components/ProactiveAlerts";
 import AgentTrace from "./components/AgentTrace";
+import AmbientPanel from "./components/AmbientPanel";
+import GuardianPanel from "./components/GuardianPanel";
+import RequestTracePanel from "./components/RequestTracePanel";
+import PluginManagerPanel from "./components/PluginManagerPanel";
 import API from "./config";
 import { useAstraWS } from "./hooks/useAstraWS";
 
@@ -940,7 +944,11 @@ export default function App() {
         </main>
 
         {/* Agent trace */}
-        <AgentTrace messages={messages} />
+              <AmbientPanel />
+              <GuardianPanel />
+              <RequestTracePanel />
+              <PluginManagerPanel />
+              <AgentTrace messages={messages} />
 
 
       </div>
