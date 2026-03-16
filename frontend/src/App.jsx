@@ -32,13 +32,61 @@ const intentColor = (intent) => ({
   general:   "#94a3b8",
 }[intent?.toLowerCase()] || "#94a3b8");
 
-const modeAccent = (id) => ({
-  jarvis: "#38bdf8",
-  focus:  "#f97316",
-  chill:  "#34d399",
-  expert: "#c084fc",
-  debug:  "#fbbf24",
-}[id] || "#38bdf8");
+const MODE_THEMES = {
+  jarvis: {
+    accent:      "#38bdf8",
+    bg:          "#04090f",
+    chatBg:      "#040c18",
+    userBubble:  "#0d1e35",
+    astraBubble: "#080f1c",
+    glow:        "rgba(56,189,248,0.06)",
+    label:       "JARVIS",
+    hint:        "PERSONAL AI OS",
+  },
+  focus: {
+    accent:      "#f97316",
+    bg:          "#0f0800",
+    chatBg:      "#0a0500",
+    userBubble:  "#1a0e00",
+    astraBubble: "#120900",
+    glow:        "rgba(249,115,22,0.06)",
+    label:       "FOCUS",
+    hint:        "DEEP WORK MODE",
+  },
+  chill: {
+    accent:      "#34d399",
+    bg:          "#02100a",
+    chatBg:      "#020d07",
+    userBubble:  "#051a0e",
+    astraBubble: "#041208",
+    glow:        "rgba(52,211,153,0.06)",
+    label:       "CHILL",
+    hint:        "RELAXED MODE",
+  },
+  expert: {
+    accent:      "#c084fc",
+    bg:          "#08040f",
+    chatBg:      "#060210",
+    userBubble:  "#12073a",
+    astraBubble: "#0d0520",
+    glow:        "rgba(192,132,252,0.06)",
+    label:       "EXPERT",
+    hint:        "PRECISION MODE",
+  },
+  debug: {
+    accent:      "#fbbf24",
+    bg:          "#0f0c00",
+    chatBg:      "#0a0800",
+    userBubble:  "#1a1400",
+    astraBubble: "#120f00",
+    glow:        "rgba(251,191,36,0.06)",
+    label:       "DEBUG",
+    hint:        "SYSTEM TRACE MODE",
+  },
+};
+
+const modeAccent = (id) => (MODE_THEMES[id] || MODE_THEMES.jarvis).accent;
+const modeTheme  = (id) =>  MODE_THEMES[id] || MODE_THEMES.jarvis;
 
 // ── Fonts injection ───────────────────────────────────────────────────────────
 const FONTS = `
@@ -321,7 +369,8 @@ function SystemSidebar({ health, memory, models, currentModel, onSwitchModel }) 
 }
 
 // ── Message bubble ────────────────────────────────────────────────────────────
-function Message({ msg, isStreaming, accent }) {
+function Message({ msg, isStreaming, accent, theme }) {
+  theme = theme || MODE_THEMES.jarvis;
   const isUser = msg.role === "user";
   const iColor = intentColor(msg.intent);
 
@@ -353,8 +402,8 @@ function Message({ msg, isStreaming, accent }) {
         <div style={{
           padding: "13px 17px",
           background: isUser
-            ? "#0d1e35"
-            : "#080f1c",
+            ? (theme?.userBubble  || "#0d1e35")
+            : (theme?.astraBubble || "#080f1c"),
           border: isUser
             ? "1px solid rgba(56,189,248,0.14)"
             : "1px solid rgba(255,255,255,0.07)",
@@ -463,6 +512,7 @@ export default function App() {
   const chatBoxRef = useRef(null);
 
   const accent = modeAccent(currentMode);
+  const theme  = modeTheme(currentMode);
 
   // Auto-scroll
   useEffect(() => {
@@ -511,7 +561,10 @@ export default function App() {
         body: JSON.stringify({ mode: modeId }),
       });
       const d = await r.json();
-      if (d.mode) setCurrentMode(d.mode);
+      if (d.mode) {
+        setCurrentMode(d.mode);
+        setTab("chat"); // reset to chat tab on mode switch
+      }
     } catch {}
   }, []);
 
@@ -677,7 +730,8 @@ export default function App() {
   return (
     <div style={{
       height: "100vh", display: "flex", flexDirection: "column",
-      background: "#04090f",
+      background: theme.bg,
+      transition: "background 0.6s ease",
       color: "rgba(226,232,240,0.9)",
       fontFamily: "'Space Grotesk', sans-serif",
       overflow: "hidden",
@@ -690,7 +744,7 @@ export default function App() {
         <div style={{
           position: "absolute", top: "-20%", right: "-10%",
           width: 600, height: 600, borderRadius: "50%",
-          background: `radial-gradient(circle, ${accent}08 0%, transparent 70%)`,
+          background: `radial-gradient(circle, ${accent}12 0%, transparent 70%)`,
           transition: "background 0.6s ease",
         }} />
         <div style={{
@@ -719,10 +773,12 @@ export default function App() {
             }}>ASTRA</div>
             <div style={{
               fontSize: 8, letterSpacing: "0.18em",
-              color: "#2a4a6a",
+              color: accent,
+              opacity: 0.6,
               fontFamily: "'JetBrains Mono', monospace",
+              transition: "color 0.4s ease",
             }}>
-              PERSONAL AI · {currentModel.toUpperCase()}
+              {theme.hint} · {currentModel.toUpperCase()}
             </div>
           </div>
         </div>
@@ -786,7 +842,7 @@ export default function App() {
           {tab === "chat" && (
             <>
               {/* Messages */}
-              <div ref={chatBoxRef} style={{ flex: 1, overflowY: "auto", minHeight: 0, padding: "24px 28px", background: "#040c18" }}>
+              <div ref={chatBoxRef} style={{ flex: 1, overflowY: "auto", minHeight: 0, padding: "24px 28px", background: theme.chatBg, transition: "background 0.6s ease" }}>
                 {messages.length === 0 && (
                   <div style={{
                     height: "100%", display: "flex", flexDirection: "column",
@@ -800,8 +856,10 @@ export default function App() {
                     <div style={{
                       fontSize: 10, letterSpacing: "0.25em",
                       fontFamily: "'JetBrains Mono', monospace",
-                      color: "#0f2040",
-                    }}>SYSTEMS READY · AWAITING INPUT</div>
+                      color: accent,
+                      opacity: 0.25,
+                      transition: "color 0.4s ease",
+                    }}>{theme.hint} · AWAITING INPUT</div>
                     <div style={{
                       marginTop: 24, display: "flex", gap: 24,
                       fontSize: 11, color: "#0f2040",
@@ -824,7 +882,7 @@ export default function App() {
                 )}
 
                 {messages.map(msg => (
-                  <Message key={msg.id} msg={msg} isStreaming={false} accent={accent} />
+                  <Message key={msg.id} msg={msg} isStreaming={false} accent={accent} theme={theme} />
                 ))}
 
                 {streaming && streamBuffer && (
@@ -832,6 +890,7 @@ export default function App() {
                     msg={{ role: "assistant", content: streamBuffer, agent: `ollama/${currentModel}` }}
                     isStreaming={true}
                     accent={accent}
+                    theme={theme}
                   />
                 )}
 
@@ -945,11 +1004,7 @@ export default function App() {
         </main>
 
         {/* Agent trace */}
-              <ErrorBoundary><AmbientPanel /></ErrorBoundary>
-              <ErrorBoundary><GuardianPanel /></ErrorBoundary>
-              <ErrorBoundary><RequestTracePanel /></ErrorBoundary>
-              <ErrorBoundary><PluginManagerPanel /></ErrorBoundary>
-              <ErrorBoundary><AgentTrace messages={messages} /></ErrorBoundary>
+              {tab === "chat" && <ErrorBoundary><AgentTrace messages={messages} /></ErrorBoundary>}
 
 
       </div>
