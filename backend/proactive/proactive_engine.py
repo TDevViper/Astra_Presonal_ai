@@ -54,11 +54,12 @@ class ProactiveEngine:
 
     def end_focus_session(self):
         if self._focus_start:
-            elapsed = (datetime.now() - self._focus_start).seconds // 60
+            elapsed = int((datetime.now() - self._focus_start).total_seconds()) // 60
             pass  # disabled
         self._focus_start = None
 
     def _loop(self):
+        time.sleep(CHECK_INTERVAL)  # wait before first check
         while self._running:
             try:
                 self._check_triggers()
@@ -144,7 +145,7 @@ class ProactiveEngine:
         self.speak(msg)
 
     def _check_break_reminder(self, now: datetime):
-        elapsed = (now - self._last_break_reminder).seconds
+        elapsed = (now - self._last_break_reminder).total_seconds()
         if elapsed >= BREAK_INTERVAL:
             self._last_break_reminder = now
             self.speak(f"Hey {USER_NAME}, stand up, stretch, grab some water. You've earned it.")
@@ -156,7 +157,7 @@ class ProactiveEngine:
 
     def _check_calendar_reminder(self, now: datetime):
         try:
-            if self._last_spoke and (now - self._last_spoke).seconds < 10 * 60:
+            if self._last_spoke and (now - self._last_spoke).total_seconds() < 10 * 60:
                 return
             import sys, os
             sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

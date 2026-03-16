@@ -177,14 +177,12 @@ if __name__ == "__main__":
     proactive = get_proactive_engine(speak_fn=speak)
     proactive.start()
 
-    # Morning briefing on startup
+    # Morning briefing handled by ProactiveEngine._do_morning_briefing()
     try:
         mem = load_memory()
-        if should_give_briefing(mem):
-            brief = generate_morning_brief(mem)
-            logger.info(f"📋 Briefing: {brief}")
-            speak(brief)
+        brief = generate_morning_brief(mem)
+        logger.info(f"📋 Briefing: {brief}")
     except Exception as _e:
-        logger.warning(f"Briefing skipped: {_e}")
+        logger.warning(f"Briefing log skipped: {_e}")
 
     app.run(debug=config.debug, host=config.host, port=config.port)
