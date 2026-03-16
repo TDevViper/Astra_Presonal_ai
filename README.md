@@ -23,6 +23,20 @@
 
 ---
 
+
+## UI Preview
+
+> Screenshots coming soon — run locally to see the full interface.
+> `docs/images/` folder is ready for contributions.
+
+| Panel | Description |
+|---|---|
+| Chat Interface | Streaming responses with agent + confidence metadata |
+| Agent Trace | Live 12-step pipeline visualization per query |
+| Memory Graph | Interactive knowledge graph of learned entities |
+| Vision Panel | Real-time camera + screen analysis feed |
+
+---
 ## What is ASTRA?
 
 ASTRA is a **personal AI operating system** that runs entirely on your machine. It combines multi-agent reasoning, hybrid memory, real-time vision, and voice — all orchestrated through a 12-step processing pipeline with zero data leaving your device.
@@ -242,6 +256,16 @@ Available tools: `web_search` · `read_file` · `run_python` · `memory_recall` 
 
 ---
 
+
+## Why I Built ASTRA
+
+Most AI assistants today are wrappers around cloud APIs — your data leaves your device, context resets every session, and you have no control over the model.
+
+I built ASTRA to answer a different question: **what does a truly personal AI look like if it runs 100% on your own hardware?**
+
+ASTRA is the result — a full AI operating system with persistent memory, multi-agent reasoning, local voice and vision, and zero cloud dependency. Every conversation stays on your machine. Every memory is yours.
+
+---
 ## Quick Start
 
 ### Requirements
@@ -254,7 +278,7 @@ Available tools: `web_search` · `read_file` · `run_python` · `memory_recall` 
 ### 1. Clone
 ```bash
 git clone https://github.com/TDevViper/Astra_Presonal_ai.git
-cd Astra_Presonal_ai
+cd Astra_Presonal_ai  # rename to astra-ai-os recommended
 ```
 
 ### 2. Setup
@@ -297,6 +321,22 @@ http://localhost:3000   (Docker)
 
 ---
 
+
+## Example Queries
+```
+"What meetings do I have today?"
+"Why is my CPU usage spiking?"
+"Analyze this screenshot and tell me what's happening"
+"Search for the latest news on AI agents"
+"Remember that I prefer dark mode and minimal UI"
+"What have we talked about this week?"
+"Run this Python script and show me the output"
+"Summarize my git changes from today"
+"Turn off the living room lights"
+"Who is in this photo?"
+```
+
+---
 ## API Reference
 
 All endpoints require `X-API-Key` header when `ASTRA_API_KEY` is set.
@@ -319,6 +359,23 @@ GET  /api/digest        → Daily digest
 
 ---
 
+
+## ASTRA vs Cloud AI
+
+| Feature | ChatGPT / Gemini | ASTRA |
+|---|---|---|
+| Runs locally | ❌ Cloud only | ✅ 100% on-device |
+| Persistent memory | ❌ Resets each session | ✅ 4-layer hybrid memory |
+| Your data stays private | ❌ Sent to servers | ✅ Never leaves your machine |
+| Vision | ☁️ Cloud processed | ✅ Local LLaVA:7b |
+| Voice | ☁️ Cloud processed | ✅ Local Whisper + Kokoro |
+| Custom tools | ❌ Limited plugins | ✅ Git, shell, calendar, smart home |
+| Works offline | ❌ Needs internet | ✅ Fully offline capable |
+| Cost per query | 💰 API billing | ✅ Free after setup |
+| Multi-agent reasoning | ⚠️ Basic | ✅ ReAct + Planner + Critic |
+| Knowledge graph | ❌ | ✅ Builds model of you over time |
+
+---
 ## Security Model
 
 | Layer | Protection |
