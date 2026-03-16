@@ -19,7 +19,7 @@ class TruthGuard:
         (r"i am gpt",             "wrong_creator"),
     ]
 
-    def __init__(self, user_name: str = "Arnav", user_location: str = ""):
+    def __init__(self, user_name: str = "", user_location: str = ""):
         self.user_name     = user_name
         self.user_location = user_location
         self._compile_patterns()

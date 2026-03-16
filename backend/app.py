@@ -105,8 +105,9 @@ def receive_frame():
     from flask import request
     data  = request.get_json()
     frame = data.get("frame")
-    if frame:
-        _frame_buffer.add(frame)
+    fb = globals().get("_frame_buffer")
+    if frame and fb:
+        fb.add(frame)
     return {"ok": True}
 
 @app.errorhandler(404)

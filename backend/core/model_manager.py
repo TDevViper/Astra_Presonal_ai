@@ -6,6 +6,30 @@ import time
 from typing import Dict, List
 
 logger = logging.getLogger(__name__)
+import threading as _threading
+import time as _time
+import subprocess as _subprocess
+
+_last_used: dict = {}
+_UNLOAD_AFTER = 300
+
+def _auto_unload_loop():
+    while True:
+        _time.sleep(60)
+        now = _time.time()
+        for model, last_t in list(_last_used.items()):
+            if now - last_t > _UNLOAD_AFTER:
+                try:
+                    _subprocess.run(["ollama", "stop", model],
+                                    timeout=5, capture_output=True)
+                    del _last_used[model]
+                    logger.info("♻️  Auto-unloaded idle model: %s", model)
+                except Exception as e:
+                    logger.warning("unload failed %s: %s", model, e)
+
+_threading.Thread(target=_auto_unload_loop, daemon=True).start()
+
+
 
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 OLLAMA_SERVERS = [{"name": "Local Ollama", "url": OLLAMA_HOST}]
@@ -103,6 +127,7 @@ class ModelManager:
         preferred = INTENT_MODEL_MAP.get(intent, self.default_model)
         if preferred in self.available_models:
             self.current_model = preferred
+            _last_used[preferred] = _time.time()
             return preferred
         for model in ["phi3:mini", "llama3.2:3b", "mistral:latest"]:
             if model in self.available_models:

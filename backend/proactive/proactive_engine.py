@@ -17,10 +17,15 @@ class ProactiveEngine:
     def __init__(self, speak_fn: Callable[[str], None]):
         self.speak = speak_fn
         try:
-            import json
-            _m = json.load(open("memory.json"))
-            global USER_NAME
-            USER_NAME = _m.get("preferences", {}).get("name", "User")
+            import json, os as _os
+            _mem_path = _os.path.join(
+                _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))),
+                "memory", "data", "memory.json"
+            )
+            if _os.path.exists(_mem_path):
+                _m = json.load(open(_mem_path))
+                global USER_NAME
+                USER_NAME = _m.get("preferences", {}).get("name", "User")
         except Exception as e:
             logger.warning("ProactiveEngine: calendar tool unavailable: %s", e)
         self._running = False

@@ -20,6 +20,7 @@ from emotion.emotion_detector import detect_emotion
 from intents.classifier import is_question_like
 from personality.modes import get_token_budget, get_temperature
 from utils.cleaner import clean_text
+from config import config
 from websearch.search_agent import WebSearchAgent
 from tools.tool_router import detect_tool, detect_compound
 
@@ -66,7 +67,7 @@ class Brain:
     def __init__(self) -> None:
         self.truth_guard   = TruthGuard()
         self.capabilities  = CapabilityManager()
-        self.model_manager = ModelManager(default_model="phi3:mini")
+        self.model_manager = ModelManager(default_model=config.DEFAULT_MODEL)
         self.search_agent  = WebSearchAgent()
         self._cache  = ResponseCache()
         self._exit   = EarlyExitHandler()
@@ -250,7 +251,8 @@ class Brain:
 
     def process_stream(self, user_input: str) -> Generator:
         user_input = clean_text(user_input)
-        if not user_input:
+        user_input = _sanitize_input(user_input)
+        if not user_input or user_input.startswith("[blocked"):
             yield {"token": "I didn't catch that — try again?"}
             return
 

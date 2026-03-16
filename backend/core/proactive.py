@@ -177,8 +177,8 @@ def _broadcast(msg: str):
     if _broadcast_fn:
         try:
             _broadcast_fn(msg)
-        except Exception:
-            pass  # TODO: handle
+        except Exception as _e:
+            logger.warning("error: %s", _e)
 
 def start_proactive_monitor():
     threading.Thread(target=_monitor_loop, daemon=True).start()
@@ -190,8 +190,8 @@ def _monitor_loop():
         try:
             _check_system(last_alerts)
             _check_tasks(last_alerts)
-        except Exception:
-            pass  # TODO: handle
+        except Exception as _e:
+            logger.warning("error: %s", _e)
         time.sleep(120)
 
 def _check_system(last_alerts: dict):
