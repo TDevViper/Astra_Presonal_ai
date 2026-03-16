@@ -1,3 +1,4 @@
+from api.auth import require_api_key
 import logging
 from flask import Blueprint, request, jsonify
 
@@ -5,6 +6,7 @@ logger     = logging.getLogger(__name__)
 execute_bp = Blueprint("execute", __name__)
 
 @execute_bp.route("/capabilities", methods=["GET"])
+@require_api_key
 def get_capabilities():
     try:
         from core.brain_singleton import get_brain
@@ -13,6 +15,7 @@ def get_capabilities():
         return jsonify({"error": str(e)}), 500
 
 @execute_bp.route("/capabilities/<capability>", methods=["PUT"])
+@require_api_key
 def toggle_capability(capability: str):
     try:
         from core.brain_singleton import get_brain
@@ -27,6 +30,7 @@ def toggle_capability(capability: str):
         return jsonify({"error": str(e)}), 500
 
 @execute_bp.route("/execute", methods=["POST"])
+@require_api_key
 def execute_tool():
     try:
         data      = request.get_json() or {}

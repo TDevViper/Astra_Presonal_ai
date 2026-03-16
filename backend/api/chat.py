@@ -1,3 +1,4 @@
+from api.auth import require_api_key
 import logging
 from flask import Blueprint, request, jsonify
 
@@ -8,6 +9,7 @@ MAX_INPUT_CHARS = 4000
 
 
 @chat_bp.route("/chat", methods=["POST"])
+@require_api_key
 def chat():
     try:
         data       = request.get_json()

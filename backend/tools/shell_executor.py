@@ -95,7 +95,7 @@ def execute_shell(command: str, confirmed: bool = False,
     try:
         logger.info("shell_executor [%s]: %s", tier, command[:80])
         result = subprocess.run(
-            command, shell=True, capture_output=True, text=True,
+            shlex.split(command), shell=False, capture_output=True, text=True,
             timeout=30, cwd=os.path.expanduser("~")
         )
         output = result.stdout.strip() or result.stderr.strip() or "(no output)"

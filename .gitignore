@@ -9,13 +9,22 @@ __pycache__/
 venv/
 venv311/
 .env
-# Databases (never commit)
+
+# Databases
 *.db
 *.sqlite
+
+# Vector DB
+backend/data/vector_db/
+
+# AI memory runtime
+backend/memory/data/
+backend/memory.json
+
 # Backup files
-*.bak
-*.bak2
-*.bak3
+*.bak*
+*.orig
+
 # AI / ML models
 *.pth
 *.pt
@@ -25,26 +34,37 @@ venv311/
 *.safetensors
 *.ppn
 models/
-# Vector DB / embeddings
-backend/memory/embedding_cache/
-backend/memory/vector_store/
-# OS files
-.DS_Store
-# Docker
-.dockerignore
+
+# Node
+node_modules/
+
+# Build outputs
+dist/
+build/
+
 # Logs
 *.log
 logs/
-# IDE
-.vscode/
-.idea/
-# Large model files — never commit these
+
 # Coverage
 .coverage
 htmlcov/
 coverage.xml
-# Backup files (all variants)
-*.bak*
-*.orig
-frontend/node_modules/
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Docker
+.dockerignore
+
+# Project backups
 backend_original_backup/
+backend/memory/data/
+backend/data/snapshots/
+backend/data/vector_db/
+*.npy
+memory.json
