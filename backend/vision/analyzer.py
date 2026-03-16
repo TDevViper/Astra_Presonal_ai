@@ -161,8 +161,8 @@ def _parse_json(text: str) -> Dict:
     # Try direct parse first
     try:
         return json.loads(text)
-    except Exception:
-        pass  # TODO: handle
+    except Exception as _e:
+        logger.debug('vision analyzer: %s', _e)
 
     # Try extracting JSON block
     match = re.search(r'\{[\s\S]*\}', text)

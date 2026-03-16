@@ -70,8 +70,8 @@ def _save_mode():
         os.makedirs(os.path.dirname(_MODE_FILE), exist_ok=True)
         with open(_MODE_FILE, "w") as f:
             json.dump({"mode": _current_mode}, f)
-    except Exception:
-        pass  # TODO: handle
+    except Exception as _e:
+        logger.debug('modes: %s', _e)
 
 
 _load_mode()

@@ -56,8 +56,8 @@ def store_episode(user_msg: str, astra_reply: str,
     try:
         from knowledge.entity_extractor import extract_and_store
         extract_and_store(user_msg + " " + astra_reply, user_name=user_name)
-    except Exception:
-        pass  # TODO: handle
+    except Exception as _e:
+        logger.debug('episodic: %s', _e)
 
 
 def recall_episodes(query: str, top_k: int = 3) -> List[Dict]:
@@ -126,5 +126,5 @@ def _auto_extract_after_store(user_msg: str, reply: str):
     try:
         from knowledge.auto_extractor import extract_and_store
         from memory.memory_engine import load_memory as _lm; _m=_lm(); extract_and_store(user_msg + " " + reply, user_name=_m.get("preferences",{}).get("name","User"))
-    except Exception:
-        pass  # TODO: handle
+    except Exception as _e:
+        logger.debug('episodic: %s', _e)

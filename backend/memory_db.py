@@ -75,5 +75,5 @@ def get_fact(key: str):
 if __name__ != "__main__":
     try:
         init_db()
-    except Exception:
-        pass
+    except Exception as _e:
+        pass  # non-critical: first-run or empty db

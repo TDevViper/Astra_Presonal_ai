@@ -79,7 +79,7 @@ class ActivityMonitor:
 
             def on_activity(*args, **kwargs):
                 now  = datetime.now()
-                idle = (now - self._last_input).seconds
+                idle = (now - self._last_input).total_seconds()
                 if idle > 300:
                     self._activity_start = now
                     logger.info("⏱️ Activity reset after idle")
@@ -131,8 +131,8 @@ class ActivityMonitor:
 
     def _check_activity(self):
         now       = datetime.now()
-        idle      = (now - self._last_input).seconds
-        elapsed   = (now - self._activity_start).seconds
+        idle      = (now - self._last_input).total_seconds()
+        elapsed   = (now - self._activity_start).total_seconds()
 
         if idle > 300:
             return
@@ -140,7 +140,7 @@ class ActivityMonitor:
         threshold = THRESHOLDS.get(self._activity_type, THRESHOLDS["unknown"])
 
         if self._last_spoke:
-            if (now - self._last_spoke).seconds < 30 * 60:
+            if (now - self._last_spoke).total_seconds() < 30 * 60:
                 return
 
         if elapsed >= threshold:
@@ -180,10 +180,10 @@ class ActivityMonitor:
 
     def _check_posture(self):
         now     = datetime.now()
-        elapsed = (now - self._last_posture).seconds
+        elapsed = (now - self._last_posture).total_seconds()
         if elapsed < POSTURE_CHECK_INTERVAL:
             return
-        if (now - self._last_input).seconds > 300:
+        if (now - self._last_input).total_seconds() > 300:
             return
 
         self._last_posture = now
@@ -230,11 +230,11 @@ class ActivityMonitor:
     def _check_screen(self):
         return  # disabled on M4 Air — too heavy
         now     = datetime.now()
-        elapsed = (now - self._last_screen).seconds
+        elapsed = (now - self._last_screen).total_seconds()
 
         if elapsed < SCREEN_CHECK_INTERVAL:
             return
-        if (now - self._last_input).seconds > 300:
+        if (now - self._last_input).total_seconds() > 300:
             return  # User idle, skip
 
         self._last_screen = now
@@ -276,7 +276,7 @@ class ActivityMonitor:
 
         # Don't speak if spoke recently
         now = datetime.now()
-        if self._last_spoke and (now - self._last_spoke).seconds < 10 * 60:
+        if self._last_spoke and (now - self._last_spoke).total_seconds() < 10 * 60:
             return
 
         content_type = result.get("content_type", "")

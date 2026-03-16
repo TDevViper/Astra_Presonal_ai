@@ -28,8 +28,8 @@ def get_git_root() -> Optional[str]:
         )
         if result.returncode == 0:
             return result.stdout.strip()
-    except Exception:
-        pass  # TODO: handle
+    except Exception as _e:
+        logger.debug('git_tool: %s', _e)
     return None
 
 

@@ -81,8 +81,8 @@ def _is_contradictory(new_text: str, threshold: float = 0.85) -> Optional[str]:
                 existing_neg = bool(existing_words & neg_words)
                 if new_neg != existing_neg:
                     return hit["text"]
-    except Exception:
-        pass  # TODO: handle
+    except Exception as _e:
+        logger.debug('vector_store contradiction check: %s', _e)
     return None
 
 

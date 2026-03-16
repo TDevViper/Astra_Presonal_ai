@@ -318,8 +318,8 @@ def set_brightness(level: int) -> str:
         subprocess.run(["osascript", "-e", f'tell application "System Events"\n  tell process "SystemUIServer"\n    key code 144\n  end tell\nend tell'], capture_output=True)
         _osascript(f'set brightness of display 1 to {val}')
         return f"Brightness set to {level}%."
-    except Exception:
-        pass  # TODO: handle
+    except Exception as _e:
+        logger.debug('system_controller: %s', _e)
     """Set screen brightness 0-100."""
     level = max(0, min(100, level))
     try:
