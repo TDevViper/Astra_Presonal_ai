@@ -34,8 +34,8 @@ def health():
         patterns = analyze_patterns()
         if patterns.get("top_topics"):
             status["frequent_topics"] = patterns["top_topics"][:3]
-    except Exception:
-        pass
+    except Exception as _e:
+        logger.debug('health check: %s', _e)
     status["brain"]  = status.get("brain",  {}).get("status") == "ok"
     status["memory"] = status.get("memory", {}).get("status") == "ok"
     status["voice"]  = status.get("voice",  {}).get("status") in ("ok", "warning")

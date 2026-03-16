@@ -54,8 +54,8 @@ def _set_limits():
     try:
         resource.setrlimit(resource.RLIMIT_CPU, (8, 8))
         resource.setrlimit(resource.RLIMIT_AS, (256 * 1024 * 1024, 256 * 1024 * 1024))
-    except Exception:
-        pass
+    except Exception as _e:
+        logger.debug('sandbox: %s', _e)
 
 def execute_python(code: str) -> Dict:
     safe, reason = _is_safe(code)

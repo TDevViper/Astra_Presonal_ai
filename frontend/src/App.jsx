@@ -8,6 +8,7 @@ import GuardianPanel from "./components/GuardianPanel";
 import RequestTracePanel from "./components/RequestTracePanel";
 import PluginManagerPanel from "./components/PluginManagerPanel";
 import API from "./config";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { useAstraWS } from "./hooks/useAstraWS";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -944,11 +945,11 @@ export default function App() {
         </main>
 
         {/* Agent trace */}
-              <AmbientPanel />
-              <GuardianPanel />
-              <RequestTracePanel />
-              <PluginManagerPanel />
-              <AgentTrace messages={messages} />
+              <ErrorBoundary><AmbientPanel /></ErrorBoundary>
+              <ErrorBoundary><GuardianPanel /></ErrorBoundary>
+              <ErrorBoundary><RequestTracePanel /></ErrorBoundary>
+              <ErrorBoundary><PluginManagerPanel /></ErrorBoundary>
+              <ErrorBoundary><AgentTrace messages={messages} /></ErrorBoundary>
 
 
       </div>

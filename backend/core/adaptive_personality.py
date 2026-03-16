@@ -15,8 +15,8 @@ def _load_style() -> Dict:
         if os.path.exists(STYLE_FILE):
             with open(STYLE_FILE) as f:
                 return json.load(f)
-    except Exception:
-        pass
+    except Exception as _e:
+        logger.debug('adaptive_personality: %s', _e)
     return {
         "response_length":  "medium",   # short | medium | verbose
         "format_preference": "prose",   # prose | bullets | mixed

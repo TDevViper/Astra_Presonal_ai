@@ -49,8 +49,8 @@ def websocket_handler(ws):
     from core.brain_singleton import get_brain
     try:
         get_brain()  # ensure initialized
-    except Exception:
-        pass
+    except Exception as _e:
+        logger.debug('ws_stream: %s', _e)
     with _lock:
         _connected_clients.append(ws)
 

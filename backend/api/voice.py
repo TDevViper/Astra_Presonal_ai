@@ -78,6 +78,6 @@ def stop_wake():
         if _wake_listener:
             _wake_listener.stop()
             _wake_listener = None
-    except Exception:
-        pass
+    except Exception as _e:
+        logger.debug('voice api: %s', _e)
     return jsonify({"status": "stopped"})
