@@ -26,8 +26,8 @@ class ContextBuilder:
             try:
                 from memory.summarizer import get_recent_context
                 summary_ctx = get_recent_context(memory, max_summaries=3)
-            except Exception:
-                pass
+            except Exception as _e:
+                logger.debug('context_builder: %s', _e)
 
             system_prompt = build_system_prompt(
                 user_name=user_name,
@@ -50,8 +50,8 @@ class ContextBuilder:
                     visual_ctx = build_visual_context(user_input)
                     if visual_ctx:
                         system_prompt += visual_ctx
-                except Exception:
-                    pass
+                except Exception as _e:
+                    logger.debug('context_builder: %s', _e)
 
             # Inject adaptive personality style
             try:
@@ -59,8 +59,8 @@ class ContextBuilder:
                 style_addon = get_style_addon()
                 if style_addon:
                     system_prompt += f"\n\nSTYLE: {style_addon}"
-            except Exception:
-                pass
+            except Exception as _e:
+                logger.debug('context_builder: %s', _e)
 
             # Inject live ambient context
             try:
@@ -68,8 +68,8 @@ class ContextBuilder:
                 ambient_ctx = get_context_string()
                 if ambient_ctx:
                     system_prompt += f"\n\nCURRENT ENVIRONMENT: {ambient_ctx}"
-            except Exception:
-                pass
+            except Exception as _e:
+                logger.debug('context_builder: %s', _e)
 
             return system_prompt, sem_conf
 

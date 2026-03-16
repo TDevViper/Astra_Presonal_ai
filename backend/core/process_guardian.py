@@ -52,8 +52,8 @@ def _alert(msg: str):
     if _broadcast_fn:
         try:
             _broadcast_fn(msg)
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug('process_guardian: %s', _e)
 
 
 def _port_open(port: int) -> bool:

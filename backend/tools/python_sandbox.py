@@ -83,5 +83,5 @@ def execute_python(code: str) -> Dict:
     finally:
         try:
             os.unlink(tmp_path)
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug('sandbox: %s', _e)

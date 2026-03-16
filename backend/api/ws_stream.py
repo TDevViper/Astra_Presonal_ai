@@ -148,5 +148,5 @@ def _handle_chat(ws, user_input: str, image_b64=None):
         try:
             ws.send(json.dumps({"type": "error", "data": "Something went wrong"}))
             ws.send(json.dumps({"type": "done"}))
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug('ws_stream: %s', _e)

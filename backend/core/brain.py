@@ -215,8 +215,8 @@ class Brain:
                     rag_ctx = query_rag(user_input, top_k=3)
                     if rag_ctx:
                         system_prompt += f"\n\nRELEVANT KNOWLEDGE:\n{rag_ctx}"
-            except Exception:
-                pass
+            except Exception as _e:
+                logger.debug('brain: %s', _e)
 
             self._add_to_history("user", user_input)
             reply = self._llm.try_react(user_input, selected_model, system_prompt, user_name)
@@ -239,8 +239,8 @@ class Brain:
             try:
                 from core.self_improve import log_response as _si_log
                 _si_log(user_input, reply, final_conf)
-            except Exception:
-                pass
+            except Exception as _e:
+                logger.debug('brain: %s', _e)
             return result
 
         except Exception as e:
@@ -358,8 +358,8 @@ class Brain:
                 rag_ctx = query_rag(user_input, top_k=3)
                 if rag_ctx:
                                             system_prompt += f"\n\nRELEVANT KNOWLEDGE:\n{rag_ctx}"
-        except Exception:
-            pass
+        except Exception as _e:
+            logger.debug('brain: %s', _e)
 
         self._add_to_history("user", user_input)
 
@@ -407,8 +407,8 @@ class Brain:
                     if _summary:
                         _mem = store_summary(_mem, _summary)
                         self._mem.save(_mem)
-            except Exception:
-                pass
+            except Exception as _e:
+                logger.debug('brain: %s', _e)
             self.conversation_history = self.conversation_history[-12:]
 
     def _build_reply(self, reply, emotion, intent, agent,

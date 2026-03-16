@@ -89,8 +89,8 @@ def _scan_once():
                 store_vision_episode(error_text, source="screen",
                                      error_detected=True,
                                      active_app=_live_context.get("active_app"))
-            except Exception:
-                pass
+            except Exception as _e:
+                logger.debug('ambient: %s', _e)
         else:
             _live_context["error_text"] = None
             # Store normal screen observation in visual memory
@@ -99,8 +99,8 @@ def _scan_once():
                     from core.visual_memory import store_vision_episode
                     store_vision_episode(summary, source="screen",
                                          active_app=_live_context.get("active_app"))
-                except Exception:
-                    pass
+                except Exception as _e:
+                    logger.debug('ambient: %s', _e)
 
     except Exception as e:
         logger.debug("ambient scan skipped: %s", e)
