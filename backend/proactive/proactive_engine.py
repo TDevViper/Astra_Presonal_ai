@@ -24,7 +24,7 @@ class ProactiveEngine:
             )
             if _os.path.exists(_mem_path):
                 with open(_mem_path) as _f:
-                _m = json.load(_f)
+                    _m = json.load(_f)
                 global USER_NAME
                 USER_NAME = _m.get("preferences", {}).get("name", "User")
         except Exception as e:
