@@ -68,3 +68,5 @@ backend/data/snapshots/
 backend/data/vector_db/
 *.npy
 memory.json
+backend/.coverage
+backend/logs/
