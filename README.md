@@ -12,6 +12,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square&logo=python)](https://python.org)
 [![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react)](https://react.dev)
+[![Tests](https://img.shields.io/badge/Tests-86%20passing-brightgreen?style=flat-square)](#)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ed?style=flat-square&logo=docker)](https://docker.com)
 [![Ollama](https://img.shields.io/badge/Ollama-Local_LLM-black?style=flat-square)](https://ollama.ai)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
@@ -32,6 +33,9 @@ This is not a chatbot wrapper. It is a full AI system with:
 - A **critic + refinement pipeline** that reviews every response
 - A **truth guard** that catches hallucinations before they reach you
 - **Parallel tool execution** for multi-step queries
+- **Kokoro TTS** for natural, high-quality local voice output
+- **React error boundaries** so UI never crashes silently
+- **Model auto-unload** — idle models free RAM automatically
 
 ---
 
@@ -40,15 +44,19 @@ This is not a chatbot wrapper. It is a full AI system with:
 ┌─────────────────────────────────────────────────────────────────┐
 │                     React Frontend (Vite)                        │
 │   Chat · Vision · Memory Graph · Live Pipeline Trace Panel      │
+│   ErrorBoundary on every panel — no silent UI crashes           │
 └────────────────────────┬────────────────────────────────────────┘
                          │ HTTP / WebSocket
 ┌────────────────────────▼────────────────────────────────────────┐
-│                    Flask Backend  :5001                          │
+│                    Flask Backend  :5050                          │
+│                    API Key auth on all endpoints                 │
+│                    Rate limiter · CORS · 18 blueprints           │
 │                                                                  │
 │  ┌─────────────────────────────────────────────────────────┐    │
-│  │                   Orchestrator                           │    │
+│  │                   Brain v5.1 — 12-step pipeline          │    │
 │  │                                                          │    │
-│  │  Input → Intent Detection → Route to Agent              │    │
+│  │  Input → Sanitize → Cache → Intent → Tools → Memory     │    │
+│  │       → Web Search → ReAct → LLM → Critic → Polish      │    │
 │  │                                                          │    │
 │  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐  │    │
 │  │  │ Shortcut │ │  Tools   │ │  ReAct   │ │ Planner  │  │    │
@@ -57,6 +65,7 @@ This is not a chatbot wrapper. It is a full AI system with:
 │  │                      │                                   │    │
 │  │              ┌───────▼──────┐                           │    │
 │  │              │  Ollama LLM  │ phi3 · mistral · llava    │    │
+│  │              │  Auto-unload │ idle models free RAM       │    │
 │  │              └───────┬──────┘                           │    │
 │  │                      │                                   │    │
 │  │    ┌─────────────────▼──────────────────────────┐      │    │
@@ -70,9 +79,9 @@ This is not a chatbot wrapper. It is a full AI system with:
 │  │    Memory    │  │   Knowledge  │  │       Vision         │  │
 │  │  ─────────  │  │    Graph     │  │  ──────────────────  │  │
 │  │  Episodic   │  │  ─────────  │  │  LLaVA:7b Analyzer  │  │
-│  │  Semantic   │  │  Neo4j-like │  │  WebRTC Camera      │  │
+│  │  Semantic   │  │  NetworkX   │  │  WebRTC Camera      │  │
 │  │  FAISS Vec  │  │  Entities   │  │  Screen Capture     │  │
-│  │  ChromaDB   │  │  Relations  │  │  Continuous Vision  │  │
+│  │  ChromaDB   │  │  Relations  │  │  Face Recognition   │  │
 │  └──────────────┘  └──────────────┘  └──────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
          │                    │                    │
@@ -81,8 +90,8 @@ This is not a chatbot wrapper. It is a full AI system with:
 │  :11434       │   │   :6379       │   │  astra.db     │
 │  phi3:mini    │   │   Response    │   │  Chat History │
 │  mistral      │   │   Cache       │   │  User Facts   │
-│  llama3.2     │   └───────────────┘   └───────────────┘
-│  llava:7b     │
+│  llava:7b     │   │   mem: 256m   │   └───────────────┘
+│  mem: 10g     │   └───────────────┘
 └───────────────┘
 ```
 
@@ -98,47 +107,45 @@ User Input
  1. clean_text()           — strip noise, normalize
     │
     ▼
- 2. detect_mode_switch()   — focus / creative / precise mode
+ 2. _sanitize_input()      — block prompt injection attempts
     │
     ▼
- 3. response_cache         — MD5 hash check (600s TTL, Redis)
+ 3. detect_mode_switch()   — focus / creative / precise mode
     │
     ▼
- 4. chain_planner          — detect multi-step queries
+ 4. response_cache         — MD5 hash check (600s TTL, Redis)
     │
     ▼
- 5. tool_router            — git / file / system / calendar / python
+ 5. chain_planner          — detect multi-step queries
     │
     ▼
- 6. intent_shortcuts       — instant replies for known patterns
+ 6. tool_router            — git / file / system / calendar / python
     │
     ▼
- 7. memory_recall          — semantic + episodic + knowledge graph
+ 7. intent_shortcuts       — instant replies for known patterns
     │
     ▼
- 8. web_search_agent       — DuckDuckGo with citation extraction
+ 8. memory_recall          — semantic + episodic + knowledge graph
     │
     ▼
- 9. ReAct agent            — Thought → Action → Observation loop
+ 9. web_search_agent       — DuckDuckGo with citation extraction
     │
     ▼
-10. Ollama LLM             — model selected by query intent
+10. ReAct agent            — Thought → Action → Observation loop
     │
     ▼
-11. critic_review()        — quality check on output
+11. Ollama LLM             — model selected by query intent
     │
     ▼
-12. refine → truth_guard → polish → limit_words → proactive
+12. critic → refine → truth_guard → polish → limit_words → proactive
     │
     ▼
- Final Reply
+Final Reply
 ```
 
 ---
 
 ## ReAct Agent Loop
-
-For reasoning queries, ASTRA uses a full ReAct implementation:
 ```
 User: "Why is my CPU usage spiking when I run the model?"
          │
@@ -158,20 +165,15 @@ User: "Why is my CPU usage spiking when I run the model?"
    Action: memory_recall(ollama performance settings)
          │
          ▼
-   Observation: num_predict=600 found in past config
-         │
-         ▼
    Final Answer: "Your Ollama runner is using 87% CPU during
                   inference. Reduce num_predict to 200-300..."
 ```
 
-Available tools inside ReAct: `web_search` · `read_file` · `run_python` · `memory_recall` · `graph_lookup` · `calculate`
+Available tools: `web_search` · `read_file` · `run_python` · `memory_recall` · `graph_lookup` · `calculate`
 
 ---
 
 ## Memory Architecture
-
-ASTRA uses a 4-layer hybrid memory system:
 ```
 ┌─────────────────────────────────────────────┐
 │              Memory Layers                   │
@@ -183,12 +185,14 @@ ASTRA uses a 4-layer hybrid memory system:
 │  └─ Past sessions with intent + emotion tag │
 │                                              │
 │  Layer 3 — Semantic Memory                  │
-│  └─ FAISS vector index (sentence-transformers│
-│     all-MiniLM-L6-v2, 384-dim embeddings)   │
+│  └─ FAISS + ChromaDB vector index           │
+│     BGE-small-en-v1.5 embeddings            │
+│     Decay scoring — recent = higher rank    │
+│     Contradiction detection before store    │
 │                                              │
 │  Layer 4 — Knowledge Graph                  │
-│  └─ Entity-relation store built from every  │
-│     conversation (auto_extractor.py)         │
+│  └─ NetworkX entity-relation store          │
+│     Auto-extracted from every conversation  │
 │     User → [likes, works_on, prefers] → X  │
 └─────────────────────────────────────────────┘
 ```
@@ -202,17 +206,20 @@ ASTRA uses a 4-layer hybrid memory system:
 | 💬 Chat | ✅ | 12-step pipeline, streaming, multi-model routing |
 | 🤖 Multi-Agent | ✅ | ReAct, Planner, Critic, Reasoner, Orchestrator |
 | 🧠 Memory | ✅ | FAISS + ChromaDB + Episodic + Knowledge Graph |
-| 👁️ Vision | ✅ | LLaVA:7b, WebRTC camera, screen capture, live mode |
-| 🎤 Voice | ✅ | Whisper STT, TTS, wake word detection |
+| 👁️ Vision | ✅ | LLaVA:7b, WebRTC camera, screen capture, face recognition |
+| 🎤 Voice | ✅ | Whisper STT, Kokoro TTS (local, high quality) |
 | 🌐 Web Search | ✅ | DuckDuckGo agent with citation extraction |
-| 🐍 Code Sandbox | ✅ | Propose + execute Python with approval flow |
+| 🐍 Code Sandbox | ✅ | AST-checked Python with approval flow |
 | 🔀 Git Tools | ✅ | Status, log, diff, branch, commit proposals |
 | 📁 File Reader | ✅ | Read + AI-analyze any local file |
 | 💻 System Monitor | ✅ | CPU, RAM, disk, top processes |
 | 📅 Calendar | ✅ | macOS Calendar + Reminders integration |
 | 🏠 Smart Home | ✅ | Philips Hue, TinyTuya device control |
 | 📊 Pipeline Trace | ✅ | Live agent decision panel in UI |
-| 🐳 Docker | ✅ | 4-container deployment, Redis cache |
+| 🔒 Auth | ✅ | API key protection on all endpoints |
+| ♻️ RAM Mgmt | ✅ | Models auto-unload after 5min idle |
+| 🛡️ Error Boundary | ✅ | React panels never crash the full UI |
+| 🐳 Docker | ✅ | 4-container deployment, memory limits set |
 | 🔒 Privacy | ✅ | 100% local, no data leaves device |
 
 ---
@@ -223,24 +230,26 @@ ASTRA uses a 4-layer hybrid memory system:
 |---|---|
 | Frontend | React 18, Vite, WebRTC, Tailwind |
 | Backend | Python 3.11, Flask, Flask-CORS, WebSocket |
-| LLM Runtime | Ollama (phi3:mini, mistral, llama3.2, llava:7b) |
-| Vector DB | FAISS + ChromaDB + sentence-transformers |
+| LLM Runtime | Ollama (phi3:mini, mistral, llava:7b) |
+| Vector DB | FAISS + ChromaDB + BGE-small-en-v1.5 |
 | Knowledge Graph | NetworkX + spaCy entity extraction |
 | Vision | LLaVA:7b, OpenCV, mss screen capture |
 | STT | faster-whisper (tiny model, local) |
-| TTS | Kokoro / macOS say |
-| Cache | Redis 7 (response cache, session store) |
+| TTS | Kokoro v1 (local neural TTS) |
+| Cache | Redis 7 (response cache, 256MB limit) |
 | Database | SQLite (chat history, user facts) |
-| Deployment | Docker Compose (4 containers) |
+| Deployment | Docker Compose (4 containers, mem limits) |
 
 ---
 
 ## Quick Start
 
 ### Requirements
-- Docker Desktop
+- macOS or Linux
+- Docker Desktop (optional — can run without)
 - 8GB RAM minimum (16GB recommended for llava)
 - 20GB disk space for models
+- Python 3.11
 
 ### 1. Clone
 ```bash
@@ -248,39 +257,55 @@ git clone https://github.com/TDevViper/Astra_Presonal_ai.git
 cd Astra_Presonal_ai
 ```
 
-### 2. Configure
+### 2. Setup
 ```bash
-cp .env.example .env
-# Add your SERPER_API_KEY for web search (optional)
+python3 -m venv venv311
+source venv311/bin/activate
+pip install -r backend/requirements.txt
 ```
 
-### 3. Launch
+### 3. Configure
 ```bash
-docker compose up -d
+cp backend/.env.example backend/.env
+# Generate a secure API key
+python3 -c "import secrets; print(secrets.token_hex(32))"
+# Add to backend/.env:
+# ASTRA_API_KEY=<your_key>
+# SERPER_API_KEY=<optional_for_web_search>
 ```
 
 ### 4. Pull Models
 ```bash
-docker exec astra_ollama ollama pull phi3:mini
-docker exec astra_ollama ollama pull mistral
-docker exec astra_ollama ollama pull llama3.2:3b
-docker exec astra_ollama ollama pull llava:7b
+ollama pull phi3:mini
+ollama pull llava:7b
 ```
 
-### 5. Open
+### 5. Start
+```bash
+# Option A — direct
+cd backend && python app.py
+
+# Option B — Docker
+docker compose up -d
 ```
-http://localhost:3000
+
+### 6. Open
+```
+http://localhost:5173   (dev)
+http://localhost:3000   (Docker)
 ```
 
 ---
 
 ## API Reference
+
+All endpoints require `X-API-Key` header when `ASTRA_API_KEY` is set.
 ```
 POST /chat              → Full pipeline chat
 POST /chat/stream       → Streaming response with SSE
 POST /talk              → Voice + Vision combined
 POST /voice/listen      → Record + transcribe (Whisper)
-POST /voice/say         → TTS speak text
+POST /voice/say         → TTS speak text (Kokoro)
 POST /vision/analyze_b64→ Analyze base64 image (WebRTC)
 POST /vision/screen     → Analyze current screen
 GET  /memory            → Load full memory state
@@ -289,64 +314,21 @@ POST /model/switch      → Switch active Ollama model
 GET  /health            → System health + model list
 POST /execute           → System stats / tool execution
 GET  /knowledge/graph   → Knowledge graph data
-GET  /api/digest        → Daily digest (exchanges, summary, tasks, topics)
+GET  /api/digest        → Daily digest
 ```
 
 ---
 
-## Project Structure
-```
-Astra/
-├── docker-compose.yml
-├── backend/
-│   ├── app.py                 # Flask entry point
-│   ├── config.py              # Environment config
-│   ├── core/
-│   │   ├── brain.py           # Main 12-step pipeline
-│   │   ├── orchestrator.py    # Multi-agent router
-│   │   ├── agent_loop.py      # Autonomous agent loop
-│   │   ├── model_manager.py   # Smart model selection
-│   │   ├── truth_guard.py     # Hallucination filter
-│   │   └── self_improve.py    # Response quality logger
-│   ├── agents/
-│   │   ├── react_agent.py     # ReAct implementation
-│   │   ├── planner.py         # Task decomposition
-│   │   ├── critic.py          # Output quality review
-│   │   └── reasoner.py        # Chain-of-thought
-│   ├── memory/
-│   │   ├── memory_engine.py   # Core memory store
-│   │   ├── vector_store.py    # FAISS operations
-│   │   ├── episodic.py        # Session memory
-│   │   └── semantic_recall.py # Similarity search
-│   ├── knowledge/
-│   │   ├── graph.py           # Knowledge graph
-│   │   ├── entity_extractor.py# spaCy NER
-│   │   └── auto_extractor.py  # Auto-build from chat
-│   ├── vision/
-│   │   ├── vision_engine.py   # LLaVA integration
-│   │   ├── screen_watcher.py  # Screen capture
-│   │   └── continuous_vision.py# Live analysis loop
-│   ├── voice/
-│   │   ├── listener.py        # Whisper STT
-│   │   ├── speaker.py         # TTS engine
-│   │   └── wake_word.py       # Porcupine wake word
-│   └── tools/
-│       ├── tool_router.py     # Tool dispatcher
-│       ├── react_agent.py     # ReAct tool runner
-│       ├── git_tool.py        # Git operations
-│       ├── python_sandbox.py  # Code execution
-│       ├── system_monitor.py  # System stats
-│       └── chain_planner.py   # Multi-tool chains
-└── frontend/
-    ├── src/
-    │   ├── App.jsx            # Main UI
-    │   └── components/
-    │       ├── AgentTrace.jsx # Live pipeline panel
-    │       ├── KnowledgeGraph.jsx
-    │       ├── LiveVision.jsx
-    │       └── ProactiveAlerts.jsx
-    └── Dockerfile
-```
+## Security Model
+
+| Layer | Protection |
+|---|---|
+| API auth | `X-API-Key` header on all endpoints |
+| Prompt injection | `_sanitize_input()` on every message (chat + stream) |
+| Python sandbox | AST-checked, blocked imports, CPU/RAM limits |
+| Shell executor | 3-tier safety: safe → elevated → root |
+| Rate limiting | 500 req/min via Flask-Limiter + Redis |
+| CORS | Whitelist only (localhost dev ports) |
 
 ---
 
@@ -363,17 +345,78 @@ Measured on Mac M4 (16GB), all models local:
 | Vision analysis (LLaVA) | ~3.1s |
 | Cache hit response | ~12ms |
 | Tool execution (system) | ~95ms |
+| Test suite | 86 tests, ~20s |
+
+---
+
+## Project Structure
+```
+Astra/
+├── docker-compose.yml         # 4-container setup, memory limits
+├── backend/
+│   ├── app.py                 # Flask entry point, all blueprints
+│   ├── config.py              # Env-based config class
+│   ├── core/
+│   │   ├── brain.py           # 12-step pipeline orchestrator
+│   │   ├── llm_engine.py      # Ollama calls, ReAct trigger
+│   │   ├── model_manager.py   # Smart model selection + auto-unload
+│   │   ├── truth_guard.py     # Hallucination filter
+│   │   ├── response_cache.py  # Redis MD5 cache
+│   │   └── post_processor.py  # Critic → refine → polish
+│   ├── agents/
+│   │   ├── react_agent.py     # ReAct implementation
+│   │   ├── planner.py         # Task decomposition
+│   │   ├── critic.py          # Output quality review
+│   │   └── reasoner.py        # Chain-of-thought
+│   ├── memory/
+│   │   ├── vector_store.py    # ChromaDB + decay scoring
+│   │   ├── episodic.py        # Session memory
+│   │   └── semantic_recall.py # Similarity search
+│   ├── knowledge/
+│   │   ├── graph.py           # NetworkX knowledge graph
+│   │   └── auto_extractor.py  # Auto-build from chat
+│   ├── vision/
+│   │   ├── vision_engine.py   # LLaVA integration
+│   │   └── face_recognition_engine.py
+│   ├── voice/
+│   │   ├── listener.py        # Whisper STT
+│   │   └── speaker.py         # Kokoro TTS
+│   ├── tools/
+│   │   ├── tool_router.py     # Tool dispatcher
+│   │   ├── shell_executor.py  # 3-tier safety model
+│   │   └── python_sandbox.py  # AST-checked execution
+│   └── tests/
+│       ├── test_brain_pipeline.py   # 40+ pipeline tests
+│       ├── test_tool_executor.py    # Tool + face tests
+│       ├── test_agent_loop.py
+│       └── test_knowledge_graph.py
+└── frontend/
+    └── src/
+        ├── App.jsx                  # Main UI (700 lines)
+        └── components/
+            ├── ErrorBoundary.jsx    # Catches component crashes
+            ├── AgentTrace.jsx       # Live pipeline panel
+            ├── KnowledgeGraph.jsx
+            └── LiveVision.jsx
+```
 
 ---
 
 ## Roadmap
 
 - [x] WebSocket real-time streaming
+- [x] Kokoro TTS (local neural voice)
+- [x] API key authentication
+- [x] Prompt injection protection
+- [x] Model auto-unload (RAM management)
+- [x] React ErrorBoundary
+- [x] Docker memory limits
+- [x] 86-test suite
 - [ ] Temporal frame memory (last 10 frames context)
-- [ ] Prometheus + Grafana observability dashboard
-- [ ] Full pytest test suite
+- [ ] Prometheus + Grafana observability
 - [ ] Android companion app
 - [ ] GPU server offloading
+- [ ] App.jsx component splitting
 
 ---
 
