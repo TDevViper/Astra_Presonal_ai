@@ -56,10 +56,14 @@ class KokoroTTS:
             chunks = [audio for _, _, audio in generator if audio is not None and len(audio) > 0]
             if chunks:
                 full_audio = np.concatenate(chunks)
-                # Use default output device — follows macOS audio routing
                 try:
-                    device = sd.default.device[1]  # output device
-                    sd.play(full_audio, samplerate=24000, device=device)
+                    import scipy.signal as sps
+                    device_info = sd.query_devices(sd.default.device[1])
+                    target_sr = int(device_info["default_samplerate"])
+                    if target_sr != 24000:
+                        num_samples = int(len(full_audio) * target_sr / 24000)
+                        full_audio = sps.resample(full_audio, num_samples)
+                    sd.play(full_audio, samplerate=target_sr)
                 except Exception:
                     sd.play(full_audio, samplerate=24000)
                 sd.wait()
