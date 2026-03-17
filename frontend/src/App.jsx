@@ -8,6 +8,7 @@ import GuardianPanel from "./components/GuardianPanel";
 import RequestTracePanel from "./components/RequestTracePanel";
 import PluginManagerPanel from "./components/PluginManagerPanel";
 import API from "./config";
+import ChatPanel from "./components/ChatPanel.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { useAstraWS } from "./hooks/useAstraWS";
 
