@@ -203,7 +203,8 @@ def _check_system(last_alerts: dict):
         last_alerts["cpu"] = now
 
     ram = psutil.virtual_memory().percent
-    if ram > 90 and now - last_alerts.get("ram", 0) > 300:
+    # macOS compresses memory — only alert at very high pressure
+    if ram > 95 and now - last_alerts.get("ram", 0) > 300:
         _broadcast(f"⚠️ RAM at {ram:.0f}% — memory pressure is high.")
         last_alerts["ram"] = now
 
