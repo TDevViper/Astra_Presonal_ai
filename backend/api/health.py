@@ -1,6 +1,6 @@
 import os
 import ollama
-from core.smart_guardian import get_full_stats as _smart_stats
+from core.smart_guardian import get_full_stats as _smart_stats, get_trend_summary as _trend_summary
 from flask import Blueprint, jsonify
 from core.proactive import get_welcome_back, analyze_patterns
 
@@ -143,6 +143,7 @@ def _check_vectors() -> dict:
 def health_score():
     try:
         stats = _smart_stats()
+        stats["trend"] = _trend_summary()
         return jsonify(stats)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
