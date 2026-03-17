@@ -134,10 +134,10 @@ set_broadcast(_ws_broadcast)
 
 # Start process guardian (auto-restart services, disk/RAM alerts)
 try:
-    from core.process_guardian import start as _start_guardian
+    from core.smart_guardian import start as _start_guardian
     _start_guardian(broadcast_fn=_ws_broadcast)
 except Exception as _ge:
-    import logging; logging.getLogger(__name__).warning(f'Process guardian failed to start: {_ge}')
+    import logging; logging.getLogger(__name__).warning(f'SmartGuardian failed to start: {_ge}')
 
 # Start hot-reload plugin watcher
 try:

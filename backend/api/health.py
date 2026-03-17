@@ -1,5 +1,6 @@
 import os
 import ollama
+from core.smart_guardian import get_full_stats as _smart_stats
 from flask import Blueprint, jsonify
 from core.proactive import get_welcome_back, analyze_patterns
 
@@ -136,3 +137,12 @@ def _check_vectors() -> dict:
         return {"status": "ok", "vectors_stored": count}
     except Exception as e:
         return {"status": "error", "error": str(e)}
+
+
+@health_bp.route("/health/score", methods=["GET"])
+def health_score():
+    try:
+        stats = _smart_stats()
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
