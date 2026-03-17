@@ -146,6 +146,8 @@ class Brain:
                 r = self._build_reply(shortcut, emotion_label, "shortcut", "intent_handler",
                                       confidence=confidence_score("shortcut", "shortcut"))
                 self._cache.set(user_input, r)
+                try: _obs_store().add(_obs.finish(intent="shortcut", agent="intent_handler"))
+                except Exception: pass
                 return r
 
             self_reply = self._exit.check_self_query(user_input, user_name)
@@ -232,6 +234,7 @@ class Brain:
                                        query_intent, self.conversation_history)
             _obs.step_end("llm", meta=selected_model)
             _publish("llm_done", {"model": selected_model, "reply_len": len(reply)})
+            _obs.step_end("llm", meta=selected_model)
             self._add_to_history("assistant", reply)
 
             reply = self._post.process(reply, user_input, user_name, memory,
@@ -259,6 +262,10 @@ class Brain:
 
         except Exception as e:
             logger.error("Brain.process error: %s", e, exc_info=True)
+            try:
+                _obs_store().add(_obs.finish(intent="error", agent="error"))
+            except Exception:
+                pass
             return self._error_reply("Something went wrong.")
 
     # ── Streaming ─────────────────────────────────────────────────────────
@@ -445,5 +452,4 @@ class Brain:
 
     def get_model_info(self) -> Dict:
         return self.model_manager.get_model_info()
-
 

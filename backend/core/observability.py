@@ -58,22 +58,44 @@ class RequestTrace:
         }
 
 
+import json, os
+
+_TRACE_FILE = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "data", "traces.json"
+)
+
 class ObservabilityStore:
     def __init__(self, maxlen: int = 50):
-        self._traces: deque = deque(maxlen=maxlen)
-        self._lock = threading.Lock()
+        self.maxlen = maxlen
+        self._lock  = threading.Lock()
+        os.makedirs(os.path.dirname(_TRACE_FILE), exist_ok=True)
+
+    def _read(self) -> List[Dict]:
+        try:
+            with open(_TRACE_FILE) as f:
+                return json.load(f)
+        except Exception:
+            return []
+
+    def _write(self, traces: List[Dict]):
+        try:
+            with open(_TRACE_FILE, "w") as f:
+                json.dump(traces[-self.maxlen:], f)
+        except Exception:
+            pass
 
     def add(self, trace: Dict):
         with self._lock:
-            self._traces.append(trace)
+            traces = self._read()
+            traces.append(trace)
+            self._write(traces)
 
     def get_recent(self, n: int = 10) -> List[Dict]:
-        with self._lock:
-            return list(self._traces)[-n:]
+        return self._read()[-n:]
 
     def get_stats(self) -> Dict:
-        with self._lock:
-            traces = list(self._traces)
+        traces = self._read()
         if not traces:
             return {}
         totals = [t["total_ms"] for t in traces]

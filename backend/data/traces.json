@@ -1,0 +1,1 @@
+[{"request_id": "d8f33f8e", "total_ms": 7, "intent": "shortcut", "agent": "intent_handler", "steps": []}, {"request_id": "b4959456", "total_ms": 36471, "intent": "casual", "agent": "ollama/phi3:mini", "steps": [{"step": "llm", "ms": 17681, "meta": "phi3:mini"}, {"step": "llm", "ms": 36167, "meta": "phi3:mini"}]}]
