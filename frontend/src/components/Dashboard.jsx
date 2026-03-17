@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import API from "../config";
+import API, { API_KEY } from "../config";
 
-const KEY = "91008d3c8ce5f66e23dd68c0fb6117adae0c5e2ebcc3995c5fd054c41108cc2e";
-const H = { "X-API-Key": KEY };
+const H = { "X-API-Key": API_KEY };
 
 function ScoreRing({ score, level }) {
   const color = level === "healthy" ? "#34d399" : level === "warning" ? "#fbbf24" : "#f87171";

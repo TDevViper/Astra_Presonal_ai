@@ -7,7 +7,7 @@ import AmbientPanel from "./components/AmbientPanel";
 import GuardianPanel from "./components/GuardianPanel";
 import RequestTracePanel from "./components/RequestTracePanel";
 import PluginManagerPanel from "./components/PluginManagerPanel";
-import API from "./config";
+import API, { API_KEY } from "./config";
 import ChatPanel from "./components/ChatPanel.jsx";
 import Dashboard from "./components/Dashboard.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
@@ -525,10 +525,10 @@ export default function App() {
     const poll = async () => {
       try {
         const [h, m, mdl, modeData] = await Promise.all([
-          fetch(API.health).then(r => r.json()).catch(() => ({})),
-          fetch(API.memory).then(r => r.json()).catch(() => ({})),
-          fetch(API.model).then(r => r.json()).catch(() => ({})),
-          fetch(API.modeList).then(r => r.json()).catch(() => ({})),
+          fetch(API.health,   {headers:{"X-API-Key":API_KEY}}).then(r=>r.json()).catch(()=>({})),
+          fetch(API.memory,   {headers:{"X-API-Key":API_KEY}}).then(r=>r.json()).catch(()=>({})),
+          fetch(API.model,    {headers:{"X-API-Key":API_KEY}}).then(r=>r.json()).catch(()=>({})),
+          fetch(API.modeList, {headers:{"X-API-Key":API_KEY}}).then(r=>r.json()).catch(()=>({})),
         ]);
         setHealth(h);
         setMemory(m);
@@ -547,7 +547,7 @@ export default function App() {
   const switchModel = useCallback(async (model) => {
     try {
       await fetch(API.modelSet, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", "X-API-Key": API_KEY },
         body: JSON.stringify({ model }),
       });
       setCurrentModel(model);
@@ -579,7 +579,7 @@ export default function App() {
       const controller = new AbortController();
       abortRef.current = controller;
       const res = await fetch(API.stream, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", "X-API-Key": API_KEY },
         body: JSON.stringify({ message: text }), signal: controller.signal,
       });
       const reader  = res.body.getReader();
@@ -618,7 +618,7 @@ export default function App() {
     setMessages(prev => [...prev, { role: "user", content: text, id: Date.now() }]);
     try {
       const r = await fetch(API.chat, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", "X-API-Key": API_KEY },
         body: JSON.stringify({ message: text }),
       });
       const data = await r.json();
