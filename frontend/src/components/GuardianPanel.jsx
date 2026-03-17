@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 
 const S = {
   panel: {
@@ -95,9 +95,9 @@ const DEMO_LOG = [
 ];
 
 export default function GuardianPanel() {
-  const [checks, setChecks] = useState(DEMO_CHECKS);
-  const [log, setLog] = useState(DEMO_LOG);
-  const [tick, setTick] = useState(0);
+  const [checks] = useState(DEMO_CHECKS);
+  const [log] = useState(DEMO_LOG);
+  const [, setTick] = useState(0);
 
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 6000);

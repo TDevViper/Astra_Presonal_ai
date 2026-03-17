@@ -1,5 +1,3 @@
-import { useRef } from "react";
-
 function ThinkingDots() {
   return (
     <div style={{ display: "flex", gap: 5, alignItems: "center", padding: "4px 0" }}>

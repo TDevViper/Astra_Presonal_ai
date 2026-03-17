@@ -233,7 +233,7 @@ function SystemSidebar({ health, memory, models, currentModel, onSwitchModel }) 
       try {
         const r = await fetch(API.stats);
         if (r.ok) setSysInfo(await r.json());
-      } catch {}
+      } catch { /* ignore */ }
     };
     fetchStats();
     const t = setInterval(fetchStats, 10000);
@@ -492,8 +492,7 @@ function ModePill({ mode, active, onClick }) {
 // ══════════════════════════════════════════════════════════════════════════════
 export default function App() {
   const [messages,     setMessages]     = useState([]);
-  const [proactiveAlerts, setProactiveAlerts] = useState([]);
-  const [feedback,     setFeedback]     = useState({});
+  const [, setProactiveAlerts] = useState([]);
   const [input,        setInput]        = useState("");
   const [loading,      setLoading]      = useState(false);
   const [streaming,    setStreaming]     = useState(false);
@@ -536,7 +535,7 @@ export default function App() {
         if (mdl.current)      setCurrentModel(mdl.current);
         if (modeData.modes)   setModes(modeData.modes);
         if (modeData.current) setCurrentMode(modeData.current);
-      } catch {}
+      } catch { /* ignore */ }
     };
     poll();
     const t = setInterval(poll, 20000);
@@ -551,7 +550,7 @@ export default function App() {
         body: JSON.stringify({ model }),
       });
       setCurrentModel(model);
-    } catch {}
+    } catch { /* ignore */ }
   }, []);
 
   // Switch mode
@@ -566,7 +565,7 @@ export default function App() {
         setCurrentMode(d.mode);
         setTab("chat"); // reset to chat tab on mode switch
       }
-    } catch {}
+    } catch { /* ignore */ }
   }, []);
 
   // Stream via HTTP SSE
@@ -598,7 +597,7 @@ export default function App() {
             if (data.type === "done") {
               if (!buffer && data.full) { buffer = data.full; setStreamBuffer(buffer); }
             }
-          } catch {}
+          } catch { /* ignore */ }
         }
       }
     } catch (e) {
@@ -664,10 +663,6 @@ export default function App() {
       setStreaming(false); setLoading(false);
     },
   });
-
-  const handleFeedback = useCallback((msgId, value) => {
-    setMessages(prev => prev.map(m => m.id === msgId ? { ...m, feedback: value } : m));
-  }, []);
 
   const sendWS = useCallback((text) => {
     setLoading(true); setStreaming(true); setStreamBuffer("");

@@ -19,7 +19,7 @@ export default function ProactiveAlerts() {
               setAlerts(prev => prev.filter(a => a.id !== id));
             }, 6000);
           }
-        } catch {}
+        } catch { /* ignore */ }
       };
       ws.onclose = () => setTimeout(connect, 3000);
       ws.onerror = () => ws.close();

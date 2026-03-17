@@ -191,7 +191,6 @@ export function JarvisLayout({
   messages, streamBuffer, streaming, loading,
   input, setInput, send, onKey, inputRef, bottomRef,
   accent, currentModel, health, memory, models, onSwitchModel,
-  streamBuffer: sb,
 }) {
   const [activeNav, setActiveNav] = useState("chat");
 

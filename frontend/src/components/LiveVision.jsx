@@ -25,7 +25,7 @@ export default function LiveVision({ onAnalysis }) {
   const [history, setHistory]         = useState([]);
   const [question, setQuestion]       = useState("");
   const [error, setError]             = useState(null);
-  const [lastReply, setLastReply]     = useState("");
+  const [, setLastReply]              = useState("");
 
   // ── Camera ────────────────────────────────────────────────
   const startCamera = async () => {
@@ -40,7 +40,7 @@ export default function LiveVision({ onAnalysis }) {
         await videoRef.current.play();
       }
       setCamActive(true);
-    } catch (e) {
+    } catch {
       setError("Camera access denied — allow camera in browser settings.");
     }
   };
@@ -66,7 +66,7 @@ export default function LiveVision({ onAnalysis }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ frame: b64 })
       });
-    } catch (e) { /* silent */ }
+    } catch { /* silent */ }
   };
 
   const captureFrame = useCallback(() => {

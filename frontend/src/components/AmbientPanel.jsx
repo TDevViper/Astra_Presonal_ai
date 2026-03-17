@@ -62,7 +62,7 @@ const AMBIENT_STYLE = {
     color: "#00ffe755",
     marginTop: "2px",
   },
-  bar: (pct, color) => ({
+  bar: () => ({
     height: "3px",
     background: "#0d1a2a",
     borderRadius: "2px",
@@ -121,7 +121,7 @@ export default function AmbientPanel() {
       setData(j);
       setActive(true);
       setError(null);
-    } catch (e) {
+    } catch {
       setError("AMBIENT FEED OFFLINE");
       setActive(false);
     }

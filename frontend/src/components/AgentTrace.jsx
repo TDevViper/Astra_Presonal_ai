@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useMemo, useState } from "react";
 
 const STEP_COLORS = {
   emotion:    "#ff88ff",
@@ -66,49 +66,53 @@ function PipelineBar({ steps }) {
 
 export default function AgentTrace({ messages }) {
   const [expanded, setExpanded] = useState(true);
-  const [traceLog, setTraceLog] = useState([]);
-  const bottomRef = useRef(null);
 
-  useEffect(() => {
-    const last = messages?.filter(m => m.role === "assistant" && !m.streaming).slice(-1)[0];
-    if (!last || !last.agent) return;
+  const traceLog = useMemo(() => {
+    const assistants = (messages || []).filter(m => m.role === "assistant" && !m.streaming);
+    const lastFive = assistants.slice(-5);
 
-    const steps = [];
-    const ts    = Date.now();
+    return lastFive.map((last) => {
+      const steps = [];
 
-    if (last.emotion && last.emotion !== "neutral") {
-      steps.push({ type: "emotion", value: `Detected: ${last.emotion.toUpperCase()} (${((last.emotionScore||0.5)*100).toFixed(0)}%)`, latency: 12 });
-    }
-    if (last.intent) {
-      steps.push({ type: "intent", value: `Classified: ${last.intent.toUpperCase()}`, latency: 8 });
-    }
-    if (last.memory_updated) {
-      steps.push({ type: "memory", value: "Fact extracted → stored to vector DB", latency: 35 });
-    }
-    if (last.tool_used) {
-      steps.push({ type: "tool", value: `Tool executed via tool_router`, latency: 120 });
-    }
-    if (last.agent?.includes("ollama")) {
-      const model = last.agent.split("/")[1] || "phi3:mini";
-      steps.push({ type: "react",  value: `ReAct agent evaluated (needs_react check)`, latency: 45 });
-      steps.push({ type: "model",  value: `${model.toUpperCase()} — ${last.intent || "chat"} query`, latency: 980 });
-      steps.push({ type: "critic", value: "Critic reviewed response quality", latency: 210 });
-      steps.push({ type: "refine", value: "Refinement + truth_guard + polish applied", latency: 95 });
-    } else {
-      steps.push({ type: "model", value: `${(last.agent||"astra").toUpperCase()} handled request`, latency: 18 });
-    }
-    steps.push({
-      type: "done",
-      value: `Confidence: ${((last.confidence||0)*100).toFixed(0)}% · ${last.citations?.length ? `${last.citations.length} citations` : "no citations"}`,
+      if (last.emotion && last.emotion !== "neutral") {
+        steps.push({ type: "emotion", value: `Detected: ${last.emotion.toUpperCase()} (${((last.emotionScore || 0.5) * 100).toFixed(0)}%)`, latency: 12 });
+      }
+      if (last.intent) {
+        steps.push({ type: "intent", value: `Classified: ${last.intent.toUpperCase()}`, latency: 8 });
+      }
+      if (last.memory_updated) {
+        steps.push({ type: "memory", value: "Fact extracted → stored to vector DB", latency: 35 });
+      }
+      if (last.tool_used) {
+        steps.push({ type: "tool", value: "Tool executed via tool_router", latency: 120 });
+      }
+      if (last.agent?.includes("ollama")) {
+        const model = last.agent.split("/")[1] || "phi3:mini";
+        steps.push({ type: "react", value: "ReAct agent evaluated (needs_react check)", latency: 45 });
+        steps.push({ type: "model", value: `${model.toUpperCase()} — ${last.intent || "chat"} query`, latency: 980 });
+        steps.push({ type: "critic", value: "Critic reviewed response quality", latency: 210 });
+        steps.push({ type: "refine", value: "Refinement + truth_guard + polish applied", latency: 95 });
+      } else {
+        steps.push({ type: "model", value: `${(last.agent || "astra").toUpperCase()} handled request`, latency: 18 });
+      }
+      steps.push({
+        type: "done",
+        value: `Confidence: ${((last.confidence || 0) * 100).toFixed(0)}% · ${last.citations?.length ? `${last.citations.length} citations` : "no citations"}`,
+      });
+
+      return {
+        id: last.id || `${last.agent || "astra"}-${last.content?.length || 0}`,
+        steps,
+        agent: last.agent,
+        intent: last.intent,
+        confidence: last.confidence,
+        time: (typeof last.id === "number"
+          ? new Date(last.id)
+          : new Date(0)
+        ).toLocaleTimeString("en-US", { hour12: false }),
+      };
     });
-
-    setTraceLog(prev => [
-      ...prev.slice(-4),
-      { id: ts, steps, agent: last.agent, intent: last.intent, confidence: last.confidence, time: new Date().toLocaleTimeString("en-US",{hour12:false}) }
-    ]);
   }, [messages]);
-
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [traceLog]);
 
   const latest = traceLog[traceLog.length - 1];
 
@@ -204,8 +208,6 @@ export default function AgentTrace({ messages }) {
               </div>
             </div>
           )}
-
-          <div ref={bottomRef} />
         </div>
       )}
     </div>

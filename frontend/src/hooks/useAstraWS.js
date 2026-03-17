@@ -10,6 +10,7 @@ export function useAstraWS({ onToken, onMeta, onDone, onError, onProactive }) {
   const reconnects     = useRef(0);
   const pingTimer      = useRef(null);
   const reconnectTimer = useRef(null);
+  const connectRef     = useRef(null);
   const [connected, setConnected] = useState(false);
 
   const onTokenRef     = useRef(onToken);
@@ -60,7 +61,7 @@ export function useAstraWS({ onToken, onMeta, onDone, onError, onProactive }) {
       if (reconnects.current < MAX_RECONNECT) {
         reconnects.current++;
         const delay = RECONNECT_DELAY_MS * Math.min(reconnects.current, 5);
-        reconnectTimer.current = setTimeout(connect, delay);
+        reconnectTimer.current = setTimeout(() => connectRef.current?.(), delay);
       }
     };
 
@@ -69,6 +70,7 @@ export function useAstraWS({ onToken, onMeta, onDone, onError, onProactive }) {
   }, []);
 
   useEffect(() => {
+    connectRef.current = connect;
     connect();
     return () => {
       clearInterval(pingTimer.current);
