@@ -100,7 +100,12 @@ def detect_tool(user_input: str) -> str | None:
         return "git"
     if any(t in text for t in TASK_TRIGGERS):
         return "task_manager"
-    if any(t in text for t in SYSTEM_MONITOR_TRIGGERS):
+    # Skip system_monitor for personal/memory statements
+    _personal = ["i live", "i am", "my name", "i work", "i like", "i prefer",
+                 "i study", "i hate", "i love", "remember", "i'm from"]
+    if any(p in text for p in _personal):
+        pass  # fall through to memory handler
+    elif any(t in text for t in SYSTEM_MONITOR_TRIGGERS):
         return "system_monitor"
     if any(t in text for t in FILE_TRIGGERS):
         return "file_reader"

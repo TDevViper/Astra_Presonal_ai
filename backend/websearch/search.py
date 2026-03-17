@@ -110,3 +110,10 @@ def extract_citations(results: list) -> list:
         for i, r in enumerate(results, 1)
         if r.get("source", "").startswith("http")
     ]
+
+
+# Alias for backward compatibility
+def search(query: str, max_results: int = 5) -> list:
+    if SERPER_API_KEY:
+        return serper_search(query, max_results)
+    return duckduckgo_search(query, max_results)

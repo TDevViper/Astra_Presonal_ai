@@ -146,6 +146,12 @@ class ModelManager:
         if q.startswith(_CASUAL_STARTS):
             return "casual"
 
+        # 1.5 Memory storage — catch before other intents
+        if any(p in q for p in ["my name is", "i live in", "i am from", "i work at",
+                                  "i prefer", "remember that", "my age is", "i like",
+                                  "i dislike", "i hate", "my job", "i study"]):
+            return "memory"
+
         # 2. Coding
         if any(w in q for w in ["```", "def ", "class ", "import ", "function(",
                                   "debug", "traceback", "compile", "algorithm",
