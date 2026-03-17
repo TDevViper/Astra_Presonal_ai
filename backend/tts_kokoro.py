@@ -14,6 +14,10 @@ try:
 
     _pipeline = KPipeline(lang_code='a', repo_id='hexgrad/Kokoro-82M', model=_MODEL)
 
+    # Always use system default output device (follows macOS audio routing)
+    import sounddevice as _sd
+    _sd.default.device = (None, _sd.default.device[1])
+
     # Pre-load default voice into memory at startup
     _voice_cache = {}
     _default_voice_path = os.path.join(_VOICES, "af_bella.pt")
