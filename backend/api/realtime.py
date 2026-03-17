@@ -76,9 +76,10 @@ def realtime_status():
     GPU_HOST = os.getenv("REMOTE_GPU_HOST", "")
     status   = {}
     try:
-        from voice.listener import get_model
-        get_model()
-        status["whisper"] = "ready"
+        # Status check must not trigger downloads; see voice.listener.whisper_status().
+        from voice.listener import whisper_status
+        ok, msg = whisper_status()
+        status["whisper"] = "ready" if ok else f"error: {msg}"
     except Exception as e:
         status["whisper"] = f"error: {e}"
     try:

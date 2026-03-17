@@ -27,6 +27,9 @@ def talk():
             jarvis         = vision_result.get("jarvis_response", "")
             visual_context = jarvis or summary
 
+        from memory.memory_engine import load_memory
+        user_name = load_memory().get("preferences", {}).get("name", "User")
+
         # ── Step 2: Build prompt cleanly ──────────────────────
         # Key insight: visual_context is ASTRA's own observation.
         # Combine it naturally so brain doesn't leak it back.
@@ -43,8 +46,6 @@ def talk():
         # ── Step 3: Get reply from brain ──────────────────────
         from core.brain_singleton import get_brain
         _brain = get_brain()
-        from memory.memory_engine import load_memory
-        user_name = load_memory().get("preferences",{}).get("name","User")
         result = _brain.process(prompt, vision_mode=True)
         reply  = result.get("reply", "").strip()
         # Cap at 40 words for conversational feel

@@ -1,21 +1,85 @@
 import logging
 import numpy as np
 import sounddevice as sd
-from faster_whisper import WhisperModel
 
 logger = logging.getLogger(__name__)
 
 # Load whisper model once (tiny = fast on M4)
 _model = None
 
+# region agent log
+def _dbg(hypothesis_id: str, message: str, data: dict):
+    try:
+        import time, json, urllib.request
+        payload = {
+            "sessionId": "4c1d8e",
+            "runId": "whisper-403-debug",
+            "hypothesisId": hypothesis_id,
+            "location": "backend/voice/listener.py",
+            "message": message,
+            "data": data,
+            "timestamp": int(time.time() * 1000),
+        }
+        req = urllib.request.Request(
+            "http://127.0.0.1:7482/ingest/9b816707-b54b-4d01-ae5f-e94ebab7cde8",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json", "X-Debug-Session-Id": "4c1d8e"},
+            method="POST",
+        )
+        urllib.request.urlopen(req, timeout=1.5).read()
+    except Exception:
+        pass
+# endregion agent log
+
 def get_model():
     global _model
     if _model is None:
         logger.info("🧠 Loading Whisper model (tiny)...")
-        _model = WhisperModel("small", device="cpu", compute_type="int8")
+        # region agent log
+        _dbg("H3-whisper-init", "Initializing WhisperModel", {"model": "small", "device": "cpu", "compute_type": "int8"})
+        # endregion agent log
+        try:
+            # Import lazily so we can capture import-time failures (often model download / proxy issues).
+            try:
+                from faster_whisper import WhisperModel  # type: ignore
+            except Exception as e:
+                # region agent log
+                _dbg("H5-whisper-import", "faster_whisper import failed", {"errorType": type(e).__name__, "error": str(e)[:200]})
+                # endregion agent log
+                raise
+            _model = WhisperModel("small", device="cpu", compute_type="int8")
+        except Exception as e:
+            # region agent log
+            _dbg("H3-whisper-init", "WhisperModel init failed", {"errorType": type(e).__name__, "error": str(e)[:200]})
+            # endregion agent log
+            raise
         logger.info("✅ Whisper ready")
     return _model
 
+
+def whisper_status() -> tuple[bool, str]:
+    """
+    Lightweight readiness check for /realtime/status.
+    Must NOT trigger network downloads (common in locked-down networks).
+    """
+    try:
+        # Reuse already-loaded model.
+        if _model is not None:
+            return True, "ready"
+
+        from faster_whisper import WhisperModel  # type: ignore
+        import os
+
+        # Keep models in-repo so users can prefetch/cache them.
+        download_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "models", "whisper"))
+        # Status check should never download; it should only detect whether files exist.
+        WhisperModel("small", device="cpu", compute_type="int8", download_root=download_root, local_files_only=True)
+        return True, "ready"
+    except Exception as e:
+        msg = str(e)
+        if "403" in msg or "Forbidden" in msg:
+            msg = "model download blocked (403). Pre-download models or run with network access."
+        return False, msg
 
 def record_audio(duration: int = 5, sample_rate: int = 16000) -> np.ndarray:
     """Record audio from microphone."""

@@ -7,12 +7,50 @@ _BASE   = os.path.dirname(os.path.abspath(__file__))
 _MODEL  = os.path.join(_BASE, "kokoro-v0_19.onnx")
 _VOICES = os.path.join(_BASE, "voices")
 
+# region agent log
+def _dbg(hypothesis_id: str, message: str, data: dict):
+    try:
+        import time, json, urllib.request
+        payload = {
+            "sessionId": "4c1d8e",
+            "runId": "kokoro-403-debug",
+            "hypothesisId": hypothesis_id,
+            "location": "backend/tts_kokoro.py",
+            "message": message,
+            "data": data,
+            "timestamp": int(time.time() * 1000),
+        }
+        req = urllib.request.Request(
+            "http://127.0.0.1:7482/ingest/9b816707-b54b-4d01-ae5f-e94ebab7cde8",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json", "X-Debug-Session-Id": "4c1d8e"},
+            method="POST",
+        )
+        urllib.request.urlopen(req, timeout=1.5).read()
+    except Exception:
+        pass
+# endregion agent log
+
 try:
+    # Allow forcing offline fallback in locked-down networks.
+    if os.getenv("KOKORO_OFFLINE", "").lower() in ("1", "true", "yes"):
+        raise RuntimeError("Kokoro disabled via KOKORO_OFFLINE")
+
     from kokoro import KPipeline
     import sounddevice as sd
     import torch
 
-    _pipeline = KPipeline(lang_code='a', repo_id='hexgrad/Kokoro-82M', model=_MODEL)
+    # region agent log
+    _dbg("H4-kokoro-init", "Initializing Kokoro pipeline", {"repo_id": "hexgrad/Kokoro-82M", "modelPathExists": os.path.exists(_MODEL)})
+    # endregion agent log
+    try:
+        _pipeline = KPipeline(lang_code='a', repo_id='hexgrad/Kokoro-82M', model=_MODEL)
+    except Exception as e:
+        # If network/proxy blocks HF fetch, retry offline/local init.
+        # region agent log
+        _dbg("H6-kokoro-offline", "Kokoro init failed with repo_id; retrying without repo_id", {"errorType": type(e).__name__, "error": str(e)[:200]})
+        # endregion agent log
+        _pipeline = KPipeline(lang_code='a', model=_MODEL)
 
     # Always use system default output device (follows macOS audio routing)
     import sounddevice as _sd
@@ -27,6 +65,9 @@ try:
     KOKORO_AVAILABLE = True
     print("[KokoroTTS] ✅ Kokoro v1 ready")
 except Exception as e:
+    # region agent log
+    _dbg("H4-kokoro-init", "Kokoro init failed (falling back)", {"errorType": type(e).__name__, "error": str(e)[:200]})
+    # endregion agent log
     print(f"[KokoroTTS] Not available ({e}) — falling back to macOS say")
     KOKORO_AVAILABLE = False
 

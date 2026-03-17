@@ -9,6 +9,7 @@ import RequestTracePanel from "./components/RequestTracePanel";
 import PluginManagerPanel from "./components/PluginManagerPanel";
 import API from "./config";
 import ChatPanel from "./components/ChatPanel.jsx";
+import Dashboard from "./components/Dashboard.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { useAstraWS } from "./hooks/useAstraWS";
 
@@ -718,9 +719,10 @@ export default function App() {
 
   // ── Tabs ──────────────────────────────────────────────────────────────────
   const TABS = [
-    { id: "chat",   label: "Interface" },
-    { id: "vision", label: "Vision"    },
-    { id: "graph",  label: "Memory"    },
+    { id: "chat",      label: "Interface" },
+    { id: "vision",    label: "Vision"    },
+    { id: "graph",     label: "Memory"    },
+    { id: "dashboard", label: "Dashboard" },
   ];
 
   return (
