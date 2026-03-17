@@ -55,6 +55,10 @@ class config:
     memory_dir = MEMORY_DIR
     db_path    = DB_PATH
 
+    # token limits
+    ollama_num_predict = int(os.getenv("OLLAMA_NUM_PREDICT", "200"))
+    ollama_num_ctx     = int(os.getenv("OLLAMA_NUM_CTX", "2048"))
+
     # keys
     serper_api_key    = SERPER_API_KEY
     picovoice_api_key = PICOVOICE_API_KEY
@@ -73,3 +77,7 @@ class config:
     DB_PATH           = DB_PATH
     SERPER_API_KEY    = SERPER_API_KEY
     PICOVOICE_API_KEY = PICOVOICE_API_KEY
+
+# LLM token limits — reduces RAM pressure
+OLLAMA_NUM_PREDICT = int(os.getenv("OLLAMA_NUM_PREDICT", "200"))
+OLLAMA_NUM_CTX     = int(os.getenv("OLLAMA_NUM_CTX", "2048"))

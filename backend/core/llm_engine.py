@@ -16,7 +16,7 @@ _HARD_STOP = (
     "4) Stop the moment you have answered. No follow-up offers."
 )
 
-_TOKEN_BUDGETS = {"coding": 600, "technical": 500, "reasoning": 450, "research": 400}
+_TOKEN_BUDGETS = {"coding": 300, "technical": 250, "reasoning": 200, "research": 200}
 
 # ── Global TTS worker (single persistent thread) ──
 import queue as _queue
@@ -74,7 +74,7 @@ class LLMEngine:
         messages     = ([{"role": "system", "content": _HARD_STOP + "\n\n" + system_prompt}]
                         + history
                         + [{"role": "user", "content": processed}])
-        token_budget = _TOKEN_BUDGETS.get(query_intent, 300)
+        token_budget = _TOKEN_BUDGETS.get(query_intent, 150)
         try:
             resp = _client().chat(
                 model=selected_model,
