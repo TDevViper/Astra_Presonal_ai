@@ -452,4 +452,3 @@ class Brain:
 
     def get_model_info(self) -> Dict:
         return self.model_manager.get_model_info()
-
