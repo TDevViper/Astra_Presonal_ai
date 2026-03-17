@@ -52,7 +52,12 @@ class KokoroTTS:
             chunks = [audio for _, _, audio in generator if audio is not None and len(audio) > 0]
             if chunks:
                 full_audio = np.concatenate(chunks)
-                sd.play(full_audio, samplerate=24000)
+                # Use default output device — follows macOS audio routing
+                try:
+                    device = sd.default.device[1]  # output device
+                    sd.play(full_audio, samplerate=24000, device=device)
+                except Exception:
+                    sd.play(full_audio, samplerate=24000)
                 sd.wait()
         except Exception as e:
             print(f"[KokoroTTS] speak error: {e}")

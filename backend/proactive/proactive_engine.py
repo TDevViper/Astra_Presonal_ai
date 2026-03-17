@@ -96,7 +96,7 @@ class ProactiveEngine:
             self._fired_today.add("latenight")
             self.speak(f"{USER_NAME}, it's past 1 AM. You should get some sleep. I'll be here tomorrow.")
 
-        self._check_break_reminder(now)
+        # self._check_break_reminder(now)  # disabled — too intrusive
         self._check_calendar_reminder(now)
 
         if hour % 3 == 0 and minute < 2:
