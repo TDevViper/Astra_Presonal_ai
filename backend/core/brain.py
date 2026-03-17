@@ -20,6 +20,8 @@ from emotion.emotion_detector import detect_emotion
 from intents.classifier import is_question_like
 from personality.modes import get_token_budget, get_temperature
 from utils.cleaner import clean_text
+from core.event_bus import publish as _publish
+from core.observability import RequestTrace, get_store as _obs_store
 from config import config
 from websearch.search_agent import WebSearchAgent
 from tools.tool_router import detect_tool, detect_compound
@@ -90,6 +92,9 @@ class Brain:
     def process(self, user_input: str, vision_mode: bool = False) -> Dict:
         try:
             _trace_id = new_trace(user_input)
+            import uuid as _uuid
+            _obs = RequestTrace(_uuid.uuid4().hex[:8], user_input)
+            _publish("request_start", {"input": user_input[:80]})
             user_input = clean_text(user_input)
             user_input = _sanitize_input(user_input)
             if not user_input:
@@ -219,10 +224,14 @@ class Brain:
                 logger.debug('brain: %s', _e)
 
             self._add_to_history("user", user_input)
+            _obs.step_start("llm")
+            _publish("llm_start", {"model": selected_model})
             reply = self._llm.try_react(user_input, selected_model, system_prompt, user_name)
             if not reply:
                 reply = self._llm.call(user_input, system_prompt, selected_model,
                                        query_intent, self.conversation_history)
+            _obs.step_end("llm", meta=selected_model)
+            _publish("llm_done", {"model": selected_model, "reply_len": len(reply)})
             self._add_to_history("assistant", reply)
 
             reply = self._post.process(reply, user_input, user_name, memory,
@@ -236,6 +245,11 @@ class Brain:
                                        memory_updated=memory_updated, confidence=final_conf)
             self._cache.set(user_input, result)
             _finish(intent=result.get('intent',''), agent=result.get('agent',''))
+            _obs_store().add(_obs.finish(
+                intent=result.get('intent',''),
+                agent=result.get('agent','')
+            ))
+            _publish('response_done', {'intent': result.get('intent'), 'ms': _obs.to_dict()['elapsed_ms']})
             try:
                 from core.self_improve import log_response as _si_log
                 _si_log(user_input, reply, final_conf)

@@ -37,6 +37,7 @@ from api.system_stats import stats_bp
 from api.ingest import ingest_bp
 from api.digest import digest_bp
 from api.debug_api import debug_bp
+from api.observability import obs_bp
 
 
 class ColoredFormatter(logging.Formatter):
@@ -98,6 +99,7 @@ app.register_blueprint(stats_bp)
 app.register_blueprint(ingest_bp)
 app.register_blueprint(digest_bp)
 app.register_blueprint(debug_bp)
+app.register_blueprint(obs_bp)
 
 
 @app.route("/api/frame", methods=["POST"])
