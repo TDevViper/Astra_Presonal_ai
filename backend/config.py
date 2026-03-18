@@ -1,83 +1,74 @@
 import os
 
-# Ollama
-OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+def _bool(key: str, default: str = "true") -> bool:
+    return os.getenv(key, default).lower() == "true"
 
-# Redis
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+def _int(key: str, default: int) -> int:
+    return int(os.getenv(key, str(default)))
 
-# Models
-DEFAULT_MODEL   = os.getenv("DEFAULT_MODEL", "phi3:mini")
-VISION_MODEL    = os.getenv("VISION_MODEL",  "llava:7b")
-RESEARCH_MODEL  = os.getenv("RESEARCH_MODEL", "llama3.2:3b")
-TECHNICAL_MODEL = os.getenv("TECHNICAL_MODEL", "mistral")
 
-# Flask
-FLASK_HOST = os.getenv("FLASK_HOST", "0.0.0.0")
-FLASK_PORT = int(os.getenv("FLASK_PORT", 5050))
-DEBUG      = os.getenv("FLASK_ENV", "production") != "production"
-
-# Memory paths
-BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
-MEMORY_DIR  = os.path.join(BASE_DIR, "memory")
-DB_PATH     = os.path.join(BASE_DIR, "astra_memory.db")
-
-# API keys
-SERPER_API_KEY    = os.getenv("SERPER_API_KEY", "")
-PICOVOICE_API_KEY = os.getenv("PICOVOICE_API_KEY", "")
-
-# Features
-ENABLE_MEMORY   = os.getenv("ENABLE_MEMORY", "true").lower() == "true"
-ENABLE_EMOTIONS = os.getenv("ENABLE_EMOTIONS", "true").lower() == "true"
-
-# Backward compat class — covers every config.xyz used in app.py
 class config:
-    # server
-    host  = FLASK_HOST
-    port  = FLASK_PORT
-    debug = DEBUG
+    # Server
+    host  = os.getenv("FLASK_HOST", "0.0.0.0")
+    port  = _int("FLASK_PORT", 5050)
+    debug = os.getenv("FLASK_ENV", "production") != "production"
 
-    # features
-    enable_memory   = ENABLE_MEMORY
-    enable_emotions = ENABLE_EMOTIONS
+    # Ollama
+    ollama_host     = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+    default_model   = os.getenv("DEFAULT_MODEL", "phi3:mini")
+    vision_model    = os.getenv("VISION_MODEL", "llava:7b")
+    research_model  = os.getenv("RESEARCH_MODEL", "llama3.2:3b")
+    technical_model = os.getenv("TECHNICAL_MODEL", "mistral")
 
-    # ollama
-    ollama_host     = OLLAMA_HOST
-    default_model   = DEFAULT_MODEL
-    vision_model    = VISION_MODEL
-    research_model  = RESEARCH_MODEL
-    technical_model = TECHNICAL_MODEL
+    # Token limits
+    ollama_num_predict = _int("OLLAMA_NUM_PREDICT", 200)
+    ollama_num_ctx     = _int("OLLAMA_NUM_CTX", 2048)
 
-    # redis
-    redis_url = REDIS_URL
+    # Redis
+    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
 
-    # paths
-    memory_dir = MEMORY_DIR
-    db_path    = DB_PATH
+    # Paths
+    BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
+    memory_dir = os.path.join(BASE_DIR, "memory")
+    db_path    = os.path.join(BASE_DIR, "astra_memory.db")
 
-    # token limits
-    ollama_num_predict = int(os.getenv("OLLAMA_NUM_PREDICT", "200"))
-    ollama_num_ctx     = int(os.getenv("OLLAMA_NUM_CTX", "2048"))
+    # Features
+    enable_memory   = _bool("ENABLE_MEMORY")
+    enable_emotions = _bool("ENABLE_EMOTIONS")
 
-    # keys
-    serper_api_key    = SERPER_API_KEY
-    picovoice_api_key = PICOVOICE_API_KEY
+    # API keys
+    serper_api_key    = os.getenv("SERPER_API_KEY", "")
+    picovoice_api_key = os.getenv("PICOVOICE_API_KEY", "")
 
-    # uppercase aliases
-    OLLAMA_HOST       = OLLAMA_HOST
-    REDIS_URL         = REDIS_URL
-    DEFAULT_MODEL     = DEFAULT_MODEL
-    VISION_MODEL      = VISION_MODEL
-    RESEARCH_MODEL    = RESEARCH_MODEL
-    TECHNICAL_MODEL   = TECHNICAL_MODEL
-    FLASK_HOST        = FLASK_HOST
-    FLASK_PORT        = FLASK_PORT
-    DEBUG             = DEBUG
-    MEMORY_DIR        = MEMORY_DIR
-    DB_PATH           = DB_PATH
-    SERPER_API_KEY    = SERPER_API_KEY
-    PICOVOICE_API_KEY = PICOVOICE_API_KEY
+    # Uppercase aliases — kept for backward compat with older modules
+    OLLAMA_HOST       = ollama_host
+    DEFAULT_MODEL     = default_model
+    VISION_MODEL      = vision_model
+    RESEARCH_MODEL    = research_model
+    TECHNICAL_MODEL   = technical_model
+    FLASK_HOST        = host
+    FLASK_PORT        = port
+    DEBUG             = debug
+    REDIS_URL         = redis_url
+    MEMORY_DIR        = memory_dir
+    DB_PATH           = db_path
+    SERPER_API_KEY    = serper_api_key
+    PICOVOICE_API_KEY = picovoice_api_key
 
-# LLM token limits — reduces RAM pressure
-OLLAMA_NUM_PREDICT = int(os.getenv("OLLAMA_NUM_PREDICT", "200"))
-OLLAMA_NUM_CTX     = int(os.getenv("OLLAMA_NUM_CTX", "2048"))
+
+# Module-level aliases for code that does `from config import DEFAULT_MODEL`
+OLLAMA_HOST       = config.ollama_host
+REDIS_URL         = config.redis_url
+DEFAULT_MODEL     = config.default_model
+VISION_MODEL      = config.vision_model
+RESEARCH_MODEL    = config.research_model
+TECHNICAL_MODEL   = config.technical_model
+FLASK_HOST        = config.host
+FLASK_PORT        = config.port
+DEBUG             = config.debug
+MEMORY_DIR        = config.memory_dir
+DB_PATH           = config.db_path
+SERPER_API_KEY    = config.serper_api_key
+PICOVOICE_API_KEY = config.picovoice_api_key
+OLLAMA_NUM_PREDICT = config.ollama_num_predict
+OLLAMA_NUM_CTX     = config.ollama_num_ctx

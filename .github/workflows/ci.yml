@@ -47,11 +47,11 @@ jobs:
           FLASK_ENV: "testing"
           OLLAMA_HOST: "http://localhost:11434"
         run: |
-          PYTHONPATH=$PYTHONPATH:$(pwd) python -m pytest tests/ -v --cov=core --cov-report=term-missing
+          PYTHONPATH=$PYTHONPATH:$(pwd) python -m pytest tests/ -v --cov=core --cov=memory --cov=api --cov=tools --cov-report=term-missing
 
       - name: Coverage summary
         working-directory: backend
         env:
           FLASK_ENV: "testing"
         run: |
-          PYTHONPATH=$PYTHONPATH:$(pwd) python -m pytest tests/ --cov=core --cov-report=xml
+          PYTHONPATH=$PYTHONPATH:$(pwd) python -m pytest tests/ --cov=core --cov=memory --cov=api --cov=tools --cov-report=xml
