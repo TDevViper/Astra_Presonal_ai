@@ -21,4 +21,4 @@ COPY . .
 
 EXPOSE 5050
 
-CMD ["gunicorn", "--worker-class", "geventwebsocket.gunicorn.workers.GeventWebSocketWorker", "--workers", "1", "--bind", "0.0.0.0:5050", "--timeout", "120", "app:app"]
+CMD ["gunicorn", "--worker-class", "geventwebsocket.gunicorn.workers.GeventWebSocketWorker", "--workers", "4", "--bind", "0.0.0.0:5050", "--timeout", "120", "app:app"]

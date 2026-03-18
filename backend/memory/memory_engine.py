@@ -2,6 +2,7 @@
 # astra_engine/memory/memory_engine.py
 # ==========================================
 import json
+import copy
 import os
 import logging
 import threading
@@ -48,8 +49,8 @@ def load_memory() -> Dict[str, Any]:
                 return DEFAULT_MEMORY.copy()
             except Exception as e:
                 logger.error(f"Error loading memory: {e}")
-                return DEFAULT_MEMORY.copy()
-        return DEFAULT_MEMORY.copy()
+                return copy.deepcopy(DEFAULT_MEMORY)
+        return copy.deepcopy(DEFAULT_MEMORY)
 
 
 def save_memory(memory: Dict[str, Any], history: list = None) -> bool:
