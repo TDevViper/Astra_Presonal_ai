@@ -45,6 +45,15 @@ def memory_recall(user_message: str, memory: dict, user_name: str) -> str:
             return f"Your favorite color is {color}!"
         return "I don't know your favorite color yet. What is it?"
 
+
+    # HOBBIES / INTERESTS
+    if any(phrase in text for phrase in ["hobby", "hobbies", "what do i love", "what do i enjoy", "what are my interests", "what i like to do"]):
+        facts = memory.get("user_facts", [])
+        hobbies = [f.get("value") or f.get("fact","") for f in facts if f.get("type") == "hobby" or any(w in f.get("fact","").lower() for w in ["love", "hobby", "sport", "cricket", "play", "enjoy", "interest", "passion"])]
+        if hobbies:
+            return "Your hobbies: " + ", ".join(h.title() for h in hobbies if h) + "."
+        return "I don't know your hobbies yet. Tell me what you enjoy!"
+
     # GENERAL PREFERENCES - Questions only
     if text.startswith(("what", "tell me")) and any(word in text for word in ["like", "prefer", "favorite", "favourite"]):
         prefs = memory.get("preferences", {})

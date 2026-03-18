@@ -50,3 +50,8 @@ def reminder_check_text(user_name=None):
         return result or ""
     except Exception:
         return ""
+
+
+def get_todays_events():
+    return morning_briefing_text()
+

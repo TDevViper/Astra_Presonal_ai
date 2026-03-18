@@ -112,8 +112,15 @@ def extract_user_fact(text: str) -> Optional[Dict]:
         pref_val  = m.group(3).strip()
         return _fact(f"Favorite {pref_type} is {pref_val}", "preference", f"favorite_{pref_type}", pref_val, 0.85)
 
-    return None
+    # Hobby extraction
+    _hm = re.search(r'i (?:also )?(?:love|enjoy|like|adore) (?:playing |doing |watching )?([A-Za-z][A-Za-z ]{2,25}?)(?:\.|,|$|!)', t)
+    if _hm:
+        hobby = _hm.group(1).strip()
+        skip = {"you", "that", "this", "it", "the", "your", "my", "coding", "programming"}
+        if hobby and hobby.lower() not in skip and len(hobby) > 2:
+            return _fact(f"Loves {hobby}", "hobby", "hobby", hobby, 0.9)
 
+    return None
 
 def _fact(fact_str: str, ftype: str, subtype: str, value, confidence: float) -> Dict:
     return {

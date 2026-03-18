@@ -129,8 +129,7 @@ def react_solve(user_input: str, model: str = "phi3:mini",
     # Merge static tool descriptions with any registered plugin tools
     from tools.registry import descriptions as _plugin_descs
     _extra = _plugin_descs()
-    _all_tools = TOOL_DESCRIPTIONS + ("
-" + _extra if _extra else "")
+    _all_tools = TOOL_DESCRIPTIONS + ("\n" + _extra if _extra else "")
 
     system_prompt = f"""You are ASTRA, {user_name}'s personal AI assistant.
 Solve this step by step using Thought -> Action -> Observation cycles.

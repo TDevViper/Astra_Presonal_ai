@@ -25,10 +25,16 @@ def query_rag(query: str, top_k: int = 3, use_reranker: bool = True) -> str:
 def should_use_rag(query: str) -> bool:
     if count() == 0:
         return False
-    skip = ["hi", "hello", "hey", "bye", "thanks", "what time", "how are you"]
-    q    = query.lower().strip()
-    if any(q == s for s in skip):
+    q = query.lower().strip()
+    skip_exact = ["hi", "hello", "hey", "bye", "thanks", "what time", "how are you"]
+    if any(q == s for s in skip_exact):
         return False
     if len(q.split()) < 3:
+        return False
+    personal = ["my name", "my hobby", "hobbies", "i love", "i like", "i prefer",
+                "my favorite", "my colour", "my color", "my language", "where i live",
+                "who am i", "what do i", "do i like", "my task", "my reminder",
+                "my project", "what is my"]
+    if any(p in q for p in personal):
         return False
     return True
