@@ -120,11 +120,23 @@ def store_vector(text: str, source: str = "fact",
 
 def store_fact(fact: str, fact_type: str = "fact", user_name: str = "user",
                priority: int = 1) -> bool:
+    # If storing a name/location, remove old ones first
+    t = fact.lower()
+    if fact_type in ("identity", "name") or "name is" in t:
+        old_facts, _ = semantic_search("user name", top_k=5)
+        for o in old_facts:
+            if "name" in o["text"].lower():
+                _remove_by_text(o["text"])
+                logger.info(f"🔄 Replaced old name fact: {o['text'][:40]}")
+    elif "lives in" in t or fact_type == "location":
+        old_facts, _ = semantic_search("user location city", top_k=3)
+        for o in old_facts:
+            if "live" in o["text"].lower() or "city" in o["text"].lower():
+                _remove_by_text(o["text"])
     # Check for contradiction before storing
     contradiction = _is_contradictory(fact)
     if contradiction:
         logger.info(f"🔄 Contradiction detected — updating: {contradiction[:50]}")
-        # Remove old contradicting fact, store new one
         _remove_by_text(contradiction)
 
     return store_vector(text=fact, source="fact", priority=priority,

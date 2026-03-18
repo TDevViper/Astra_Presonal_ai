@@ -12,7 +12,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square&logo=python)](https://python.org)
 [![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react)](https://react.dev)
-[![Tests](https://img.shields.io/badge/Tests-86%20passing-brightgreen?style=flat-square)](#)
+[![Tests](https://img.shields.io/badge/Tests-passing-brightgreen?style=flat-square)](#)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ed?style=flat-square&logo=docker)](https://docker.com)
 [![Ollama](https://img.shields.io/badge/Ollama-Local_LLM-black?style=flat-square)](https://ollama.ai)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
@@ -199,10 +199,11 @@ Available tools: `web_search` · `read_file` · `run_python` · `memory_recall` 
 │  └─ Past sessions with intent + emotion tag │
 │                                              │
 │  Layer 3 — Semantic Memory                  │
-│  └─ FAISS + ChromaDB vector index           │
+│  └─ ChromaDB vector index (primary)         │
 │     BGE-small-en-v1.5 embeddings            │
 │     Decay scoring — recent = higher rank    │
 │     Contradiction detection before store    │
+│     Priority weighting (name=3, pref=2)     │
 │                                              │
 │  Layer 4 — Knowledge Graph                  │
 │  └─ NetworkX entity-relation store          │
@@ -426,7 +427,9 @@ Astra/
 │   │   ├── critic.py          # Output quality review
 │   │   └── reasoner.py        # Chain-of-thought
 │   ├── memory/
-│   │   ├── vector_store.py    # ChromaDB + decay scoring
+│   │   ├── vector_store.py    # ChromaDB + decay + priority scoring
+│   │   ├── memory_extractor.py # Fact extraction from user input
+│   │   ├── memory_recall.py   # Structured memory recall
 │   │   ├── episodic.py        # Session memory
 │   │   └── semantic_recall.py # Similarity search
 │   ├── knowledge/
@@ -469,6 +472,9 @@ Astra/
 - [x] React ErrorBoundary
 - [x] Docker memory limits
 - [x] 86-test suite
+- [x] Memory hobby/preference extraction + recall
+- [x] Vector search threshold tuning
+- [x] Dead code cleanup (13 files removed)
 - [ ] Temporal frame memory (last 10 frames context)
 - [ ] Prometheus + Grafana observability
 - [ ] Android companion app
