@@ -67,6 +67,19 @@ handler = logging.StreamHandler()
 handler.setFormatter(ColoredFormatter())
 logger.addHandler(handler)
 
+
+def _validate_startup():
+    import sys
+    errors = []
+    if not os.getenv("ASTRA_API_KEY"):
+        errors.append("ASTRA_API_KEY is not set — API will reject all requests")
+    if not os.getenv("OLLAMA_HOST") and not os.getenv("DEFAULT_MODEL"):
+        errors.append("OLLAMA_HOST not set — LLM calls will fail")
+    for e in errors:
+        logging.getLogger(__name__).warning("STARTUP WARNING: %s", e)
+
+_validate_startup()
+
 app = Flask(__name__)
 app.config["JSON_AS_ASCII"] = False
 sock.init_app(app)
