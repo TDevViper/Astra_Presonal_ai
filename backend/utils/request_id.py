@@ -17,6 +17,11 @@ def clear_request_id():
 class RequestIdFilter(logging.Filter):
     def filter(self, record):
         record.request_id = get_request_id()
+        try:
+            from utils.telemetry import get_current_trace_id
+            record.trace_id = get_current_trace_id()
+        except Exception:
+            record.trace_id = "-"
         return True
 
 def init_request_id_logging():

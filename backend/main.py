@@ -11,10 +11,12 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
 from utils.request_id import set_request_id, init_request_id_logging
+from utils.telemetry import init_telemetry, instrument_fastapi
 from config import config
 
 logging.basicConfig(level=logging.INFO)
 init_request_id_logging()
+init_telemetry()
 
 def _validate_startup():
     if not os.getenv("ASTRA_API_KEY"):
@@ -53,6 +55,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="ASTRA", version="5.1", lifespan=lifespan)
+instrument_fastapi(app)
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):

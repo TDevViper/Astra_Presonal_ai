@@ -18,6 +18,7 @@ class JSONFormatter(logging.Formatter):
             "level":      record.levelname,
             "logger":     record.name,
             "request_id": getattr(record, "request_id", "-"),
+            "trace_id":   getattr(record, "trace_id", "-"),
             "msg":        record.getMessage(),
         }
         if hasattr(record, "event"):

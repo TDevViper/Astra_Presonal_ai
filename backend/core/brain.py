@@ -21,6 +21,7 @@ from intents.classifier import is_question_like
 from personality.modes import get_token_budget, get_temperature
 from utils.cleaner import clean_text
 from core.event_bus import publish as _publish
+from utils.telemetry import start_span
 from core.observability import RequestTrace, get_store as _obs_store
 from config import config
 from websearch.search_agent import WebSearchAgent
@@ -128,7 +129,8 @@ class Brain:
             user_name = self._mem.user_name(memory)
             _obs.step_start("llm")
             _publish("llm_start", {"model": self.model_manager.default_model})
-            result = self._resolve(user_input, memory, user_name, vision_mode=vision_mode)
+            with start_span("brain.resolve", {"intent": "pending", "vision": str(vision_mode)}):
+                result = self._resolve(user_input, memory, user_name, vision_mode=vision_mode)
             _obs.step_end("llm", meta=result.get("agent", ""))
             _publish("llm_done", {"reply_len": len(result.get("reply", ""))})
             _finish(intent=result.get("intent", ""), agent=result.get("agent", ""))
