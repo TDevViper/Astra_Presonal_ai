@@ -15,8 +15,8 @@ _BACKEND_DIR       = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_DIR             = os.path.join(_BACKEND_DIR, "data", "vector_db")
 COLLECTION_NAME    = "astra_memory"
 TOP_K              = 5
-FACT_THRESHOLD     = 0.68   # slightly lower — catch more
-EXCHANGE_THRESHOLD = 0.73
+FACT_THRESHOLD     = 0.50   # slightly lower — catch more
+EXCHANGE_THRESHOLD = 0.58
 DECAY_HALF_LIFE    = 7 * 24 * 3600   # 7 days in seconds
 
 _client     = None
