@@ -17,8 +17,19 @@ class ContextBuilder:
             from memory.episodic import build_episodic_context
             from personality.modes import get_system_addon
 
-            semantic_ctx, sem_conf = build_semantic_context(user_input, user_name)
-            episodic_ctx           = build_episodic_context(user_input, user_name)
+            # v2: ranked context selection
+            try:
+                from core.context_engine_v2 import build_ranked_context, context_quality_report
+                semantic_ctx, sem_conf = build_ranked_context(
+                    user_input, user_name, query_intent
+                )
+                episodic_ctx = ""  # already included in v2
+                report = context_quality_report(user_input, semantic_ctx)
+                logger.info("�� ctx_quality: %s", report)
+            except Exception as _v2e:
+                logger.warning("context_v2 failed, using v1: %s", _v2e)
+                semantic_ctx, sem_conf = build_semantic_context(user_input, user_name)
+                episodic_ctx           = build_episodic_context(user_input, user_name)
             addon                  = get_system_addon()
 
             # Inject long-term conversation summaries
