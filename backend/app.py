@@ -20,6 +20,7 @@ from api.ws_stream import sock, broadcast
 # )
 
 from config import config
+from utils.request_id import set_request_id, clear_request_id, init_request_id_logging
 from api.chat import chat_bp
 from api.chat_stream import stream_bp
 from api.memory import memory_bp
@@ -79,10 +80,27 @@ def _validate_startup():
         logging.getLogger(__name__).warning("STARTUP WARNING: %s", e)
 
 _validate_startup()
+init_request_id_logging()
 
 app = Flask(__name__)
 app.config["JSON_AS_ASCII"] = False
 sock.init_app(app)
+
+@app.before_request
+def _before():
+    from flask import request, g
+    rid = request.headers.get("X-Request-ID") or set_request_id()
+    g.request_id = rid
+    set_request_id(rid)
+
+@app.after_request
+def _after(response):
+    from flask import g
+    response.headers["X-Request-ID"] = getattr(g, "request_id", "-")
+    clear_request_id()
+    return response
+
+
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,

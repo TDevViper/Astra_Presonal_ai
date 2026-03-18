@@ -14,10 +14,11 @@ CHAT_LOG   = os.path.join(LOG_DIR, "chat.log")
 class JSONFormatter(logging.Formatter):
     def format(self, record):
         log = {
-            "ts":      datetime.now(timezone.utc).isoformat(),
-            "level":   record.levelname,
-            "logger":  record.name,
-            "msg":     record.getMessage(),
+            "ts":         datetime.now(timezone.utc).isoformat(),
+            "level":      record.levelname,
+            "logger":     record.name,
+            "request_id": getattr(record, "request_id", "-"),
+            "msg":        record.getMessage(),
         }
         if hasattr(record, "event"):
             log["event"] = record.event
