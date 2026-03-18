@@ -1,4 +1,5 @@
 import os, logging, sys
+from contextlib import asynccontextmanager
 sys.path.insert(0, os.path.dirname(__file__))
 
 from dotenv import load_dotenv
@@ -23,7 +24,36 @@ def _validate_startup():
 
 _validate_startup()
 
-app = FastAPI(title="ASTRA", version="5.1")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # ── Startup ───────────────────────────────────────────────────────────────
+    logging.info("🚀 ASTRA starting up")
+
+    try:
+        from api.ws_stream import broadcast as _ws_broadcast
+    except Exception as e:
+        logging.warning("WebSocket broadcast unavailable: %s", e)
+        _ws_broadcast = lambda msg: None
+
+    from core.background import start_all
+    _tasks = await start_all(_ws_broadcast)
+
+    yield  # ── App is running ─────────────────────────────────────────────────
+
+    # ── Shutdown ──────────────────────────────────────────────────────────────
+    logging.info("🛑 ASTRA shutting down")
+    from core.background import stop_all
+    await stop_all(_tasks)
+    try:
+        from core.brain_singleton import teardown_brain
+        teardown_brain(None)
+    except Exception as e:
+        logging.warning("Brain teardown: %s", e)
+
+
+app = FastAPI(title="ASTRA", version="5.1", lifespan=lifespan)
+
 
 class RequestIDMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -32,6 +62,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         response.headers["X-Request-ID"] = rid
         return response
+
 
 app.add_middleware(RequestIDMiddleware)
 app.add_middleware(CORSMiddleware,
@@ -47,42 +78,6 @@ app.include_router(memory.router)
 app.include_router(model.router)
 app.include_router(health.router)
 
-try:
-    from api.ws_stream import broadcast as _ws_broadcast
-    from core.proactive import set_broadcast
-    set_broadcast(_ws_broadcast)
-except Exception as e:
-    logging.warning(f"Broadcast setup failed: {e}")
-
-try:
-    from core.smart_guardian import start as _start_guardian
-    _start_guardian(broadcast_fn=_ws_broadcast)
-except Exception as e:
-    logging.warning(f"SmartGuardian failed: {e}")
-
-try:
-    from tools.plugin_watcher import start as _start_plugins
-    _start_plugins()
-except Exception as e:
-    logging.warning(f"Plugin watcher failed: {e}")
-
-try:
-    from core.gpu_health import start as _start_gpu_health
-    _start_gpu_health()
-except Exception as e:
-    logging.warning(f"GPU health failed: {e}")
-
-try:
-    from rag.watcher import start_watcher
-    start_watcher(interval=30)
-except Exception as e:
-    logging.warning(f"Doc watcher failed: {e}")
-
-from core.brain_singleton import teardown_brain
-
-@app.on_event("shutdown")
-async def _shutdown():
-    teardown_brain(None)
 
 if __name__ == "__main__":
     import uvicorn
