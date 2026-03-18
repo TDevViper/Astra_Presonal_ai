@@ -352,7 +352,11 @@ class Brain:
     # ── Helpers ───────────────────────────────────────────────────────────
 
     def _add_to_history(self, role: str, content: str) -> None:
-        self.conversation_history.append({"role": role, "content": content})
+        try:
+            from core.brain_singleton import safe_append_history
+            safe_append_history(self, role, content)
+        except ImportError:
+            self.conversation_history.append({"role": role, "content": content})
         if role == "assistant" and len(self.conversation_history) >= 2:
             try:
                 from memory_db import save_exchange
