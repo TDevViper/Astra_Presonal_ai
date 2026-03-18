@@ -74,12 +74,14 @@ app.add_middleware(CORSMiddleware,
     allow_methods=["*"], allow_headers=["*"],
 )
 
-from api.routers import chat, chat_stream, memory, model, health
+from api.routers import chat, chat_stream, memory, model, health, feedback, observability
 app.include_router(chat.router)
 app.include_router(chat_stream.router)
 app.include_router(memory.router)
 app.include_router(model.router)
 app.include_router(health.router)
+app.include_router(feedback.router)
+app.include_router(observability.router)
 
 
 if __name__ == "__main__":
