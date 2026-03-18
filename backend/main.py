@@ -11,10 +11,14 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
 from utils.request_id import set_request_id, init_request_id_logging
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from utils.telemetry import init_telemetry, instrument_fastapi
 from config import config
 
 logging.basicConfig(level=logging.INFO)
+limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
 init_request_id_logging()
 init_telemetry()
 
@@ -56,6 +60,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="ASTRA", version="5.1", lifespan=lifespan)
 instrument_fastapi(app)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):

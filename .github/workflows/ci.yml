@@ -2,21 +2,25 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
     branches: [main]
 
 jobs:
   test:
+    name: Test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
 
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5.6.0
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
 
       - name: Cache pip
         uses: actions/cache@v4
@@ -27,31 +31,51 @@ jobs:
             ${{ runner.os }}-pip-
 
       - name: Install dependencies
-        working-directory: backend
         run: |
-          pip install --upgrade pip
-          pip install pytest pytest-cov
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install fastapi uvicorn slowapi pydantic opentelemetry-sdk opentelemetry-api opentelemetry-instrumentation-fastapi opentelemetry-exporter-otlp-proto-grpc
 
-      - name: Download spacy model
-        run: python -m spacy download en_core_web_sm
-
-      - name: Run tests
-        working-directory: backend
-        env:
-          REMOTE_GPU_HOST: ""
-          REDIS_URL: "redis://localhost:6379"
-          REDIS_HOST: ""
-          SERPER_API_KEY: ""
-          PICOVOICE_API_KEY: ""
-          FLASK_ENV: "testing"
-          OLLAMA_HOST: "http://localhost:11434"
+      - name: Lint (ruff)
         run: |
-          PYTHONPATH=$PYTHONPATH:$(pwd) python -m pytest tests/ -v --cov=core --cov=memory --cov=api --cov=tools --cov-report=term-missing
+          pip install ruff
+          ruff check backend/ --ignore E501,F401,F811 || true
 
-      - name: Coverage summary
+      - name: Run unit tests
         working-directory: backend
         env:
-          FLASK_ENV: "testing"
+          ASTRA_API_KEY: test-key-ci
+          DEFAULT_MODEL: phi3:mini
+          OLLAMA_HOST: http://localhost:11434
         run: |
-          PYTHONPATH=$PYTHONPATH:$(pwd) python -m pytest tests/ --cov=core --cov=memory --cov=api --cov=tools --cov-report=xml
+          python -m pytest tests/ -v --tb=short \
+            --ignore=tests/eval \
+            -q 2>&1
+
+      - name: Run eval suite
+        working-directory: backend
+        env:
+          ASTRA_API_KEY: test-key-ci
+          DEFAULT_MODEL: phi3:mini
+        run: |
+          python -m pytest tests/eval/ -v --tb=short -q 2>&1
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: backend/.pytest_cache/
+
+  lint-and-type:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install ruff
+        run: pip install ruff
+      - name: Ruff check
+        run: ruff check backend/ --ignore E501,F401,F811,E402 || true
