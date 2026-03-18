@@ -18,16 +18,20 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - name: Install dependencies
         working-directory: backend
         run: |
           pip install --upgrade pip
           pip install pytest pytest-cov
-          pip install flask flask-cors flask-limiter
-          pip install ollama sentence-transformers faiss-cpu
-          pip install networkx spacy redis
-          pip install numpy psutil
-          pip install python-dotenv requests
+          pip install -r requirements.txt
 
       - name: Download spacy model
         run: python -m spacy download en_core_web_sm
