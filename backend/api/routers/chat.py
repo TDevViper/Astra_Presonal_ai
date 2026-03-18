@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -17,8 +18,11 @@ async def chat(body: ChatRequest, _=Depends(require_api_key)):
         raise HTTPException(status_code=400, detail=f"Message must be 1-{MAX_INPUT_CHARS} characters")
     try:
         from core.brain_singleton import get_brain
+        brain = get_brain()
         logger.info("💬 User: %s", user_input[:50])
-        result = get_brain().process(user_input)
+        # Run blocking Brain.process in thread pool — never blocks event loop
+        loop   = asyncio.get_event_loop()
+        result = await loop.run_in_executor(None, brain.process, user_input)
         logger.info("🤖 ASTRA: %s", result["reply"][:50])
         return result
     except Exception as e:
