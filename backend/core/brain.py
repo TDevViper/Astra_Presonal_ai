@@ -79,18 +79,18 @@ class Brain:
         self._mem    = MemoryManager()
         self._tools  = ToolExecutor(self.model_manager, self._build_reply)
         self._llm    = LLMEngine(self.model_manager)
-        self.conversation_history: List[Dict] = []
+        # conversation_history is NOT stored here — it is per-request
+        # Use brain_singleton.load_request_history() to get a fresh snapshot
         try:
-            from memory_db import load_recent_history, init_db
+            from memory_db import init_db
             init_db()
-            self.conversation_history = load_recent_history(n=15)
         except Exception as e:
             logger.warning("memory_db init failed: %s", e)
         logger.info("🚀 Brain v5.1 initialized")
 
     # ── Main entry point ──────────────────────────────────────────────────
 
-    def process(self, user_input: str, vision_mode: bool = False) -> Dict:
+    def process(self, user_input: str, vision_mode: bool = False, history: list = None) -> Dict:
         try:
             _trace_id = new_trace(user_input)
             import uuid as _uuid
@@ -130,7 +130,8 @@ class Brain:
             _obs.step_start("llm")
             _publish("llm_start", {"model": self.model_manager.default_model})
             with start_span("brain.resolve", {"intent": "pending", "vision": str(vision_mode)}):
-                result = self._resolve(user_input, memory, user_name, vision_mode=vision_mode)
+                _history = history if history is not None else []
+            result = self._resolve(user_input, memory, user_name, vision_mode=vision_mode, history=_history)
             _obs.step_end("llm", meta=result.get("agent", ""))
             _publish("llm_done", {"reply_len": len(result.get("reply", ""))})
             _finish(intent=result.get("intent", ""), agent=result.get("agent", ""))
@@ -149,7 +150,8 @@ class Brain:
     # ── Shared dispatch — used by both process() and process_stream() ─────
 
     def _resolve(self, user_input: str, memory: dict, user_name: str,
-                 vision_mode: bool = False) -> Dict:
+                 vision_mode: bool = False, history: list = None,
+                 streaming: bool = False) -> Dict:
         """
         Run the full dispatch pipeline and return a result dict.
         Returns dict with key 'reply' always set.
@@ -243,7 +245,7 @@ class Brain:
         selected_model = self.model_manager.select_model(user_input, query_intent)
         system_prompt, sem_conf = self._ctx.build(
             user_input, user_name, memory, emotion_label,
-            query_intent, self.conversation_history
+            query_intent, history or []
         )
         try:
             from rag.rag_engine import query_rag, should_use_rag
@@ -258,13 +260,13 @@ class Brain:
         reply = self._llm.try_react(user_input, selected_model, system_prompt, user_name)
         if not reply:
             reply = self._llm.call(user_input, system_prompt, selected_model,
-                                   query_intent, self.conversation_history)
+                                   query_intent, history or [])
         self._add_to_history("assistant", reply)
 
         reply = self._post.process(reply, user_input, user_name, memory,
                                    selected_model, query_intent, emotion_label, emotion_score)
         self._mem.post_turn(user_input, reply, memory, user_name, query_intent,
-                            emotion_label, self.conversation_history, selected_model)
+                            emotion_label, history or [], selected_model)
 
         final_conf = max(confidence_score(f"ollama/{selected_model}", query_intent), sem_conf)
         result = self._build_reply(reply, emotion_label, query_intent,
@@ -280,7 +282,7 @@ class Brain:
 
     # ── Streaming ─────────────────────────────────────────────────────────
 
-    def process_stream(self, user_input: str) -> Generator:
+    def process_stream(self, user_input: str, history: list = None) -> Generator:
         user_input = clean_text(user_input)
         user_input = _sanitize_input(user_input)
         if not user_input or user_input.startswith("[blocked"):
@@ -320,20 +322,20 @@ class Brain:
         memory = self._mem.update_emotion(memory, emotion_label, emotion_score)
 
         # Try _resolve first (handles tools, memory, web search, shortcuts)
-        result = self._resolve(user_input, memory, user_name)
+        result = self._resolve(user_input, memory, user_name, history=history or [], streaming=True)
         reply  = result.get("reply", "")
 
         # If _resolve went to LLM, re-stream it instead of word-splitting
         if result.get("agent", "").startswith("ollama/"):
             system_prompt, sem_conf = self._ctx.build(
                 user_input, user_name, memory, emotion_label,
-                query_intent, self.conversation_history
+                query_intent, history or []
             )
             self._add_to_history("user", user_input)
             full_reply = ""
             for item in self._llm.stream(
                 user_input, system_prompt, selected_model, query_intent,
-                self.conversation_history, get_temperature(), get_token_budget(query_intent)
+                history or [], get_temperature(), get_token_budget(query_intent)
             ):
                 if "token" in item:
                     full_reply += item["token"]
@@ -353,33 +355,32 @@ class Brain:
         for word in reply.split(" "): yield {"token": word + " "}
     # ── Helpers ───────────────────────────────────────────────────────────
 
-    def _add_to_history(self, role: str, content: str) -> None:
-        try:
-            from core.brain_singleton import safe_append_history
-            safe_append_history(self, role, content)
-        except ImportError:
-            self.conversation_history.append({"role": role, "content": content})
-        if role == "assistant" and len(self.conversation_history) >= 2:
+    def _add_to_history(self, role: str, content: str, history: list = None) -> None:
+        """Append to the per-request history list. Never touches shared state."""
+        if history is not None:
+            history.append({"role": role, "content": content})
+        if role == "assistant" and history and len(history) >= 2:
             try:
                 from memory_db import save_exchange
-                last_user = next((m["content"] for m in reversed(self.conversation_history[:-1])
+                last_user = next((m["content"] for m in reversed(history[:-1])
                                   if m["role"] == "user"), "")
                 save_exchange(last_user, content)
             except Exception as e:
                 logger.warning("save_exchange failed: %s", e)
-        if len(self.conversation_history) > 12:
             try:
                 from memory.summarizer import should_summarize, summarize_conversation, store_summary
-                if should_summarize(self.conversation_history):
+                if len(history) > 12 and should_summarize(history):
                     _mem = self._mem.load()
                     _user = self._mem.user_name(_mem)
-                    _summary = summarize_conversation(self.conversation_history, _mem, _user)
+                    _summary = summarize_conversation(history, _mem, _user)
                     if _summary:
                         _mem = store_summary(_mem, _summary)
                         self._mem.save(_mem)
             except Exception as _e:
-                logger.debug('brain: %s', _e)
-            self.conversation_history = self.conversation_history[-12:]
+                logger.debug('brain summarizer: %s', _e)
+            # Trim in-place so callers see the trimmed list
+            if len(history) > 12:
+                del history[:-12]
 
     def _build_reply(self, reply, emotion, intent, agent,
                      tool_used=False, memory_updated=False,

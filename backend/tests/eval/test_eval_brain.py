@@ -59,7 +59,7 @@ def monkeypatch_module():
 # ── Helper ────────────────────────────────────────────────────────────────────
 
 def run_case(brain, case: EvalCase) -> dict:
-    result = brain.process(case.input)
+    result = brain.process(case.input, history=[])
     reply  = result.get("reply", "")
     report = case.run(reply)
     # Print details on failure for CI readability
@@ -222,7 +222,7 @@ def test_process_always_returns_required_keys(brain):
         "explain quantum computing",
     ]
     for inp in inputs:
-        result = brain.process(inp)
+        result = brain.process(inp, history=[])
         for key in required:
             assert key in result, f"Missing key '{key}' for input: {inp!r}"
 
@@ -231,7 +231,7 @@ def test_confidence_is_float_between_0_and_1(brain):
     """Confidence must always be a float in [0, 1]."""
     inputs = ["hello", "what time is it", "search for python tutorials"]
     for inp in inputs:
-        result = brain.process(inp)
+        result = brain.process(inp, history=[])
         conf = result.get("confidence", -1)
         assert isinstance(conf, float), f"confidence not float for: {inp!r}"
         assert 0.0 <= conf <= 1.0, f"confidence {conf} out of range for: {inp!r}"

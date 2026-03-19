@@ -18,7 +18,11 @@ from utils.telemetry import init_telemetry, instrument_fastapi
 from config import config
 
 logging.basicConfig(level=logging.INFO)
-limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
+def _api_key_or_ip(request):
+    """Key rate limiter on API key if present, fall back to IP."""
+    return request.headers.get("X-API-Key") or get_remote_address(request)
+
+limiter = Limiter(key_func=_api_key_or_ip, default_limits=["120/minute"])
 init_request_id_logging()
 init_telemetry()
 
