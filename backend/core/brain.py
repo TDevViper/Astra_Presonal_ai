@@ -28,6 +28,8 @@ from websearch.search_agent import WebSearchAgent
 from tools.tool_router import detect_tool, detect_compound
 
 logger = logging.getLogger(__name__)
+from core.pipeline.base import RequestContext
+from core.pipeline.builder import build_pipeline
 from core.request_trace import new_trace, step as _step, finish as _finish
 
 _LOCAL_QUERY_WORDS = {"my project","my code","in the project","my file","my folder","where is","which file","codebase"}
@@ -104,7 +106,8 @@ class Brain:
             init_db()
         except Exception as e:
             logger.warning("memory_db init failed: %s", e)
-        logger.info("🚀 Brain v5.1 initialized")
+        self._pipeline = build_pipeline(self)
+        logger.info("🚀 Brain v5.1 initialized — pipeline: %s", self._pipeline)
 
     # ── Main entry point ──────────────────────────────────────────────────
 
@@ -173,135 +176,64 @@ class Brain:
                  precomputed_intent: str = None,
                  precomputed_model: str = None) -> Dict:
         """
-        Run the full dispatch pipeline and return a result dict.
-        Returns dict with key 'reply' always set.
-        Called by both process() (returns dict) and process_stream() (tokenises reply).
+        Dispatch via pipeline registry — replaces the old if-chain (Phase C).
+        Each handler is independently testable and composable.
         """
         emotion_label, emotion_score = detect_emotion(user_input)
         memory = self._mem.update_emotion(memory, emotion_label, emotion_score)
-        # Per-request TruthGuard — avoids shared state write race (E-7)
-        from core.truth_guard import TruthGuard as _TG
-        _truth_guard = _TG(
-            user_name=user_name,
-            user_location=self._mem.user_location(memory)
+
+        ctx = RequestContext(
+            user_input     = user_input,
+            session_id     = session_id,
+            vision_mode    = vision_mode,
+            streaming      = streaming,
+            history        = history or [],
+            memory         = memory,
+            user_name      = user_name,
+            emotion_label  = emotion_label,
+            emotion_score  = emotion_score,
+            query_intent   = precomputed_intent or "",
+            selected_model = precomputed_model  or "",
         )
 
-        # Quick tools
-        qt = self._exit.check_quick_tools(user_input)
-        if qt:
-            reply, intent, agent = qt
-            self._mem.save(memory)
-            return self._build_reply(reply, emotion_label, intent, agent, confidence=1.0)
+        reply_obj = self._pipeline.run(ctx)
 
-        # Intent shortcut
-        shortcut = self._exit.check_intent_shortcut(user_input, user_name)
-        if shortcut and not vision_mode:
-            self._mem.save(memory)
-            r = self._build_reply(shortcut, emotion_label, "shortcut", "intent_handler",
-                                  confidence=confidence_score("shortcut", "shortcut"))
-            self._cache.set(user_input, r, session_id)
-            return r
+        if reply_obj is None:
+            return self._error_reply("I couldn't process that request.")
 
-        # Self query
-        self_reply = self._exit.check_self_query(user_input, user_name)
-        if self_reply:
-            self._mem.save(memory)
-            return self._build_reply(self_reply, emotion_label, "self_awareness", "self", confidence=1.0)
+        # Stream sentinel — LLMHandler says "please stream me"
+        if reply_obj.stream_sentinel:
+            return {
+                "__stream__":    True,
+                "query_intent":  reply_obj.intent,
+                "selected_model": reply_obj.agent.replace("ollama/", ""),
+                "system_prompt": reply_obj.extra.get("system_prompt", ""),
+                "agent":         reply_obj.agent,
+                "reply":         "",
+                "confidence":    reply_obj.confidence,
+            }
 
-        # Tool dispatch
-        compound = detect_compound(user_input)
-        if compound:
-            return {"reply": compound, "agent": "system_controller", "intent": "shortcut",
-                    "emotion": emotion_label, "tool_used": True, "memory_updated": False,
-                    "confidence": 1.0, "confidence_label": "HIGH", "confidence_emoji": "🟢"}
-        tool = detect_tool(user_input)
-        if tool and self.capabilities.is_enabled(tool):
-            tool_resp = self._tools.execute(tool, user_input, memory, user_name)
-            if tool_resp:
-                self._mem.save(memory)
-                return tool_resp
-
-        # Fact extraction
-        fact, memory = self._mem.extract_and_store_fact(user_input, memory, user_name)
-        memory_updated = fact is not None
-        if fact:
-            self._mem.save(memory)
-            if not is_question_like(user_input):
-                return self._build_reply(
-                    self._mem.acknowledge_fact(fact), emotion_label,
-                    "memory_storage", "memory", memory_updated=True,
-                    confidence=confidence_score("memory_storage", "memory_storage")
-                )
-
-        # Memory recall
-        recalled = self._mem.recall(user_input, memory, user_name)
-        if recalled:
-            self._mem.save(memory)
-            return self._build_reply(recalled, emotion_label, "memory_recall", "memory",
-                                     confidence=confidence_score("memory_recall", "memory_recall"))
-
-        # Web search
-        if (self.capabilities.is_enabled("web_search")
-                and _needs_web_search(user_input)
-                and not _is_local_query(user_input)):
-            self.search_agent.model = self.model_manager.select_model(user_input, "research")
-            _search_query = user_input
-            for _trigger in ["search for ", "search ", "google ", "look up ", "find "]:
-                if _search_query.lower().startswith(_trigger):
-                    _search_query = _search_query[len(_trigger):].strip()
-                    break
-            result = self.search_agent.run(_search_query, user_name)
-            self._add_to_history("user", user_input)
-            self._add_to_history("assistant", result["reply"])
-            self._mem.save(memory)
-            return self._build_reply(
-                result["reply"], emotion_label, "web_search", "web_search_agent",
-                tool_used=True, citations=result.get("citations") or [],
-                results_count=result.get("results_count", 0),
-                memory_updated=memory_updated,
-                confidence=confidence_score("web_search_agent", "web_search")
+        # Post-process LLM replies
+        if reply_obj.agent.startswith("ollama/"):
+            from core.truth_guard import TruthGuard as _TG
+            _truth_guard = _TG(user_name=user_name,
+                               user_location=self._mem.user_location(memory))
+            reply_obj.text = self._post.process(
+                reply_obj.text, user_input, user_name, memory,
+                reply_obj.agent.replace("ollama/", ""), reply_obj.intent,
+                emotion_label, emotion_score, truth_guard=_truth_guard
             )
+            self._mem.post_turn(user_input, reply_obj.text, memory, user_name,
+                                reply_obj.intent, emotion_label, history or [],
+                                reply_obj.agent.replace("ollama/", ""))
+            self._cache.set(user_input, reply_obj.to_dict(emotion_label), session_id)
+            try:
+                from core.self_improve import log_response as _si_log
+                _si_log(user_input, reply_obj.text, reply_obj.confidence)
+            except Exception as _e:
+                logger.debug("self_improve: %s", _e)
 
-        # LLM path — use pre-computed intent/model if provided (avoids double call)
-        query_intent   = precomputed_intent or self.model_manager.classify_query_intent(user_input)
-        selected_model = precomputed_model  or self.model_manager.select_model(user_input, query_intent)
-        system_prompt, sem_conf = self._ctx.build(
-            user_input, user_name, memory, emotion_label,
-            query_intent, history or []
-        )
-        try:
-            from rag.rag_engine import query_rag, should_use_rag
-            if should_use_rag(user_input):
-                rag_ctx = query_rag(user_input, top_k=3)
-                if rag_ctx:
-                    system_prompt += f"\n\nRELEVANT KNOWLEDGE:\n{rag_ctx}"
-        except Exception as _e:
-            logger.debug('brain: %s', _e)
-
-        self._add_to_history("user", user_input)
-        reply = self._llm.try_react(user_input, selected_model, system_prompt, user_name)
-        if not reply:
-            reply = self._llm.call(user_input, system_prompt, selected_model,
-                                   query_intent, history or [])
-        self._add_to_history("assistant", reply)
-
-        reply = self._post.process(reply, user_input, user_name, memory,
-                                   selected_model, query_intent, emotion_label, emotion_score,
-                                   truth_guard=_truth_guard)
-        self._mem.post_turn(user_input, reply, memory, user_name, query_intent,
-                            emotion_label, history or [], selected_model)
-
-        final_conf = max(confidence_score(f"ollama/{selected_model}", query_intent), sem_conf)
-        result = self._build_reply(reply, emotion_label, query_intent,
-                                   f"ollama/{selected_model}",
-                                   memory_updated=memory_updated, confidence=final_conf)
-        self._cache.set(user_input, result, session_id)
-        try:
-            from core.self_improve import log_response as _si_log
-            _si_log(user_input, reply, final_conf)
-        except Exception as _e:
-            logger.debug('brain: %s', _e)
-        return result
+        return reply_obj.to_dict(emotion_label)
 
     # ── Streaming ─────────────────────────────────────────────────────────
 

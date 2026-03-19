@@ -58,7 +58,7 @@ def record_feedback(
 
     # Thumbs up → append to fine-tuning dataset
     if rating == "up":
-        _append_to_dataset(user_input, reply, intent)
+        _append_to_dataset(user_input, reply, intent, session_id=message_id[:8])
 
     # Thumbs down → trigger immediate deep scoring
     if rating == "down":
@@ -74,17 +74,57 @@ def record_feedback(
     return entry
 
 
-def _append_to_dataset(user_input: str, reply: str, intent: str):
-    """Append a thumbs-up exchange to the fine-tuning dataset."""
-    record = {
-        "ts":     datetime.utcnow().isoformat(),
-        "intent": intent,
-        "prompt": user_input[:300],
-        "completion": reply[:600],
-    }
-    with _lock:
-        with open(DATASET_FILE, "a") as f:
-            f.write(json.dumps(record) + "\n")
+# Minimum unique sessions that must approve before dataset inclusion
+_QUALITY_GATE = int(os.getenv("FEEDBACK_QUALITY_GATE", "3"))
+
+# Pending approvals: input_hash -> set of session_ids that approved
+_pending_approvals: dict = {}
+_pending_lock = threading.Lock()
+
+
+def _input_hash(user_input: str, reply: str) -> str:
+    import hashlib
+    return hashlib.sha256(f"{user_input[:200]}:{reply[:400]}".encode()).hexdigest()[:16]
+
+
+def _append_to_dataset(user_input: str, reply: str, intent: str,
+                       session_id: str = "default"):
+    """
+    Quality-gated dataset append (E-10 fix).
+    Requires _QUALITY_GATE unique sessions to approve before adding to dataset.
+    Prevents accidental dataset poisoning from single-user thumbs-up.
+    """
+    key = _input_hash(user_input, reply)
+
+    with _pending_lock:
+        if key not in _pending_approvals:
+            _pending_approvals[key] = {
+                "sessions": set(),
+                "user_input": user_input,
+                "reply": reply,
+                "intent": intent,
+            }
+        _pending_approvals[key]["sessions"].add(session_id)
+        approved_count = len(_pending_approvals[key]["sessions"])
+
+    if approved_count >= _QUALITY_GATE:
+        record = {
+            "ts":         datetime.utcnow().isoformat(),
+            "intent":     intent,
+            "prompt":     user_input[:300],
+            "completion": reply[:600],
+            "approvals":  approved_count,
+        }
+        with _lock:
+            with open(DATASET_FILE, "a") as f:
+                f.write(json.dumps(record) + "\n")
+        with _pending_lock:
+            _pending_approvals.pop(key, None)
+        logger.info("✅ Dataset entry approved (%d sessions): %s...",
+                    approved_count, user_input[:40])
+    else:
+        logger.debug("⏳ Pending dataset entry (%d/%d sessions): %s...",
+                     approved_count, _QUALITY_GATE, user_input[:40])
 
 
 def _trigger_deep_score(user_input: str, reply: str, ts: str):

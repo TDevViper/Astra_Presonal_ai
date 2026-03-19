@@ -216,3 +216,36 @@ def react(user_input: str, model: str = "phi3:mini",
         return ""
     result = react_solve(user_input, model=model, context=context, user_name=user_name)
     return result["answer"] if result["success"] else ""
+
+
+async def react_async(user_input: str, model: str = "phi3:mini",
+                      context: str = "", user_name: str = "User") -> str:
+    """
+    Async wrapper for react — runs blocking react_solve in thread pool.
+    Enables parallel tool calls in future iterations.
+    """
+    import asyncio
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(
+        None,
+        lambda: react_solve(user_input, model=model, context=context, user_name=user_name)
+    )
+    return result["answer"] if result["success"] else ""
+
+
+async def execute_tools_parallel(tool_calls: list, user_name: str = "User") -> list:
+    """
+    Execute multiple tool calls in parallel using asyncio.gather.
+    tool_calls: list of (tool_name, arg) tuples
+    Returns list of results in same order.
+    """
+    import asyncio
+    loop = asyncio.get_event_loop()
+
+    async def _run_one(tool_name, arg):
+        return await loop.run_in_executor(
+            None, lambda: _execute_tool(tool_name, arg, user_name)
+        )
+
+    return await asyncio.gather(*[_run_one(t, a) for t, a in tool_calls],
+                                return_exceptions=True)
