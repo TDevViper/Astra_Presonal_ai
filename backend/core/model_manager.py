@@ -104,17 +104,18 @@ class ModelManager:
         self.default_model  = default_model
         self.current_model  = default_model
         self._active_server = None
+        self._ollama_host   = OLLAMA_HOST
         self._refresh_server()
 
     def _refresh_server(self):
-        self._active_server       = _get_active_server()
-        os.environ["OLLAMA_HOST"] = self._active_server["url"]
-        self.available_models     = self._get_available_models()
+        self._active_server = _get_active_server()
+        self._ollama_host   = self._active_server["url"]  # instance var, not os.environ
+        self.available_models = self._get_available_models()
         logger.info(f"🖥️  Models: {self.available_models}")
 
     def _get_available_models(self) -> List[str]:
         try:
-            client = ollama.Client(host=os.environ.get("OLLAMA_HOST", "http://localhost:11434"))
+            client = ollama.Client(host=getattr(self, "_ollama_host", OLLAMA_HOST))
             result = client.list()
             models = []
             for m in result.get("models", []):
@@ -130,7 +131,7 @@ class ModelManager:
     def select_model(self, query: str, intent: str = "casual") -> str:
         global _server_cache_time
         if time.time() - _server_cache_time > _SERVER_CACHE_TTL:
-            if not _check_server(os.environ.get("OLLAMA_HOST", ""), timeout=1):
+            if not _check_server(getattr(self, "_ollama_host", OLLAMA_HOST), timeout=1):
                 self._refresh_server()
         preferred = INTENT_MODEL_MAP.get(intent, self.default_model)
         if preferred in self.available_models:

@@ -46,6 +46,16 @@ async def lifespan(app: FastAPI):
         logging.warning("WebSocket broadcast unavailable: %s", e)
         _ws_broadcast = lambda msg: None
 
+    # Eager Brain init — eliminates 8-15s first-request latency (P-1)
+    try:
+        from core.brain_singleton import get_brain
+        import asyncio as _asyncio
+        loop = _asyncio.get_event_loop()
+        await loop.run_in_executor(None, get_brain)
+        logging.info("🧠 Brain pre-initialized")
+    except Exception as e:
+        logging.warning("Brain pre-init failed: %s", e)
+
     from core.background import start_all
     _tasks = await start_all(_ws_broadcast)
 

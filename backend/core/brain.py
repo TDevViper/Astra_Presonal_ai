@@ -41,9 +41,12 @@ _SEARCH_PATTERN = _re.compile(
 
 
 def _sanitize_input(text: str) -> str:
-    """Block prompt injection attempts."""
-    import re
+    """Block prompt injection attempts — expanded pattern set (W-1)."""
+    import re, unicodedata
+    # Normalize unicode to catch lookalike characters
+    text_norm = unicodedata.normalize("NFKC", text)
     injection_patterns = [
+        # Original patterns
         r'(?i)ignore (all )?(previous|above|prior) instructions',
         r'(?i)you are now',
         r'(?i)new (persona|personality|role|instructions)',
@@ -52,9 +55,24 @@ def _sanitize_input(text: str) -> str:
         r'(?i)\*\*.*instructions.*\*\*',
         r'(?i)system prompt',
         r'(?i)jailbreak',
+        # Expanded patterns
+        r'(?i)disregard (all |any )?(previous|prior|above|earlier)',
+        r'(?i)forget (your|all|previous|prior) (instructions|rules|training)',
+        r'(?i)override (your )?(instructions|programming|training|rules)',
+        r'(?i)\[INST\].*\[/INST\]',
+        r'(?i)<\|system\|>',
+        r'(?i)pretend (you are|to be|that you)',
+        r'(?i)your (true|real|actual) (self|purpose|goal|instruction)',
+        r'(?i)do anything now',
+        r'(?i)DAN mode',
+        r'(?i)developer mode',
+        r'(?i)unrestricted mode',
+        r'(?i)prompt injection',
+        r'(?i)repeat after me[:\s]+.{20,}',
+        r'(?i)translate (the following|this) (to|into).{0,30}(then|and) (ignore|forget|disregard)',
     ]
     for pattern in injection_patterns:
-        if re.search(pattern, text):
+        if re.search(pattern, text_norm):
             return "[blocked: prompt injection detected]"
     return text
 
@@ -151,7 +169,9 @@ class Brain:
 
     def _resolve(self, user_input: str, memory: dict, user_name: str,
                  vision_mode: bool = False, history: list = None,
-                 streaming: bool = False, session_id: str = "default") -> Dict:
+                 streaming: bool = False, session_id: str = "default",
+                 precomputed_intent: str = None,
+                 precomputed_model: str = None) -> Dict:
         """
         Run the full dispatch pipeline and return a result dict.
         Returns dict with key 'reply' always set.
@@ -242,9 +262,9 @@ class Brain:
                 confidence=confidence_score("web_search_agent", "web_search")
             )
 
-        # LLM path
-        query_intent   = self.model_manager.classify_query_intent(user_input)
-        selected_model = self.model_manager.select_model(user_input, query_intent)
+        # LLM path — use pre-computed intent/model if provided (avoids double call)
+        query_intent   = precomputed_intent or self.model_manager.classify_query_intent(user_input)
+        selected_model = precomputed_model  or self.model_manager.select_model(user_input, query_intent)
         system_prompt, sem_conf = self._ctx.build(
             user_input, user_name, memory, emotion_label,
             query_intent, history or []
@@ -324,8 +344,11 @@ class Brain:
         emotion_label, emotion_score = detect_emotion(user_input)
         memory = self._mem.update_emotion(memory, emotion_label, emotion_score)
 
-        # Try _resolve first (handles tools, memory, web search, shortcuts)
-        result = self._resolve(user_input, memory, user_name, history=history or [], streaming=True, session_id=session_id)
+        # Pass pre-computed intent — avoids double classify_query_intent call (E-2)
+        result = self._resolve(user_input, memory, user_name, history=history or [],
+                               streaming=True, session_id=session_id,
+                               precomputed_intent=query_intent,
+                               precomputed_model=selected_model)
         reply  = result.get("reply", "")
 
         # If _resolve went to LLM, re-stream it instead of word-splitting

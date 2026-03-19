@@ -16,6 +16,11 @@ _BLOCKED_IMPORTS = {
 
 _BLOCKED_BUILTINS = {"__import__", "exec", "eval", "open", "compile", "breakpoint"}
 
+def _code_execution_allowed() -> bool:
+    """Single source of truth for code execution permission."""
+    return os.getenv("ALLOW_CODE_EXECUTION", "false").lower() == "true"
+
+
 def extract_python_code(text: str) -> str:
     m = re.search(r'```python\s*(.*?)```', text, re.DOTALL)
     return m.group(1).strip() if m else ""

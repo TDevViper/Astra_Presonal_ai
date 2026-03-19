@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 def mem_file(tmp_path, monkeypatch):
     """Redirect MEMORY_FILE to a temp path for each test."""
     import memory.memory_engine as me
+    me.invalidate_memory_cache()
     f = tmp_path / "memory.json"
     monkeypatch.setattr(me, "MEMORY_FILE", str(f))
     monkeypatch.setattr(me, "_thread_lock", __import__("threading").Lock())
@@ -21,6 +22,7 @@ def mem_file(tmp_path, monkeypatch):
 
 def test_load_returns_default_when_missing(mem_file):
     import memory.memory_engine as me
+    me.invalidate_memory_cache()
     load_memory = me.load_memory
     DEFAULT_MEMORY = me.DEFAULT_MEMORY
     result = load_memory()
@@ -30,6 +32,7 @@ def test_load_returns_default_when_missing(mem_file):
 
 def test_save_and_load_roundtrip(mem_file):
     import memory.memory_engine as me
+    me.invalidate_memory_cache()
     load_memory = me.load_memory
     save_memory = me.save_memory
     mem = load_memory()
@@ -43,6 +46,7 @@ def test_save_and_load_roundtrip(mem_file):
 
 def test_load_recovers_from_corrupted_file(mem_file):
     import memory.memory_engine as me
+    me.invalidate_memory_cache()
     mem_file.write_text("{ invalid json !!!")
     result = me.load_memory()
     assert result["user_facts"] == []
