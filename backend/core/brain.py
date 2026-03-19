@@ -90,7 +90,7 @@ class Brain:
 
     # ── Main entry point ──────────────────────────────────────────────────
 
-    def process(self, user_input: str, vision_mode: bool = False, history: list = None) -> Dict:
+    def process(self, user_input: str, vision_mode: bool = False, history: list = None, session_id: str = "default") -> Dict:
         try:
             _trace_id = new_trace(user_input)
             import uuid as _uuid
@@ -106,7 +106,7 @@ class Brain:
                 return self._build_reply(mode_reply, "neutral", "mode_switch", "system", confidence=1.0)
 
             if not vision_mode:
-                cached = self._cache.get(user_input)
+                cached = self._cache.get(user_input, session_id)
                 if cached:
                     _step('cache_hit')
                     return cached
@@ -131,7 +131,7 @@ class Brain:
             _publish("llm_start", {"model": self.model_manager.default_model})
             with start_span("brain.resolve", {"intent": "pending", "vision": str(vision_mode)}):
                 _history = history if history is not None else []
-            result = self._resolve(user_input, memory, user_name, vision_mode=vision_mode, history=_history)
+            result = self._resolve(user_input, memory, user_name, vision_mode=vision_mode, history=_history, session_id=session_id)
             _obs.step_end("llm", meta=result.get("agent", ""))
             _publish("llm_done", {"reply_len": len(result.get("reply", ""))})
             _finish(intent=result.get("intent", ""), agent=result.get("agent", ""))
@@ -151,7 +151,7 @@ class Brain:
 
     def _resolve(self, user_input: str, memory: dict, user_name: str,
                  vision_mode: bool = False, history: list = None,
-                 streaming: bool = False) -> Dict:
+                 streaming: bool = False, session_id: str = "default") -> Dict:
         """
         Run the full dispatch pipeline and return a result dict.
         Returns dict with key 'reply' always set.
@@ -177,7 +177,7 @@ class Brain:
             self._mem.save(memory)
             r = self._build_reply(shortcut, emotion_label, "shortcut", "intent_handler",
                                   confidence=confidence_score("shortcut", "shortcut"))
-            self._cache.set(user_input, r)
+            self._cache.set(user_input, r, session_id)
             return r
 
         # Self query
@@ -272,7 +272,7 @@ class Brain:
         result = self._build_reply(reply, emotion_label, query_intent,
                                    f"ollama/{selected_model}",
                                    memory_updated=memory_updated, confidence=final_conf)
-        self._cache.set(user_input, result)
+        self._cache.set(user_input, result, session_id)
         try:
             from core.self_improve import log_response as _si_log
             _si_log(user_input, reply, final_conf)
@@ -282,7 +282,7 @@ class Brain:
 
     # ── Streaming ─────────────────────────────────────────────────────────
 
-    def process_stream(self, user_input: str, history: list = None) -> Generator:
+    def process_stream(self, user_input: str, history: list = None, session_id: str = "default") -> Generator:
         user_input = clean_text(user_input)
         user_input = _sanitize_input(user_input)
         if not user_input or user_input.startswith("[blocked"):
@@ -299,7 +299,7 @@ class Brain:
             for word in mode_reply.split(" "): yield {"token": word + " "}
             return
 
-        cached = self._cache.get(user_input)
+        cached = self._cache.get(user_input, session_id)
         if cached:
             for word in cached.get("reply", "").split(" "): yield {"token": word + " "}
             return
@@ -322,7 +322,7 @@ class Brain:
         memory = self._mem.update_emotion(memory, emotion_label, emotion_score)
 
         # Try _resolve first (handles tools, memory, web search, shortcuts)
-        result = self._resolve(user_input, memory, user_name, history=history or [], streaming=True)
+        result = self._resolve(user_input, memory, user_name, history=history or [], streaming=True, session_id=session_id)
         reply  = result.get("reply", "")
 
         # If _resolve went to LLM, re-stream it instead of word-splitting

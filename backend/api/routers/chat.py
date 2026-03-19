@@ -20,12 +20,14 @@ async def chat(request: Request, body: ChatRequest, _=Depends(require_api_key)):
         raise HTTPException(status_code=400, detail=f"Message must be 1-{MAX_INPUT_CHARS} characters")
     try:
         from core.brain_singleton import get_brain, load_request_history
-        brain   = get_brain()
-        history = load_request_history(n=15)   # fresh per-request snapshot
+        brain      = get_brain()
+        history    = load_request_history(n=15)
+        # Session scoped to API key — prevents cross-user cache leakage
+        session_id = request.headers.get("X-API-Key", "default")[:32]
         logger.info("💬 User: %s", user_input[:50])
         loop   = asyncio.get_event_loop()
         result = await loop.run_in_executor(
-            None, lambda: brain.process(user_input, history=history)
+            None, lambda: brain.process(user_input, history=history, session_id=session_id)
         )
         logger.info("🤖 ASTRA: %s", result["reply"][:50])
         return result

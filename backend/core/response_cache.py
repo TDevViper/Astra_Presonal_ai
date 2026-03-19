@@ -11,8 +11,10 @@ _MAX_REPLY_WORDS = int(os.getenv("CACHE_MAX_WORDS",   200))   # was 40 — too t
 _SKIP_INTENTS = {"web_search", "memory_storage", "memory_recall", "error", "briefing"}
 
 
-def _key(text: str) -> str:
-    return "astra:reply:" + hashlib.md5(text.strip().lower().encode()).hexdigest()
+def _key(text: str, session_id: str = "default") -> str:
+    """Cache key scoped to session — prevents cross-user response leakage."""
+    scoped = f"{session_id}:{text.strip().lower()}"
+    return "astra:reply:" + hashlib.sha256(scoped.encode()).hexdigest()[:32]
 
 
 class ResponseCache:
@@ -39,8 +41,8 @@ class ResponseCache:
             logger.warning("Redis unavailable — using local dict cache: %s", e)
             return None
 
-    def get(self, text: str) -> Optional[Dict]:
-        k = _key(text)
+    def get(self, text: str, session_id: str = "default") -> Optional[Dict]:
+        k = _key(text, session_id)
         try:
             if self._redis:
                 raw = self._redis.get(k)
@@ -59,13 +61,13 @@ class ResponseCache:
         self._misses += 1
         return None
 
-    def set(self, text: str, result: Dict) -> None:
+    def set(self, text: str, result: Dict, session_id: str = "default") -> None:
         # Skip uncacheable responses
         if result.get("intent") in _SKIP_INTENTS:
             return
         if len(result.get("reply", "").split()) > _MAX_REPLY_WORDS:
             return
-        k = _key(text)
+        k = _key(text, session_id)
         try:
             if self._redis:
                 self._redis.setex(k, self.ttl, json.dumps(result))
@@ -75,9 +77,9 @@ class ResponseCache:
         except Exception as e:
             logger.warning("ResponseCache.set error: %s", e)
 
-    def invalidate(self, text: str) -> None:
+    def invalidate(self, text: str, session_id: str = "default") -> None:
         """Remove a specific entry (e.g. after memory update)."""
-        k = _key(text)
+        k = _key(text, session_id)
         try:
             if self._redis:
                 self._redis.delete(k)
