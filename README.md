@@ -1,4 +1,5 @@
 <div align="center">
+
 ```
  █████╗ ███████╗████████╗██████╗  █████╗ 
 ██╔══██╗██╔════╝╚══██╔══╝██╔══██╗██╔══██╗
@@ -8,233 +9,151 @@
 ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝
 ```
 
-**Local Autonomous AI OS · Multi-Agent Architecture · 100% Private**
+**Local Personal AI System · Pipeline Architecture · 100% Private**
 
 [![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square&logo=python)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-async-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react)](https://react.dev)
 [![Tests](https://img.shields.io/badge/Tests-passing-brightgreen?style=flat-square)](#)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ed?style=flat-square&logo=docker)](https://docker.com)
 [![Ollama](https://img.shields.io/badge/Ollama-Local_LLM-black?style=flat-square)](https://ollama.ai)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
-*Built by Arnav Yadav · Runs 100% locally · No cloud · No API keys*
+*Built by Arnav Yadav · Runs 100% locally · No cloud · No data leaves your device*
 
 </div>
 
 ---
 
-
-## UI Preview
-
-> Screenshots coming soon — run locally to see the full interface.
-> `docs/images/` folder is ready for contributions.
-
-| Panel | Description |
-|---|---|
-| Chat Interface | Streaming responses with agent + confidence metadata |
-| Agent Trace | Live 12-step pipeline visualization per query |
-| Memory Graph | Interactive knowledge graph of learned entities |
-| Vision Panel | Real-time camera + screen analysis feed |
-
----
 ## What is ASTRA?
 
-ASTRA is a **personal AI operating system** that runs entirely on your machine. It combines multi-agent reasoning, hybrid memory, real-time vision, and voice — all orchestrated through a 12-step processing pipeline with zero data leaving your device.
+ASTRA is a personal AI system that runs entirely on your machine. It combines a modular pipeline architecture, hybrid memory, real-time vision, and voice — all without sending a single byte to an external server.
 
-This is not a chatbot wrapper. It is a full AI system with:
-- A **ReAct agent** that reasons step-by-step using tools
-- A **knowledge graph** that builds a semantic model of you
-- A **critic + refinement pipeline** that reviews every response
-- A **truth guard** that catches hallucinations before they reach you
-- **Parallel tool execution** for multi-step queries
-- **Kokoro TTS** for natural, high-quality local voice output
-- **React error boundaries** so UI never crashes silently
-- **Model auto-unload** — idle models free RAM automatically
+This is not a chatbot wrapper. It is a production-quality local AI backend with:
 
----
-
-## System Architecture
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     React Frontend (Vite)                        │
-│   Chat · Vision · Memory Graph · Live Pipeline Trace Panel      │
-│   ErrorBoundary on every panel — no silent UI crashes           │
-└────────────────────────┬────────────────────────────────────────┘
-                         │ HTTP / WebSocket
-┌────────────────────────▼────────────────────────────────────────┐
-│                    Flask Backend  :5050                          │
-│                    API Key auth on all endpoints                 │
-│                    Rate limiter · CORS · 18 blueprints           │
-│                                                                  │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │                   Brain v5.1 — 12-step pipeline          │    │
-│  │                                                          │    │
-│  │  Input → Sanitize → Cache → Intent → Tools → Memory     │    │
-│  │       → Web Search → ReAct → LLM → Critic → Polish      │    │
-│  │                                                          │    │
-│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐  │    │
-│  │  │ Shortcut │ │  Tools   │ │  ReAct   │ │ Planner  │  │    │
-│  │  │ Handler  │ │  Router  │ │  Agent   │ │ Executor │  │    │
-│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘  │    │
-│  │                      │                                   │    │
-│  │              ┌───────▼──────┐                           │    │
-│  │              │  Ollama LLM  │ phi3 · mistral · llava    │    │
-│  │              │  Auto-unload │ idle models free RAM       │    │
-│  │              └───────┬──────┘                           │    │
-│  │                      │                                   │    │
-│  │    ┌─────────────────▼──────────────────────────┐      │    │
-│  │    │         Post-Processing Pipeline            │      │    │
-│  │    │  Critic → Refine → TruthGuard → Polish      │      │    │
-│  │    │  → LimitWords → EmotionPrefix → Proactive   │      │    │
-│  │    └────────────────────────────────────────────┘      │    │
-│  └─────────────────────────────────────────────────────────┘    │
-│                                                                  │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐  │
-│  │    Memory    │  │   Knowledge  │  │       Vision         │  │
-│  │  ─────────  │  │    Graph     │  │  ──────────────────  │  │
-│  │  Episodic   │  │  ─────────  │  │  LLaVA:7b Analyzer  │  │
-│  │  Semantic   │  │  NetworkX   │  │  WebRTC Camera      │  │
-│  │  FAISS Vec  │  │  Entities   │  │  Screen Capture     │  │
-│  │  ChromaDB   │  │  Relations  │  │  Face Recognition   │  │
-│  └──────────────┘  └──────────────┘  └──────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-         │                    │                    │
-┌────────▼──────┐   ┌────────▼──────┐   ┌────────▼──────┐
-│    Ollama     │   │     Redis     │   │   SQLite DB   │
-│  :11434       │   │   :6379       │   │  astra.db     │
-│  phi3:mini    │   │   Response    │   │  Chat History │
-│  mistral      │   │   Cache       │   │  User Facts   │
-│  llava:7b     │   │   mem: 256m   │   └───────────────┘
-│  mem: 10g     │   └───────────────┘
-└───────────────┘
-```
+- A **modular pipeline registry** where every handler is an independent, testable class
+- A **hybrid memory system** — episodic, semantic (vector), and structured fact storage
+- A **ReAct agent loop** with async parallel tool execution via `asyncio.gather`
+- A **TruthGuard** hallucination filter on every response
+- A **self-improvement loop** with a quality gate — 3 unique sessions must approve a response before it enters the fine-tune dataset
+- **Full async FastAPI** backend — no blocking calls on the request path
+- **Session-scoped caching** — zero cross-user response leakage
+- **Signed approval tokens** for all destructive tool operations
 
 ---
 
-## The 12-Step Processing Pipeline
+## Architecture
 
-Every message goes through this pipeline before reaching you:
 ```
-User Input
-    │
-    ▼
- 1. clean_text()           — strip noise, normalize
-    │
-    ▼
- 2. _sanitize_input()      — block prompt injection attempts
-    │
-    ▼
- 3. detect_mode_switch()   — focus / creative / precise mode
-    │
-    ▼
- 4. response_cache         — MD5 hash check (600s TTL, Redis)
-    │
-    ▼
- 5. chain_planner          — detect multi-step queries
-    │
-    ▼
- 6. tool_router            — git / file / system / calendar / python
-    │
-    ▼
- 7. intent_shortcuts       — instant replies for known patterns
-    │
-    ▼
- 8. memory_recall          — semantic + episodic + knowledge graph
-    │
-    ▼
- 9. web_search_agent       — DuckDuckGo with citation extraction
-    │
-    ▼
-10. ReAct agent            — Thought → Action → Observation loop
-    │
-    ▼
-11. Ollama LLM             — model selected by query intent
-    │
-    ▼
-12. critic → refine → truth_guard → polish → limit_words → proactive
-    │
-    ▼
-Final Reply
+User Request
+     │
+     ▼
+[FastAPI — main.py]
+  Rate limiter (API-key scoped) · CORS · Request ID · OTel tracing
+     │
+     ▼
+[PipelineRegistry — core/pipeline/]
+  Handlers run in order. First match wins.
+  ┌──────────────────────┐
+  │ ModeSwitchHandler    │  detect focus / creative / precise mode
+  │ CacheHandler         │  session-scoped SHA-256 cache (Redis / local)
+  │ ChainHandler         │  multi-step query decomposition
+  │ QuickToolHandler     │  time, math, calendar — no LLM needed
+  │ IntentShortcutHandler│  known-pattern fast exits
+  │ MemoryHandler        │  episodic + semantic recall
+  │ WebSearchHandler     │  DuckDuckGo with citation extraction
+  │ AgentHandler         │  ReAct loop with parallel tool calls
+  │ LLMHandler           │  Ollama via pluggable LLMBackend interface
+  └──────────────────────┘
+     │
+     ▼
+[RequestContext]           per-request, immutable, no shared state
+[MemoryTransaction]        batch all writes, commit once at end
+[ObservabilityStore]       async writes, non-blocking
+```
+
+### Key architectural properties
+
+- **No shared mutable state** — `Brain` holds no conversation history. History is loaded fresh per request from `memory_db` and written back at the end.
+- **Pluggable LLM backend** — `core/llm_backend.py` defines `LLMBackend(ABC)`. `OllamaBackend` and `StubBackend` (for testing) are included. Adding OpenAI or Anthropic means implementing 4 methods.
+- **Pipeline is open for extension, closed for modification** — adding a new capability means adding a `Handler` subclass and registering it. `brain.py` is never edited.
+- **Single entry point** — `main.py` is the only server. Flask and `app.py` have been removed.
+
+---
+
+## Memory System
+
+```
+Layer 1 — Working memory
+  Last 15 conversation turns, loaded per-request from SQLite
+  Written back atomically at request end via MemoryTransaction
+
+Layer 2 — Episodic memory
+  Past sessions with intent + emotion tags
+  Queryable by time range and topic
+
+Layer 3 — Semantic memory
+  ChromaDB vector index (BGE-small-en-v1.5 embeddings)
+  Decay scoring — recent facts ranked higher
+  Contradiction detection before storing new facts
+  Priority weighting — name (3×), preference (2×), general (1×)
+
+Layer 4 — Structured facts
+  Extracted from every conversation (location, name, preferences)
+  Stored via MemoryTransaction (single atomic write per request)
+  Indexed into ChromaDB for semantic retrieval
 ```
 
 ---
 
-## ReAct Agent Loop
+## Agent Loop
+
 ```
-User: "Why is my CPU usage spiking when I run the model?"
-         │
-         ▼
-   Thought: Need to check system stats and running processes
-         │
-         ▼
-   Action: system_monitor(cpu, top_processes)
-         │
-         ▼
-   Observation: CPU 94%, top process: ollama runner (87%)
-         │
-         ▼
-   Thought: The model inference is consuming all cores
-         │
-         ▼
-   Action: memory_recall(ollama performance settings)
-         │
-         ▼
-   Final Answer: "Your Ollama runner is using 87% CPU during
-                  inference. Reduce num_predict to 200-300..."
+User: "Why is my CPU spiking when I run the model?"
+     │
+     ▼
+Observe   — complexity: 2, requires_tools: true, requires_reflection: false
+     │
+     ▼
+Plan      — [memory_recall, tool_execute: system_monitor, llm_reply]
+     │
+     ▼
+Act       — memory_recall + tool_execute run concurrently via asyncio.gather
+            Observation: CPU 94%, top process: ollama runner (87%)
+     │
+     ▼
+Reflect   — critic pass: does the draft answer the question?
+            confidence >= 0.75 → APPROVED
+     │
+     ▼
+Reply     — "Your Ollama runner is using 87% CPU during inference.
+             Set num_threads to half your core count..."
 ```
 
-Available tools: `web_search` · `read_file` · `run_python` · `memory_recall` · `graph_lookup` · `calculate`
-
----
-
-## Memory Architecture
-```
-┌─────────────────────────────────────────────┐
-│              Memory Layers                   │
-│                                              │
-│  Layer 1 — Working Memory                   │
-│  └─ Last 12 conversation turns (in-process) │
-│                                              │
-│  Layer 2 — Episodic Memory                  │
-│  └─ Past sessions with intent + emotion tag │
-│                                              │
-│  Layer 3 — Semantic Memory                  │
-│  └─ ChromaDB vector index (primary)         │
-│     BGE-small-en-v1.5 embeddings            │
-│     Decay scoring — recent = higher rank    │
-│     Contradiction detection before store    │
-│     Priority weighting (name=3, pref=2)     │
-│                                              │
-│  Layer 4 — Knowledge Graph                  │
-│  └─ NetworkX entity-relation store          │
-│     Auto-extracted from every conversation  │
-│     User → [likes, works_on, prefers] → X  │
-└─────────────────────────────────────────────┘
-```
+Available tools: `web_search` · `read_file` · `run_python` · `memory_recall` · `system_monitor` · `git` · `calculate`
 
 ---
 
 ## Features
 
-| Feature | Status | Details |
+| Feature | Status | Notes |
 |---|---|---|
-| 💬 Chat | ✅ | 12-step pipeline, streaming, multi-model routing |
-| 🤖 Multi-Agent | ✅ | ReAct, Planner, Critic, Reasoner, Orchestrator |
-| 🧠 Memory | ✅ | FAISS + ChromaDB + Episodic + Knowledge Graph |
+| 💬 Chat | ✅ | Pipeline registry, streaming SSE, multi-model routing |
+| 🧠 Memory | ✅ | 4-layer hybrid — episodic, semantic, vector, structured |
+| 🤖 Agent loop | ✅ | ReAct with async parallel tool execution |
 | 👁️ Vision | ✅ | LLaVA:7b, WebRTC camera, screen capture, face recognition |
-| 🎤 Voice | ✅ | Whisper STT, Kokoro TTS (local, high quality) |
-| 🌐 Web Search | ✅ | DuckDuckGo agent with citation extraction |
-| 🐍 Code Sandbox | ✅ | AST-checked Python with approval flow |
-| 🔀 Git Tools | ✅ | Status, log, diff, branch, commit proposals |
-| 📁 File Reader | ✅ | Read + AI-analyze any local file |
-| 💻 System Monitor | ✅ | CPU, RAM, disk, top processes |
+| 🎤 Voice | ✅ | Whisper STT, Kokoro TTS (local) |
+| 🌐 Web search | ✅ | DuckDuckGo with citation extraction |
+| 🐍 Code sandbox | ✅ | AST-checked Python, CPU/RAM limits, signed approval tokens |
+| 🔀 Git tools | ✅ | Status, log, diff, branch, commit proposals |
+| 📁 File reader | ✅ | Read + AI-analyze any local file |
+| 💻 System monitor | ✅ | CPU, RAM, disk, top processes |
 | 📅 Calendar | ✅ | macOS Calendar + Reminders integration |
-| 🏠 Smart Home | ✅ | Philips Hue, TinyTuya device control |
-| 📊 Pipeline Trace | ✅ | Live agent decision panel in UI |
-| 🔒 Auth | ✅ | API key protection on all endpoints |
-| ♻️ RAM Mgmt | ✅ | Models auto-unload after 5min idle |
-| 🛡️ Error Boundary | ✅ | React panels never crash the full UI |
-| 🐳 Docker | ✅ | 4-container deployment, memory limits set |
+| 🏠 Smart home | ✅ | Philips Hue, TinyTuya device control |
+| 🔒 Security | ✅ | Injection filter, signed tool tokens, API-key rate limiting |
+| 📊 Observability | ✅ | OpenTelemetry, structured logging, async trace store |
+| ♻️ Self-improvement | ✅ | Feedback loop with 3-session quality gate |
+| 🐳 Docker | ✅ | 4-container deployment, memory limits |
 | 🔒 Privacy | ✅ | 100% local, no data leaves device |
 
 ---
@@ -244,45 +163,36 @@ Available tools: `web_search` · `read_file` · `run_python` · `memory_recall` 
 | Layer | Technology |
 |---|---|
 | Frontend | React 18, Vite, WebRTC, Tailwind |
-| Backend | Python 3.11, Flask, Flask-CORS, WebSocket |
-| LLM Runtime | Ollama (phi3:mini, mistral, llava:7b) |
-| Vector DB | FAISS + ChromaDB + BGE-small-en-v1.5 |
-| Knowledge Graph | NetworkX + spaCy entity extraction |
-| Vision | LLaVA:7b, OpenCV, mss screen capture |
-| STT | faster-whisper (tiny model, local) |
-| TTS | Kokoro v1 (local neural TTS) |
-| Cache | Redis 7 (response cache, 256MB limit) |
-| Database | SQLite (chat history, user facts) |
-| Deployment | Docker Compose (4 containers, mem limits) |
+| Backend | Python 3.11, FastAPI, async/await throughout |
+| LLM runtime | Ollama (phi3:mini, mistral, llava:7b) via pluggable backend |
+| Vector DB | ChromaDB + FAISS + BGE-small-en-v1.5 |
+| Cache | Redis 7 (session-scoped, SHA-256 keyed) |
+| Database | SQLite (conversation history, structured facts) |
+| Observability | OpenTelemetry + structured JSON logging |
+| Deployment | Docker Compose (4 containers, memory limits) |
 
 ---
 
-
-## Why I Built ASTRA
-
-Most AI assistants today are wrappers around cloud APIs — your data leaves your device, context resets every session, and you have no control over the model.
-
-I built ASTRA to answer a different question: **what does a truly personal AI look like if it runs 100% on your own hardware?**
-
-ASTRA is the result — a full AI operating system with persistent memory, multi-agent reasoning, local voice and vision, and zero cloud dependency. Every conversation stays on your machine. Every memory is yours.
-
----
 ## Quick Start
 
 ### Requirements
+
 - macOS or Linux
-- Docker Desktop (optional — can run without)
-- 8GB RAM minimum (16GB recommended for llava)
-- 20GB disk space for models
 - Python 3.11
+- [Ollama](https://ollama.ai) installed and running
+- 8GB RAM minimum (16GB recommended for llava)
+- 20GB disk for models
+- Docker Desktop (optional)
 
 ### 1. Clone
+
 ```bash
 git clone https://github.com/TDevViper/Astra_Presonal_ai.git
-cd Astra_Presonal_ai  # rename to astra-ai-os recommended
+cd Astra_Presonal_ai
 ```
 
 ### 2. Setup
+
 ```bash
 python3 -m venv venv311
 source venv311/bin/activate
@@ -290,31 +200,37 @@ pip install -r backend/requirements.txt
 ```
 
 ### 3. Configure
+
 ```bash
 cp backend/.env.example backend/.env
+
 # Generate a secure API key
 python3 -c "import secrets; print(secrets.token_hex(32))"
+
 # Add to backend/.env:
 # ASTRA_API_KEY=<your_key>
-# SERPER_API_KEY=<optional_for_web_search>
+# SERPER_API_KEY=<optional, for web search>
 ```
 
-### 4. Pull Models
+### 4. Pull models
+
 ```bash
 ollama pull phi3:mini
-ollama pull llava:7b
+ollama pull llava:7b        # optional, for vision
 ```
 
 ### 5. Start
-```bash
-# Option A — direct
-cd backend && python app.py
 
-# Option B — Docker
+```bash
+# Direct
+cd backend && python main.py
+
+# Docker
 docker compose up -d
 ```
 
 ### 6. Open
+
 ```
 http://localhost:5173   (dev)
 http://localhost:3000   (Docker)
@@ -322,71 +238,42 @@ http://localhost:3000   (Docker)
 
 ---
 
-
-## Example Queries
-```
-"What meetings do I have today?"
-"Why is my CPU usage spiking?"
-"Analyze this screenshot and tell me what's happening"
-"Search for the latest news on AI agents"
-"Remember that I prefer dark mode and minimal UI"
-"What have we talked about this week?"
-"Run this Python script and show me the output"
-"Summarize my git changes from today"
-"Turn off the living room lights"
-"Who is in this photo?"
-```
-
----
-## API Reference
+## API
 
 All endpoints require `X-API-Key` header when `ASTRA_API_KEY` is set.
+
 ```
-POST /chat              → Full pipeline chat
-POST /chat/stream       → Streaming response with SSE
-POST /talk              → Voice + Vision combined
-POST /voice/listen      → Record + transcribe (Whisper)
-POST /voice/say         → TTS speak text (Kokoro)
-POST /vision/analyze_b64→ Analyze base64 image (WebRTC)
-POST /vision/screen     → Analyze current screen
-GET  /memory            → Load full memory state
-DELETE /memory          → Wipe memory
-POST /model/switch      → Switch active Ollama model
-GET  /health            → System health + model list
-POST /execute           → System stats / tool execution
-GET  /knowledge/graph   → Knowledge graph data
-GET  /api/digest        → Daily digest
+POST /chat                → Full pipeline response
+POST /chat/stream         → Streaming SSE response
+POST /talk                → Voice + Vision combined
+POST /voice/listen        → Record + transcribe (Whisper)
+POST /voice/say           → TTS (Kokoro)
+POST /vision/analyze_b64  → Analyze base64 image
+POST /vision/screen       → Analyze current screen
+GET  /memory              → Load memory state
+DELETE /memory            → Wipe memory
+POST /model/switch        → Switch active model
+GET  /health              → System health + dependency status
+POST /execute             → Tool execution (signed token required)
+GET  /knowledge/graph     → Knowledge graph
+GET  /api/digest          → Daily digest
+GET  /observability       → Request traces
+POST /feedback            → Thumbs up/down (feeds quality gate)
 ```
 
 ---
 
-
-## ASTRA vs Cloud AI
-
-| Feature | ChatGPT / Gemini | ASTRA |
-|---|---|---|
-| Runs locally | ❌ Cloud only | ✅ 100% on-device |
-| Persistent memory | ❌ Resets each session | ✅ 4-layer hybrid memory |
-| Your data stays private | ❌ Sent to servers | ✅ Never leaves your machine |
-| Vision | ☁️ Cloud processed | ✅ Local LLaVA:7b |
-| Voice | ☁️ Cloud processed | ✅ Local Whisper + Kokoro |
-| Custom tools | ❌ Limited plugins | ✅ Git, shell, calendar, smart home |
-| Works offline | ❌ Needs internet | ✅ Fully offline capable |
-| Cost per query | 💰 API billing | ✅ Free after setup |
-| Multi-agent reasoning | ⚠️ Basic | ✅ ReAct + Planner + Critic |
-| Knowledge graph | ❌ | ✅ Builds model of you over time |
-
----
 ## Security Model
 
-| Layer | Protection |
+| Layer | Implementation |
 |---|---|
-| API auth | `X-API-Key` header on all endpoints |
-| Prompt injection | `_sanitize_input()` on every message (chat + stream) |
-| Python sandbox | AST-checked, blocked imports, CPU/RAM limits |
-| Shell executor | 3-tier safety: safe → elevated → root |
-| Rate limiting | 500 req/min via Flask-Limiter + Redis |
-| CORS | Whitelist only (localhost dev ports) |
+| API auth | `X-API-Key` header, validated on every request |
+| Prompt injection | Multi-pattern + unicode normalization filter on every message |
+| Rate limiting | Per API-key (not IP) via `slowapi` + Redis |
+| Tool approval | HMAC-signed server-side tokens with 60s TTL — client `approved: true` is rejected |
+| Python sandbox | AST-checked, blocked imports, CPU/RAM limits via `resource` |
+| Shell executor | 3-tier safety: safe → elevated → root, with per-tier confirmation |
+| Cache isolation | Session-scoped keys — no cross-user response leakage |
 
 ---
 
@@ -396,97 +283,107 @@ Measured on Mac M4 (16GB), all models local:
 
 | Metric | Value |
 |---|---|
-| Average response latency | ~1.8s (phi3:mini) |
+| Average response (phi3:mini) | ~1.8s |
 | Streaming first token | ~0.4s |
-| Memory retrieval (FAISS) | ~35ms |
-| ReAct loop (3 steps) | ~4.2s |
+| Cache hit | ~12ms |
+| Memory retrieval (ChromaDB) | ~35ms |
+| ReAct loop (3 steps, parallel tools) | ~3.8s |
 | Vision analysis (LLaVA) | ~3.1s |
-| Cache hit response | ~12ms |
-| Tool execution (system) | ~95ms |
-| Test suite | 86 tests, ~20s |
+| System tool execution | ~95ms |
+| Test suite (86 tests) | ~20s |
 
 ---
 
 ## Project Structure
+
 ```
 Astra/
-├── docker-compose.yml         # 4-container setup, memory limits
+├── docker-compose.yml
 ├── backend/
-│   ├── app.py                 # Flask entry point, all blueprints
-│   ├── config.py              # Env-based config class
+│   ├── main.py                      # FastAPI entry point, lifespan manager
+│   ├── config.py
 │   ├── core/
-│   │   ├── brain.py           # 12-step pipeline orchestrator
-│   │   ├── llm_engine.py      # Ollama calls, ReAct trigger
-│   │   ├── model_manager.py   # Smart model selection + auto-unload
-│   │   ├── truth_guard.py     # Hallucination filter
-│   │   ├── response_cache.py  # Redis MD5 cache
-│   │   └── post_processor.py  # Critic → refine → polish
+│   │   ├── brain.py                 # Slim orchestrator — delegates to pipeline
+│   │   ├── brain_singleton.py       # Stateless singleton, no shared history
+│   │   ├── pipeline/
+│   │   │   ├── base.py              # Handler ABC, RequestContext, Reply
+│   │   │   ├── registry.py          # PipelineRegistry — ordered handler chain
+│   │   │   ├── handlers.py          # All handler implementations
+│   │   │   └── builder.py           # Wires handlers into registry
+│   │   ├── llm_backend.py           # LLMBackend ABC + OllamaBackend + StubBackend
+│   │   ├── agent_loop.py            # Observe → Plan → Act → Reflect loop
+│   │   ├── memory_manager.py        # Memory façade (load/save/recall)
+│   │   ├── response_cache.py        # Session-scoped Redis/local cache
+│   │   ├── truth_guard.py           # Hallucination filter
+│   │   ├── context_builder.py       # System prompt assembly
+│   │   ├── post_processor.py        # Critic → refine → polish
+│   │   ├── feedback.py              # Thumbs up/down + 3-session quality gate
+│   │   ├── self_improve.py          # Deep LLM scoring for low-confidence replies
+│   │   └── observability.py         # Async trace store + OTel
 │   ├── agents/
-│   │   ├── react_agent.py     # ReAct implementation
-│   │   ├── planner.py         # Task decomposition
-│   │   ├── critic.py          # Output quality review
-│   │   └── reasoner.py        # Chain-of-thought
+│   │   ├── react_agent.py           # ReAct with asyncio.gather parallel tools
+│   │   ├── planner.py
+│   │   ├── critic.py
+│   │   └── reasoner.py
 │   ├── memory/
-│   │   ├── vector_store.py    # ChromaDB + decay + priority scoring
-│   │   ├── memory_extractor.py # Fact extraction from user input
-│   │   ├── memory_recall.py   # Structured memory recall
-│   │   ├── episodic.py        # Session memory
-│   │   └── semantic_recall.py # Similarity search
-│   ├── knowledge/
-│   │   ├── graph.py           # NetworkX knowledge graph
-│   │   └── auto_extractor.py  # Auto-build from chat
-│   ├── vision/
-│   │   ├── vision_engine.py   # LLaVA integration
-│   │   └── face_recognition_engine.py
-│   ├── voice/
-│   │   ├── listener.py        # Whisper STT
-│   │   └── speaker.py         # Kokoro TTS
+│   │   ├── memory_engine.py         # JSON persistence
+│   │   ├── memory_transaction.py    # Atomic batch-write context manager
+│   │   ├── memory_extractor.py      # Fact extraction from user input
+│   │   ├── memory_recall.py         # Structured recall
+│   │   ├── episodic.py
+│   │   ├── semantic_recall.py       # ChromaDB similarity search
+│   │   └── vector_store.py          # ChromaDB + decay + priority scoring
 │   ├── tools/
-│   │   ├── tool_router.py     # Tool dispatcher
-│   │   ├── shell_executor.py  # 3-tier safety model
-│   │   └── python_sandbox.py  # AST-checked execution
+│   │   ├── tool_router.py
+│   │   ├── shell_executor.py        # 3-tier safety + HMAC token verification
+│   │   ├── python_sandbox.py        # AST-checked execution
+│   │   └── chain_planner.py
+│   ├── api/routers/                 # FastAPI routers
 │   └── tests/
-│       ├── test_brain_pipeline.py   # 40+ pipeline tests
-│       ├── test_tool_executor.py    # Tool + face tests
+│       ├── test_brain_pipeline.py
+│       ├── test_tool_executor.py
 │       ├── test_agent_loop.py
 │       └── test_knowledge_graph.py
 └── frontend/
     └── src/
-        ├── App.jsx                  # Main UI (700 lines)
+        ├── App.jsx
         └── components/
-            ├── ErrorBoundary.jsx    # Catches component crashes
-            ├── AgentTrace.jsx       # Live pipeline panel
+            ├── ErrorBoundary.jsx
+            ├── AgentTrace.jsx
             ├── KnowledgeGraph.jsx
             └── LiveVision.jsx
 ```
 
 ---
 
-## Roadmap
+## Engineering Notes
 
-- [x] WebSocket real-time streaming
-- [x] Kokoro TTS (local neural voice)
-- [x] API key authentication
-- [x] Prompt injection protection
-- [x] Model auto-unload (RAM management)
-- [x] React ErrorBoundary
-- [x] Docker memory limits
-- [x] 86-test suite
-- [x] Memory hobby/preference extraction + recall
-- [x] Vector search threshold tuning
-- [x] Dead code cleanup (13 files removed)
-- [ ] Temporal frame memory (last 10 frames context)
-- [ ] Prometheus + Grafana observability
-- [ ] Android companion app
-- [ ] GPU server offloading
-- [ ] App.jsx component splitting
+This project went through a structured audit and refactor cycle. The major decisions:
+
+**`RequestContext` instead of a stateful Brain singleton** — shared mutable conversation history on a singleton causes guaranteed data corruption under concurrent load. Two requests interleave their histories. `RequestContext` is immutable and per-request, loaded from storage at the start and written back at the end.
+
+**Pipeline registry instead of an if-chain** — `brain.py` originally contained a 200-line routing function. Every new capability required editing the same file. The `PipelineRegistry` makes each handler independently testable and additive — new capabilities are new files, not edits to existing ones.
+
+**Signed approval tokens for shell execution** — client-supplied `approved: true` in a request body is trivially forged. A server-issued HMAC token with a 60-second TTL cannot be replayed or fabricated by an attacker who has the API key.
+
+**Feedback quality gate** — a single accidental thumbs-up on a bad response would poison the fine-tune dataset. Requiring 3 approvals from different sessions makes dataset poisoning require coordinated effort rather than a single click.
+
+**What this is not** — ASTRA is a single-tenant local application. It is not architected for multi-user SaaS deployment. The memory system, session model, and storage layer assume one user on one machine. Extending to multi-user requires PostgreSQL with per-user namespacing, a task queue for LLM inference, and JWT-based identity — infrastructure work outside the scope of this project.
+
+---
+
+## Why I Built This
+
+Most AI assistants are wrappers around cloud APIs. Your data leaves your device, context resets every session, and you have no visibility into what the model is doing.
+
+I built ASTRA to answer a different question: what does a personal AI look like if it runs entirely on your own hardware, remembers you across sessions, and shows you exactly how it reaches every answer?
+
+ASTRA is the result. Every conversation stays on your machine. Every memory is yours.
 
 ---
 
 <div align="center">
 
-*Built with 🔥 by Arnav Yadav*
-
-**"Not just an assistant — an AI OS"**
+*Built by Arnav Yadav*
 
 </div>
