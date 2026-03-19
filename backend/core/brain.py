@@ -159,7 +159,9 @@ class Brain:
         """
         emotion_label, emotion_score = detect_emotion(user_input)
         memory = self._mem.update_emotion(memory, emotion_label, emotion_score)
-        self.truth_guard.update_user_info(
+        # Per-request TruthGuard — avoids shared state write race (E-7)
+        from core.truth_guard import TruthGuard as _TG
+        _truth_guard = _TG(
             user_name=user_name,
             user_location=self._mem.user_location(memory)
         )
@@ -264,7 +266,8 @@ class Brain:
         self._add_to_history("assistant", reply)
 
         reply = self._post.process(reply, user_input, user_name, memory,
-                                   selected_model, query_intent, emotion_label, emotion_score)
+                                   selected_model, query_intent, emotion_label, emotion_score,
+                                   truth_guard=_truth_guard)
         self._mem.post_turn(user_input, reply, memory, user_name, query_intent,
                             emotion_label, history or [], selected_model)
 

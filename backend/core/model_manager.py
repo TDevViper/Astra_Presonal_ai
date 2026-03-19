@@ -11,23 +11,31 @@ import time as _time
 import subprocess as _subprocess
 
 _last_used: dict = {}
+_last_used_lock = _threading.Lock()
 _UNLOAD_AFTER = 300
 
 def _auto_unload_loop():
+    """Unload idle Ollama models. Start via start_auto_unload(), not at import."""
     while True:
         _time.sleep(60)
         now = _time.time()
-        for model, last_t in list(_last_used.items()):
-            if now - last_t > _UNLOAD_AFTER:
-                try:
-                    _subprocess.run(["ollama", "stop", model],
-                                    timeout=5, capture_output=True)
-                    del _last_used[model]
-                    logger.info("♻️  Auto-unloaded idle model: %s", model)
-                except Exception as e:
-                    logger.warning("unload failed %s: %s", model, e)
+        with _last_used_lock:
+            stale = [m for m, t in _last_used.items() if now - t > _UNLOAD_AFTER]
+        for model in stale:
+            try:
+                _subprocess.run(["ollama", "stop", model],
+                                timeout=5, capture_output=True)
+                with _last_used_lock:
+                    _last_used.pop(model, None)
+                logger.info("♻️  Auto-unloaded idle model: %s", model)
+            except Exception as e:
+                logger.warning("unload failed %s: %s", model, e)
 
-_threading.Thread(target=_auto_unload_loop, daemon=True).start()
+def start_auto_unload():
+    """Call once from lifespan — not at import time."""
+    _threading.Thread(target=_auto_unload_loop, daemon=True,
+                      name="ollama-auto-unload").start()
+    logger.info("♻️  Ollama auto-unload started (idle threshold: %ds)", _UNLOAD_AFTER)
 
 
 
@@ -127,7 +135,7 @@ class ModelManager:
         preferred = INTENT_MODEL_MAP.get(intent, self.default_model)
         if preferred in self.available_models:
             self.current_model = preferred
-            _last_used[preferred] = _time.time()
+            with _last_used_lock: _last_used[preferred] = _time.time()
             return preferred
         for model in ["phi3:mini", "llama3.2:3b", "mistral:latest"]:
             if model in self.available_models:

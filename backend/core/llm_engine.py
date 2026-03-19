@@ -8,19 +8,17 @@ OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 def _client():
     return ollama.Client(host=OLLAMA_HOST)
 
-_HARD_STOP = (
-    "CRITICAL RULES — follow exactly: "
-    "1) Answer ONLY what was asked. No additions, no suggestions, no examples unless asked. "
-    "2) Never say: sure/certainly/of course/as an AI/as an artificial intelligence. "
-    "3) If you do not know something, say so in one sentence. Do not invent facts. "
-    "4) Stop the moment you have answered. No follow-up offers."
-)
+# Removed _HARD_STOP — it fights against model fine-tuning (E-1 audit finding).
+# Quality constraints belong in the system prompt built by ContextBuilder,
+# not prepended as a meta-instruction that the model must resolve against its training.
+_HARD_STOP = ""  # kept as empty string for backward compat, will be removed next cleanup
 
 _TOKEN_BUDGETS = {"coding": 300, "technical": 250, "reasoning": 200, "research": 200}
 
 # ── Global TTS worker (single persistent thread) ──
 import queue as _queue
-_tts_q = _queue.Queue()
+_tts_q    = _queue.Queue()
+_tts_started = False
 
 def _global_tts_worker():
     try:
@@ -36,8 +34,16 @@ def _global_tts_worker():
         except _queue.Empty:
             continue
 
-import threading as _thr
-_thr.Thread(target=_global_tts_worker, daemon=True).start()
+def start_tts_worker():
+    """Start TTS worker once from lifespan — not at import time."""
+    global _tts_started
+    if _tts_started:
+        return
+    import threading as _thr
+    _thr.Thread(target=_global_tts_worker, daemon=True,
+                name="tts-worker").start()
+    _tts_started = True
+    logger.info("🔊 TTS worker started")
 
 
 class LLMEngine:
@@ -71,7 +77,7 @@ class LLMEngine:
             except Exception as e:
                 logger.warning("reasoner failed: %s", e)
 
-        messages     = ([{"role": "system", "content": _HARD_STOP + "\n\n" + system_prompt}]
+        messages     = ([{"role": "system", "content": system_prompt}]
                         + history
                         + [{"role": "user", "content": processed}])
         token_budget = _TOKEN_BUDGETS.get(query_intent, 150)

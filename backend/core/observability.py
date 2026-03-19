@@ -58,7 +58,7 @@ class RequestTrace:
         }
 
 
-import json, os
+import json, os, collections
 
 _TRACE_FILE = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -66,36 +66,53 @@ _TRACE_FILE = os.path.join(
 )
 
 class ObservabilityStore:
-    def __init__(self, maxlen: int = 50):
-        self.maxlen = maxlen
-        self._lock  = threading.Lock()
+    """
+    In-memory ring buffer for traces — O(1) writes, no disk I/O on hot path.
+    Flushes to disk only every N writes or on explicit flush().
+    """
+    def __init__(self, maxlen: int = 50, flush_every: int = 10):
+        self.maxlen      = maxlen
+        self.flush_every = flush_every
+        self._lock       = threading.Lock()
+        self._buffer: collections.deque = collections.deque(maxlen=maxlen)
+        self._write_count = 0
         os.makedirs(os.path.dirname(_TRACE_FILE), exist_ok=True)
-
-    def _read(self) -> List[Dict]:
+        # Load existing traces into buffer on startup
         try:
             with open(_TRACE_FILE) as f:
-                return json.load(f)
-        except Exception:
-            return []
-
-    def _write(self, traces: List[Dict]):
-        try:
-            with open(_TRACE_FILE, "w") as f:
-                json.dump(traces[-self.maxlen:], f)
+                for t in json.load(f):
+                    self._buffer.append(t)
         except Exception:
             pass
 
     def add(self, trace: Dict):
         with self._lock:
-            traces = self._read()
-            traces.append(trace)
-            self._write(traces)
+            self._buffer.append(trace)
+            self._write_count += 1
+            # Flush to disk every N writes — amortizes I/O cost
+            if self._write_count % self.flush_every == 0:
+                self._flush_locked()
+
+    def _flush_locked(self):
+        """Write buffer to disk. Must be called with _lock held."""
+        try:
+            with open(_TRACE_FILE, "w") as f:
+                json.dump(list(self._buffer), f)
+        except Exception:
+            pass
+
+    def flush(self):
+        """Explicit flush — call at shutdown."""
+        with self._lock:
+            self._flush_locked()
 
     def get_recent(self, n: int = 10) -> List[Dict]:
-        return self._read()[-n:]
+        with self._lock:
+            return list(self._buffer)[-n:]
 
     def get_stats(self) -> Dict:
-        traces = self._read()
+        with self._lock:
+            traces = list(self._buffer)
         if not traces:
             return {}
         totals = [t["total_ms"] for t in traces]

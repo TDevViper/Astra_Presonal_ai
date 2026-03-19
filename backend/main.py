@@ -60,6 +60,11 @@ async def lifespan(app: FastAPI):
         teardown_brain(None)
     except Exception as e:
         logging.warning("Brain teardown: %s", e)
+    try:
+        from core.observability import get_store
+        get_store().flush()
+    except Exception:
+        pass
 
 
 app = FastAPI(title="ASTRA", version="5.1", lifespan=lifespan)

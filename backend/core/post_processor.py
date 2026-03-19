@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 class PostProcessor:
     def __init__(self, truth_guard: TruthGuard):
         self._tg = truth_guard
-    def process(self, reply, user_input, user_name, memory, selected_model, query_intent, emotion_label, emotion_score) -> str:
+    def process(self, reply, user_input, user_name, memory,
+                  selected_model, query_intent, emotion_label, emotion_score,
+                  truth_guard=None) -> str:
         for step in [
             lambda r: self._critic(r, user_name, memory, user_input, selected_model, query_intent),
             lambda r: self._refine(r, memory, user_name),

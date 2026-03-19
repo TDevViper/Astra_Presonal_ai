@@ -50,6 +50,20 @@ async def start_all(broadcast_fn) -> list:
     except Exception as e:
         logger.warning("Broadcast wiring failed: %s", e)
 
+    # ── TTS worker — moved here from module-level ───────────────────────────────
+    try:
+        from core.llm_engine import start_tts_worker
+        start_tts_worker()
+    except Exception as e:
+        logger.warning("TTS worker failed to start: %s", e)
+
+    # ── Ollama auto-unload — moved here from module-level ───────────────────────
+    try:
+        from core.model_manager import start_auto_unload
+        start_auto_unload()
+    except Exception as e:
+        logger.warning("Ollama auto-unload failed to start: %s", e)
+
     # ── SmartGuardian — runs its own thread internally ────────────────────────
     try:
         from core.smart_guardian import _monitor_loop
