@@ -13,11 +13,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 def mem_file(tmp_path, monkeypatch):
     """Redirect MEMORY_FILE to a temp path for each test."""
     import memory.memory_engine as me
-    me.invalidate_memory_cache()
+    me._user_caches.clear()
     f = tmp_path / "memory.json"
     monkeypatch.setattr(me, "MEMORY_FILE", str(f))
     monkeypatch.setattr(me, "_thread_lock", __import__("threading").Lock())
     yield f
+    me._user_caches.clear()
 
 
 def test_load_returns_default_when_missing(mem_file):

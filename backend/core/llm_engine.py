@@ -13,7 +13,7 @@ def _client():
 # not prepended as a meta-instruction that the model must resolve against its training.
 _HARD_STOP = ""  # kept as empty string for backward compat, will be removed next cleanup
 
-_TOKEN_BUDGETS = {"coding": 300, "technical": 250, "reasoning": 200, "research": 200}
+_TOKEN_BUDGETS = {"coding": 1500, "technical": 1200, "reasoning": 800, "research": 1000}
 
 # ── Global TTS worker (single persistent thread) ──
 import queue as _queue
@@ -80,7 +80,7 @@ class LLMEngine:
         messages     = ([{"role": "system", "content": system_prompt}]
                         + history
                         + [{"role": "user", "content": processed}])
-        token_budget = _TOKEN_BUDGETS.get(query_intent, 150)
+        token_budget = _TOKEN_BUDGETS.get(query_intent, 512)
         try:
             resp = _client().chat(
                 model=selected_model,
