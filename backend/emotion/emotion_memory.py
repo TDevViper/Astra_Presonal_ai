@@ -3,7 +3,7 @@
 # ==========================================
 
 from typing import Dict
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def ensure_emotion_memory(memory: Dict) -> Dict:
@@ -44,14 +44,14 @@ def update_emotion(memory: Dict, emotion_label: str, score: float) -> Dict:
     patterns["last_emotion"] = {
         "label": emotion_label,
         "score": float(score),
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
     # Add to history
     patterns["history"].append({
         "label": emotion_label,
         "score": float(score),
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     })
 
     # Keep only last 30 emotions
@@ -99,7 +99,7 @@ def get_dominant_emotion(memory: Dict) -> str:
 # ── Cross-session persistent emotion tracking ─────────────────
 import json as _json
 import os as _os
-from datetime import datetime as _dt
+from datetime import datetime, timezone as _dt
 from collections import Counter as _Counter
 
 _BACKEND_DIR2        = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))

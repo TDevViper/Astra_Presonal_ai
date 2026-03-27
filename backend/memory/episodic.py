@@ -6,7 +6,7 @@
 import json
 import os
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Optional
 
 logger = logging.getLogger(__name__)
@@ -42,8 +42,8 @@ def store_episode(user_msg: str, astra_reply: str,
     """
     episodes = _load_episodes()
     episodes.append({
-        "timestamp":  datetime.utcnow().isoformat(),
-        "date":       datetime.utcnow().strftime("%Y-%m-%d"),
+        "timestamp":  datetime.now(timezone.utc).isoformat(),
+        "date":       datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "user":       user_msg[:300],
         "astra":      astra_reply[:300],
         "intent":     intent,
