@@ -243,7 +243,7 @@ def compress_memory(max_exchanges: int = 200) -> int:
         if count < max_exchanges:
             return 0
 
-        results = collection.get(include=["metadatas"], where={"source": "exchange"})
+        results = collection.get(include=["metadatas"], where={"source": "exchange", "user_id": user_id if user_id else "default"})
         if not results or not results["ids"]:
             return 0
 
