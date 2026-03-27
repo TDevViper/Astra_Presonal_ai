@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: astra-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: astra-backend
+  template:
+    metadata:
+      labels:
+        app: astra-backend
+    spec:
+      containers:
+      - name: backend
+        image: astra-backend:latest
+        ports:
+        - containerPort: 5050
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5050
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5050
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
