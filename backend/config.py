@@ -72,3 +72,8 @@ SERPER_API_KEY    = config.serper_api_key
 PICOVOICE_API_KEY = config.picovoice_api_key
 OLLAMA_NUM_PREDICT = config.ollama_num_predict
 OLLAMA_NUM_CTX     = config.ollama_num_ctx
+
+# Model fallback chain
+FALLBACK_OPENAI_KEY  = os.getenv("OPENAI_API_KEY", "")
+FALLBACK_ANTHROPIC_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+ENABLE_CLOUD_FALLBACK = os.getenv("ENABLE_CLOUD_FALLBACK", "false").lower() == "true"

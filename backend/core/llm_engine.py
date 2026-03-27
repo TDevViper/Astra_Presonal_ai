@@ -1,6 +1,20 @@
 import logging, re, os, threading
 from typing import Generator, List, Dict
 import ollama
+def _cloud_fallback(prompt: str, system: str = "") -> str:
+    import config as cfg
+    if cfg.FALLBACK_ANTHROPIC_KEY:
+        import urllib.request, json
+        payload = json.dumps({"model": "claude-haiku-4-5-20251001", "max_tokens": 1024,
+            "system": system, "messages": [{"role": "user", "content": prompt}]}).encode()
+        req = urllib.request.Request("https://api.anthropic.com/v1/messages",
+            data=payload, headers={"x-api-key": cfg.FALLBACK_ANTHROPIC_KEY,
+            "anthropic-version": "2023-06-01", "content-type": "application/json"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.loads(r.read())["content"][0]["text"]
+    raise RuntimeError("No cloud fallback configured")
+
+
 
 logger = logging.getLogger(__name__)
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
