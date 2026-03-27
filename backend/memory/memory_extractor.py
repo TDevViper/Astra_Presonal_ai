@@ -3,7 +3,7 @@
 # ==========================================
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict
 
 
@@ -129,5 +129,5 @@ def _fact(fact_str: str, ftype: str, subtype: str, value, confidence: float) -> 
         "subtype":    subtype,
         "value":      value,
         "confidence": confidence,
-        "added_at":   datetime.utcnow().isoformat()
+        "added_at":   datetime.now(timezone.utc).isoformat()
     }
