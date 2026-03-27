@@ -222,7 +222,7 @@ def _act_llm(user_input: str, context: Dict, prior_results: str = "") -> Tuple[s
             alive = False
 
         client = ollama.Client(host=GPU_HOST if alive else LOCAL_HOST)
-        model  = "mistral:latest" if alive else "phi3:mini"
+        model  = self._model_manager.select_model("reasoning") if alive else self._model_manager.select_model("fast")
 
         system = (
             "You are ASTRA, a smart personal AI assistant. "
@@ -273,7 +273,7 @@ def _act_reflect(user_input: str, draft_reply: str,
             alive = False
 
         client = ollama.Client(host=GPU_HOST if alive else LOCAL_HOST)
-        model  = "mistral:latest" if alive else "phi3:mini"
+        model  = self._model_manager.select_model("reasoning") if alive else self._model_manager.select_model("fast")
 
         prompt = f"""You are reviewing an AI assistant's response.
 
