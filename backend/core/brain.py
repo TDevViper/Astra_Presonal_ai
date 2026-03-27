@@ -99,6 +99,10 @@ class Brain:
         self._mem    = MemoryManager()
         self._tools  = ToolExecutor(self.model_manager, self._build_reply)
         self._llm    = LLMEngine(self.model_manager)
+        from core.structured_tool_caller import StructuredToolCaller
+        self._stc = StructuredToolCaller(
+            self.model_manager, self._tools, self._build_reply
+        )
         # conversation_history is NOT stored here — it is per-request
         # Use brain_singleton.load_request_history() to get a fresh snapshot
         try:
