@@ -21,8 +21,8 @@ class config:
     technical_model = os.getenv("TECHNICAL_MODEL", "mistral")
 
     # Token limits
-    ollama_num_predict = _int("OLLAMA_NUM_PREDICT", 200)
-    ollama_num_ctx     = _int("OLLAMA_NUM_CTX", 2048)
+    ollama_num_predict = _int("OLLAMA_NUM_PREDICT", 1024)
+    ollama_num_ctx     = _int("OLLAMA_NUM_CTX", 8192)
 
     # Redis
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
