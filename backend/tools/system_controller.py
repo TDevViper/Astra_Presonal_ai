@@ -1,3 +1,4 @@
+import sys
 # ==========================================
 # tools/system_controller.py
 # ASTRA Universal System Controller
@@ -5,6 +6,10 @@
 # ==========================================
 
 import subprocess
+def _macos_only(fn_name: str):
+    if sys.platform != "darwin":
+        raise RuntimeError(f"{fn_name} is only supported on macOS")
+
 import logging
 import os
 from typing import Optional, Dict, Tuple
