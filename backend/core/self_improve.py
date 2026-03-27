@@ -98,10 +98,12 @@ Output ONLY: {{"score": X, "issue": "one-line issue or empty"}}"""
 
 
 _log_counter = 0
+_log_counter_lock = threading.Lock()
 
 def log_response(user_input: str, response: str, confidence: float, user_rating=None):
     global _log_counter
-    _log_counter += 1
+    with _log_counter_lock:
+        _log_counter += 1
     intent    = classify_intent(user_input)
     heuristic = _score_reply(user_input, response, intent)
     ts        = datetime.now().isoformat()
