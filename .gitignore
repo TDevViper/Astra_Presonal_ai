@@ -72,4 +72,4 @@ backend/.coverage
 backend/logs/
 backend/.coverage
 backend/logs/
-backend/memory/vector_store/
+backend/memory/vector_store/ 
