@@ -88,3 +88,10 @@ volumes:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
       - prometheus
+  sandbox-builder:
+    build:
+      context: ./backend/sandbox
+      dockerfile: Dockerfile
+    image: astra-sandbox:latest
+    command: echo "Sandbox image built"
+    profiles: ["build"]

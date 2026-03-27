@@ -90,3 +90,37 @@ def execute_python(code: str) -> Dict:
             os.unlink(tmp_path)
         except Exception as _e:
             logger.debug('sandbox: %s', _e)
+
+# ── Docker sandbox shim ──────────────────────────────────────────────────────
+# Tries Docker container isolation first; falls back to AST sandbox if Docker
+# is unavailable (e.g. running outside compose without Docker Desktop).
+def _legacy_run_code(code: str) -> dict:
+    try:
+        from tools.docker_sandbox import run_python
+        result = run_python(code)
+        return {
+            "output": result["stdout"],
+            "error":  result["error"] or (result["stderr"] if result["exit_code"] != 0 else None),
+            "sandbox": "docker",
+        }
+    except Exception:
+        pass  # fall through to legacy below
+    return _legacy_run_code(code)
+
+
+# ── Docker sandbox shim ──────────────────────────────────────────────────────
+# Tries Docker container isolation first; falls back to AST sandbox if Docker
+# is unavailable (e.g. running outside compose without Docker Desktop).
+def run_code(code: str) -> dict:
+    try:
+        from tools.docker_sandbox import run_python
+        result = run_python(code)
+        return {
+            "output": result["stdout"],
+            "error":  result["error"] or (result["stderr"] if result["exit_code"] != 0 else None),
+            "sandbox": "docker",
+        }
+    except Exception:
+        pass  # fall through to legacy below
+    return _legacy_run_code(code)
+
