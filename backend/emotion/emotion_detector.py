@@ -1,3 +1,17 @@
+import logging
+from functools import lru_cache
+
+logger = logging.getLogger(__name__)
+
+@lru_cache(maxsize=1)
+def _get_classifier():
+    try:
+        from transformers import pipeline
+        return pipeline("text-classification", model="bhadresh-savani/distilbert-base-uncased-emotion", top_k=1)
+    except Exception as e:
+        logger.warning("Transformers emotion model unavailable, falling back to keywords: %s", e)
+        return None
+
 # astra_engine/emotion/emotion_detector.py
 
 import re
@@ -71,3 +85,15 @@ def detect_emotion(text: str) -> Tuple[str, float]:
         return "neutral", 0.0
 
     return best_label, round(base_score, 2)
+
+def detect_emotion_ml(text: str) -> str:
+    clf = _get_classifier()
+    if clf is None:
+        return detect_emotion(text)
+    try:
+        result = clf(text[:512])
+        label = result[0][0]["label"].lower()
+        score = result[0][0]["score"]
+        return label if score > 0.5 else "neutral"
+    except Exception:
+        return detect_emotion(text)
