@@ -102,7 +102,10 @@ app.add_middleware(CORSMiddleware,
 from api.routers.auth import router as auth_router
 from api.routers.users import router as users_router
 from api.routers.threads import router as threads_router
+from api.routers.dashboard import router as dashboard_router
+from auth.usage_middleware import UsageMiddleware
 from api.routers import chat, chat_stream, memory, model, health, feedback, observability, execute
+app.add_middleware(UsageMiddleware)
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(threads_router)
