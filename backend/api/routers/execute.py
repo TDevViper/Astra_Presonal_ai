@@ -1,3 +1,4 @@
+from auth.rbac import require_permission
 """
 api/routers/execute.py — Tool execution endpoint (FastAPI).
 
