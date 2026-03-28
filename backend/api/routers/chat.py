@@ -3,6 +3,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from api.deps import require_api_key
+from auth.rate_limiter import rate_limit
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

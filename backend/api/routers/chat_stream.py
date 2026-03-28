@@ -15,6 +15,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, Depends, Request
 from api.deps import require_api_key
+from auth.rate_limiter import rate_limit
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -32,7 +33,7 @@ class ChatRequest(BaseModel):
 
 
 @router.post("/chat/stream")
-async def chat_stream(request: Request, body: ChatRequest, _=Depends(require_api_key)):
+async def chat_stream(request: Request, body: ChatRequest, _=Depends(require_api_key), _rl=Depends(rate_limit)):
     user_input = body.message.strip()
 
     if not user_input:
