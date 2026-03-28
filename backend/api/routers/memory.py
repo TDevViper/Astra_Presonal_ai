@@ -1,3 +1,4 @@
+from auth.rbac import require_permission
 import asyncio, logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
