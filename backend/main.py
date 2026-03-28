@@ -99,7 +99,9 @@ app.add_middleware(CORSMiddleware,
     allow_methods=["*"], allow_headers=["*"],
 )
 
+from api.routers.auth import router as auth_router
 from api.routers import chat, chat_stream, memory, model, health, feedback, observability, execute
+app.include_router(auth_router)
 app.include_router(chat.router)
 app.include_router(chat_stream.router)
 app.include_router(memory.router)
