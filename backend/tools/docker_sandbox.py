@@ -49,16 +49,17 @@ def run_python(code: str, timeout: int = TIMEOUT_SECONDS) -> dict:
     try:
         cmd = [
             "docker", "run",
-            "--rm",                              # auto-delete container after run
-            "--network", "none",                 # no network
-            "--memory", MEMORY_LIMIT,            # memory cap
-            "--cpus",   CPU_LIMIT,               # cpu cap
-            "--read-only",                       # read-only root filesystem
-            "--tmpfs", "/tmp:size=32m",          # small writable tmp
-            "--tmpfs", "/code:size=8m",          # writable code dir
+            "--rm",
+            "--network", "none",
+            "--memory", MEMORY_LIMIT,
+            "--cpus", CPU_LIMIT,
+            "--read-only",
+            "--tmpfs", "/tmp:size=32m,noexec",
+            "--tmpfs", "/code:size=8m",
             "--security-opt", "no-new-privileges",
-            "--cap-drop", "ALL",                 # drop all Linux capabilities
-            "-v", f"{script_path}:/code/script.py:ro",  # mount code read-only
+            "--pids-limit", "64",
+            "--cap-drop", "ALL",
+            "-v", f"{script_path}:/code/script.py:ro",
             SANDBOX_IMAGE,
         ]
 
