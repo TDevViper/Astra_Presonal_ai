@@ -95,3 +95,22 @@ def me(current_user: dict = Depends(get_current_user)):
         "email":    current_user["email"],
         "role":     current_user["role"],
     }
+
+
+@router.get("/rate-limit-status")
+def rate_limit_status(current_user: dict = Depends(get_current_user)):
+    from auth.rate_limiter import ROLE_LIMITS
+    from collections import deque
+    from auth.rate_limiter import _windows
+    import time
+    role  = current_user["role"]
+    limit = ROLE_LIMITS.get(role, 5)
+    dq    = _windows.get(current_user["id"], deque())
+    now   = time.time()
+    used  = sum(1 for t in dq if t > now - 60)
+    return {
+        "role":           role,
+        "limit_per_min":  limit,
+        "used_this_min":  used,
+        "remaining":      max(0, limit - used),
+    }
