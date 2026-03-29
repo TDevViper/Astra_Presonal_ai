@@ -217,7 +217,6 @@ async def _act_llm(user_input: str, context: Dict, prior_results: str = "") -> T
         import requests
 
         GPU_HOST   = os.getenv("REMOTE_GPU_HOST", "")
-        LOCAL_HOST = "http://localhost:11434"
 
         try:
             alive = requests.get(GPU_HOST, timeout=1).status_code == 200
@@ -266,7 +265,6 @@ async def _act_reflect(user_input: str, draft_reply: str,
         import requests
 
         GPU_HOST   = os.getenv("REMOTE_GPU_HOST", "")
-        LOCAL_HOST = "http://localhost:11434"
 
         try:
             alive = requests.get(GPU_HOST, timeout=1).status_code == 200

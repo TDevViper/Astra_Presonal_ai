@@ -77,7 +77,7 @@ def _extract_core_error(text: str) -> str:
     """Pull the most meaningful line from an error block."""
     import re
     # Try to get the last traceback line
-    lines = [l.strip() for l in text.split("\n") if l.strip()]
+    lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
     for line in reversed(lines):
         if any(w in line for w in ["Error:", "Exception:", "TypeError", "ValueError",
                                     "AttributeError", "ImportError", "KeyError",

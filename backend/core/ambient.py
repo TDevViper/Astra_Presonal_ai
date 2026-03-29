@@ -1,7 +1,10 @@
 # core/ambient.py
 # ASTRA Ambient Awareness — watches screen + system continuously
 # Injects live context into every prompt automatically
-import threading, time, logging, os
+import threading
+import time
+import logging
+import os
 from typing import Optional, Dict
 
 logger = logging.getLogger(__name__)

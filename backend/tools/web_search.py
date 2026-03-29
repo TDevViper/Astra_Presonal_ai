@@ -49,7 +49,7 @@ def search_quick(query: str) -> str:
         body = top.get("body", "")[:400]
         ans  = _best_sentence(query, body)
         return f"{ans}\nSource: {top.get('title','')}\n{top.get('href','')}"
-    except Exception as e:
+    except Exception:
         return search_web(query)
 
 
@@ -78,7 +78,6 @@ def handle_search_command(text: str) -> Optional[str]:
         return search_news(query or t)
 
     # ── Factual with "and" — split into multiple searches ─────
-    KEYWORDS = ["ceo", "founder", "president", "capital", "owner", "price", "cto", "age"]
     kw_match  = re.search(r"(ceo|founder|president|capital|owner|price|cto|age) of", t)
 
     if kw_match and " and " in t:

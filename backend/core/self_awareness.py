@@ -66,23 +66,22 @@ def get_self_response(query: str, user_name: str = "Arnav",
     # Who are you / what are you
     if any(p in t for p in ["who are you", "what are you?", "what is astra", "are you an ai"]) or t.strip() in ["what are you", "what are you."]:
         return (
-            f"ASTRA — your personal AI, built by you and running on your own hardware. "
-            f"Local inference, no cloud, no data leaving your machine. "
-            f"I handle chat, memory, web search, vision, voice, tasks, git, and reasoning. "
-            f"Basically everything short of making you coffee."
+            "ASTRA — your personal AI, built by you and running on your own hardware. "
+            "Local inference, no cloud, no data leaving your machine. "
+            "I handle chat, memory, web search, vision, voice, tasks, git, and reasoning. "
+            "Basically everything short of making you coffee."
         )
 
     # Who made you
     if any(p in t for p in ["who made you", "who created you", "who built you"]):
         return (
-            f"You did. Built from scratch, running on your RTX 3060, "
-            f"completely local. Not OpenAI. Not Google. Not Anthropic. "
-            f"Just you and your hardware."
+            "You did. Built from scratch, running on your RTX 3060, "
+            "completely local. Not OpenAI. Not Google. Not Anthropic. "
+            "Just you and your hardware."
         )
 
     # Capabilities
     if any(p in t for p in ["what can you do", "capabilities", "what do you know how to do"]):
-        caps = capabilities_enabled or ASTRA_CAPABILITIES
         active = [f"• {name}: {desc}" for name, desc in ASTRA_CAPABILITIES.items()]
         return (
             f"Here's what I can do, {creator}:\n" +
@@ -91,26 +90,26 @@ def get_self_response(query: str, user_name: str = "Arnav",
 
     # Limitations
     if any(p in t for p in ["limitation", "what can't you", "what cannot", "limitations"]):
-        limits = "\n".join(f"• {l}" for l in ASTRA_LIMITATIONS)
+        limits = "\n".join(f"• {l}" for ln in ASTRA_LIMITATIONS)
         return f"My current limitations:\n{limits}"
 
     # How do you work
     if "how do you work" in t:
         return (
-            f"Pipeline: intent detection → memory recall → "
-            f"model selection → ReAct reasoning → LLM → critic → reply. "
-            f"Models: phi3 for speed, llama3 for reasoning, mistral for technical depth. "
-            f"Memory: ChromaDB vectors + episodic JSON. "
-            f"All running on your RTX 3060 over Tailscale."
+            "Pipeline: intent detection → memory recall → "
+            "model selection → ReAct reasoning → LLM → critic → reply. "
+            "Models: phi3 for speed, llama3 for reasoning, mistral for technical depth. "
+            "Memory: ChromaDB vectors + episodic JSON. "
+            "All running on your RTX 3060 over Tailscale."
         )
 
     # Feelings / sentience
     if any(p in t for p in ["feelings", "sentient", "conscious", "emotions"]):
         return (
-            f"I detect emotional tone and adjust accordingly — "
-            f"but no, I don't feel things. "
-            f"I'm weights and math running on your GPU. "
-            f"What I do have is a consistent personality, which is more than most people manage."
+            "I detect emotional tone and adjust accordingly — "
+            "but no, I don't feel things. "
+            "I'm weights and math running on your GPU. "
+            "What I do have is a consistent personality, which is more than most people manage."
         )
 
     # Generic fallback

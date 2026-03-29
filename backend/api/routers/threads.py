@@ -8,7 +8,8 @@ Conversation thread endpoints.
   DELETE /threads/{id}                archive thread
   POST   /threads/{id}/fork           fork from message
 """
-import uuid, logging
+import uuid
+import logging
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional

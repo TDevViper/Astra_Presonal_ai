@@ -2,7 +2,10 @@ import asyncio
 # tools/shell_executor.py
 # ASTRA shell executor with 3-tier safety model
 # safe → elevated → root (each requires explicit confirmation)
-import subprocess, logging, shlex, os
+import subprocess
+import logging
+import shlex
+import os
 from typing import Dict
 
 logger = logging.getLogger(__name__)
@@ -106,8 +109,7 @@ def execute_shell(command: str, confirmed: bool = False,
 
     try:
         logger.info("shell_executor [%s]: %s", tier, command[:80])
-        loop = asyncio.get_event_loop()
-result = loop.run_in_executor(None, lambda: subprocess.run(
+        result = subprocess.run(
             shlex.split(command), shell=False, capture_output=True, text=True,
             timeout=30, cwd=os.path.expanduser("~")
         )

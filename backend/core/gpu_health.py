@@ -1,7 +1,10 @@
 # core/gpu_health.py
 # Background health-check for remote GPU Ollama server.
 # Replaces per-request requests.get() calls in agent_loop and planner.
-import threading, time, os, logging
+import threading
+import time
+import os
+import logging
 
 logger = logging.getLogger(__name__)
 

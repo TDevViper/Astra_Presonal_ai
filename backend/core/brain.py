@@ -44,7 +44,8 @@ _SEARCH_PATTERN = _re.compile(
 
 def _sanitize_input(text: str) -> str:
     """Block prompt injection attempts — expanded pattern set (W-1)."""
-    import re, unicodedata
+    import re
+    import unicodedata
     # Normalize unicode to catch lookalike characters
     text_norm = unicodedata.normalize("NFKC", text)
     injection_patterns = [

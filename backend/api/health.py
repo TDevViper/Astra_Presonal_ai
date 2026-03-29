@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 import os
 import ollama
 from core.smart_guardian import get_full_stats as _smart_stats, get_trend_summary as _trend_summary
@@ -104,7 +106,8 @@ def _check_guardian() -> dict:
 
 def _check_redis() -> dict:
     try:
-        import redis, os
+        import redis
+        import os
         r = redis.Redis(
             host=os.getenv("REDIS_HOST", "localhost"),
             port=int(os.getenv("REDIS_PORT", 6379)),

@@ -10,7 +10,9 @@ _model = None
 # region agent log
 def _dbg(hypothesis_id: str, message: str, data: dict):
     try:
-        import time, json, urllib.request
+        import time
+        import json
+        import urllib.request
         payload = {
             "sessionId": "4c1d8e",
             "runId": "whisper-403-debug",

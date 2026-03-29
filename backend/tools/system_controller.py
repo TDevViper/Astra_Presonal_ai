@@ -84,7 +84,7 @@ def open_app(app_name: str) -> str:
         try:
             subprocess.run(["open", f"/Applications/{resolved}.app"], check=True)
             return f"Opening {resolved}."
-        except Exception as e:
+        except Exception:
             return f"Couldn't open {app_name}. Is it installed?"
 
 
@@ -171,7 +171,7 @@ def play_pause(app: Optional[str] = None) -> str:
     app = app or _get_active_music_app()
     try:
         if app == "VLC":
-            _osascript(f'tell application "VLC" to play')
+            _osascript('tell application "VLC" to play')
         else:
             _osascript(f'tell application "{app}" to playpause')
         return f"Play/pause toggled on {app}."
@@ -320,7 +320,7 @@ def set_brightness(level: int) -> str:
     level = max(0, min(100, level))
     try:
         val = level / 100.0
-        subprocess.run(["osascript", "-e", f'tell application "System Events"\n  tell process "SystemUIServer"\n    key code 144\n  end tell\nend tell'], capture_output=True)
+        subprocess.run(["osascript", "-e", 'tell application "System Events"\n  tell process "SystemUIServer"\n    key code 144\n  end tell\nend tell'], capture_output=True)
         _osascript(f'set brightness of display 1 to {val}')
         return f"Brightness set to {level}%."
     except Exception as _e:
@@ -334,8 +334,8 @@ def set_brightness(level: int) -> str:
     except Exception:
         # Fallback via AppleScript
         try:
-            _osascript(f'tell application "System Events" to key code 144')
-            return f"Brightness adjusted."
+            _osascript('tell application "System Events" to key code 144')
+            return "Brightness adjusted."
         except Exception:
             return "Install 'brightness' cli: brew install brightness"
 

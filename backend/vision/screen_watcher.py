@@ -1,4 +1,6 @@
-import mss, base64, io
+import mss
+import base64
+import io
 from PIL import Image
 
 class ScreenWatcher:

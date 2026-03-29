@@ -1,7 +1,11 @@
 """
 Vector memory store — LanceDB backend.
 """
-import os, logging, time, uuid, threading
+import os
+import logging
+import time
+import uuid
+import threading
 from typing import List, Dict, Tuple, Optional
 
 logger = logging.getLogger(__name__)
@@ -51,7 +55,8 @@ def _get_table():
         if _table is not None:
             return _table
         try:
-            import lancedb, pyarrow as pa
+            import lancedb
+            import pyarrow as pa
             os.makedirs(DB_DIR, exist_ok=True)
             db = lancedb.connect(DB_DIR)
             schema = pa.schema([

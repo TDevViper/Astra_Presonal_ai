@@ -1,7 +1,8 @@
 # core/visual_memory.py
 # JARVIS-level: stores every vision analysis in episodic memory
 # so ASTRA can recall what it saw across sessions
-import logging, time
+import logging
+import time
 from typing import Optional, Dict
 
 logger = logging.getLogger(__name__)

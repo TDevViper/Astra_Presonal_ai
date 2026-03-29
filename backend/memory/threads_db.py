@@ -2,7 +2,10 @@
 Conversation thread store — SQLite backed.
 Each thread belongs to one user, has a title, and stores messages as JSON.
 """
-import sqlite3, os, json, logging
+import sqlite3
+import os
+import json
+import logging
 from typing import List, Optional, Dict
 from datetime import datetime, timezone
 

@@ -165,7 +165,9 @@ def get_session_summary(user_name: str = "User") -> Optional[str]:
 
 
 # ── System monitoring + WebSocket proactive alerts ──────────────────────
-import threading, time, psutil
+import threading
+import time
+import psutil
 
 _broadcast_fn = None
 
@@ -234,5 +236,5 @@ def _check_tasks(last_alerts: dict):
         if len(pending) >= 2:
             _broadcast(f"📌 You have {len(pending)} pending tasks. Want to review them?")
             last_alerts["tasks"] = now
-    except Exception:
+    except Exception as e:
         logger.warning("proactive _check_tasks parse error: %s", e)

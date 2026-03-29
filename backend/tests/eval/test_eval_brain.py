@@ -4,7 +4,8 @@ tests/eval/test_eval_brain.py — Brain quality eval suite.
 These tests measure AI response quality, not just structure.
 Each case defines what a good answer looks like and fails if Brain regresses.
 """
-import os, sys
+import os
+import sys
 import pytest
 from unittest.mock import MagicMock
 

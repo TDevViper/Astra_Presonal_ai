@@ -85,7 +85,8 @@ def _execute_tool(tool_name: str, arg: str, user_name: str = "User") -> str:
                      for r in rels[:6]]
             return "\n".join(lines)
         elif tool_name == "calculate":
-            import ast, operator
+            import ast
+            import operator
             ops = {
                 ast.Add: operator.add, ast.Sub: operator.sub,
                 ast.Mult: operator.mul, ast.Div: operator.truediv,
@@ -178,8 +179,8 @@ Be concise. Max {MAX_STEPS} cycles."""
         if "Final Answer:" in full_out:
             final = full_out.split("Final Answer:")[-1].strip().split("\n\n")[0].strip()
         else:
-            lines = [l.strip() for l in full_out.split("\n")
-                     if l.strip() and not any(l.startswith(p)
+            lines = [ln.strip() for ln in full_out.split("\n")
+                     if ln.strip() and not any(l.startswith(p)
                      for p in ["Thought:", "Action:", "Observation:"])]
             final = lines[-1] if lines else full_out.strip()
 

@@ -1,7 +1,11 @@
 # tools/plugin_watcher.py
 # Hot-reload plugin system — drop a .py file in plugins/ and ASTRA
 # picks it up immediately without restart
-import os, time, threading, importlib, logging
+import os
+import time
+import threading
+import importlib
+import logging
 
 logger       = logging.getLogger(__name__)
 _BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

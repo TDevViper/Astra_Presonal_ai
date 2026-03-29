@@ -1,7 +1,10 @@
 # vision/face_recognition_engine.py
 # Fully offline face recognition — learn faces, identify from camera
 # Uses face_recognition (dlib) — no cloud, no API
-import os, json, logging, base64
+import os
+import json
+import logging
+import base64
 from pathlib import Path
 from typing import Dict, List, Optional
 

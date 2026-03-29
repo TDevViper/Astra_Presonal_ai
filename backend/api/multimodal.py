@@ -23,7 +23,7 @@ def talk():
             from vision.analyzer import analyze
             vision_result  = analyze(image, mode="camera", user_context=text)
             summary        = vision_result.get("summary", "")
-            objects        = vision_result.get("objects_detected", [])
+            vision_result.get("objects_detected", [])
             jarvis         = vision_result.get("jarvis_response", "")
             visual_context = jarvis or summary
 
@@ -37,7 +37,7 @@ def talk():
             prompt = f"{text}"  # just send the user's question
         elif visual_context:
             # No question — just describe what's seen naturally
-            prompt = f"hello"
+            prompt = "hello"
         elif text:
             prompt = f"{user_name} says: '{text}'. Reply conversationally in 1-2 sentences max."
         else:

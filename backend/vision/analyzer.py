@@ -136,7 +136,7 @@ def analyze(image_b64: str, mode: str = "image", user_context: str = "") -> Dict
         )
 
         raw = response["message"]["content"]
-        logger.info(f"✅ Analysis complete")
+        logger.info("✅ Analysis complete")
 
         # Parse JSON from response
         result = _parse_json(raw)
@@ -184,7 +184,7 @@ def analyze_code_in_image(image_b64: str) -> Dict:
     """Specialized code analysis from screenshot."""
     result = analyze(image_b64, mode="screen")
 
-    code = result.get("extracted", {}).get("key_text") or result.get("code_found", "")
+    result.get("extracted", {}).get("key_text") or result.get("code_found", "")
     error = result.get("extracted", {}).get("error")
 
     if error:

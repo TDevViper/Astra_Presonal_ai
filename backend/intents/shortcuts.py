@@ -81,7 +81,6 @@ INTENTS = {
     "how is it going":     "Going well! What can I help with?",
     "how's everything":    "All systems nominal. What do you need?",
     "heyy":                "Hey! What can I do for you?",
-    "sup":                 "All good. What do you need?",
 
     # ── CAPABILITIES (English) ─────────────────────────────
     "what you can do":     WHAT_CAN_YOU_DO,
@@ -127,7 +126,8 @@ def detect_intent(user_message: str, user_name: str = None) -> str:
 
     # ── TIME DETECTION ─────────────────────────────
     if any(w in text for w in ["time in", "current time", "what time"]):
-        import datetime, pytz
+        import datetime
+        import pytz
 
         city_tz = {
             "new york": "America/New_York",

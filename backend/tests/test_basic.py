@@ -35,5 +35,5 @@ def test_memory_extractor_no_match():
 
 def test_is_question_like():
     from intents.classifier import is_question_like
-    assert is_question_like("What are my hobbies?") == True
-    assert is_question_like("I love playing chess") == False
+    assert is_question_like("What are my hobbies?")
+    assert not is_question_like("I love playing chess")

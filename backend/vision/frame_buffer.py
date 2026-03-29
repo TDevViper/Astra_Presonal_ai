@@ -1,5 +1,7 @@
 from collections import deque
-import base64, numpy as np, cv2
+import base64
+import numpy as np
+import cv2
 from datetime import datetime
 
 class FrameBuffer:

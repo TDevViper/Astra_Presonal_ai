@@ -73,10 +73,10 @@ def git_status() -> Dict:
     if result["success"]:
         lines = result["output"].split("\n") if result["output"] else []
         
-        modified = [l[3:] for l in lines if l.startswith(" M")]
-        added = [l[3:] for l in lines if l.startswith("A ")]
-        deleted = [l[3:] for l in lines if l.startswith(" D")]
-        untracked = [l[3:] for l in lines if l.startswith("??")]
+        modified = [ln[3:] for ln in lines if ln.startswith(" M")]
+        added = [ln[3:] for ln in lines if ln.startswith("A ")]
+        deleted = [ln[3:] for ln in lines if ln.startswith(" D")]
+        untracked = [ln[3:] for ln in lines if ln.startswith("??")]
 
         return {
             "success": True,

@@ -1,4 +1,5 @@
-import logging, os
+import logging
+import os
 from flask import Blueprint, request, jsonify
 
 logger   = logging.getLogger(__name__)

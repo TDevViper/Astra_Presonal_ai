@@ -2,7 +2,8 @@
 FastAPI middleware — automatically logs every authenticated request.
 Attaches to the app in main.py.
 """
-import time, logging
+import time
+import logging
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from auth.usage_tracker import init_db, log_event

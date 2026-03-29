@@ -1,6 +1,7 @@
 # core/tool_executor.py
 # Handles all tool dispatch logic, extracted from Brain._handle_tool_request
-import logging, re
+import logging
+import re
 from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
