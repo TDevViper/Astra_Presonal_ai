@@ -1,260 +1,191 @@
-# ==========================================
-# memory/vector_store.py - v5.0 ADVANCED
-# Decay scoring, contradiction detection,
-# priority tagging, compression
-# ==========================================
-
-import logging
-import os
-import time as _time
-from typing import List, Dict, Optional, Tuple
+"""
+Vector memory store — LanceDB backend.
+"""
+import os, logging, time, uuid, threading
+from typing import List, Dict, Tuple, Optional
 
 logger = logging.getLogger(__name__)
 
-_BACKEND_DIR       = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_DIR             = os.path.join(_BACKEND_DIR, "data", "vector_db")
-COLLECTION_NAME    = "astra_memory"
-TOP_K              = 5
-FACT_THRESHOLD     = 0.50   # slightly lower — catch more
-EXCHANGE_THRESHOLD = 0.58
-DECAY_HALF_LIFE    = 7 * 24 * 3600   # 7 days in seconds
+DB_DIR          = os.path.join(os.path.dirname(__file__), "..", "data", "lancedb")
+TABLE_NAME      = "astra_memory"
+TOP_K           = 5
+EMBED_MODEL     = "BAAI/bge-small-en-v1.5"
+SCORE_THRESHOLD = 0.30
+RECENCY_WEIGHT  = 0.30
+SEMANTIC_WEIGHT = 0.70
 
-_client     = None
-_collection = None
-_embedder   = None
-
+_embedder      = None
+_embedder_lock = threading.Lock()
 
 def _get_embedder():
     global _embedder
     if _embedder is None:
-        from sentence_transformers import SentenceTransformer
-        logger.info("�� Loading embedder...")
-        _embedder = SentenceTransformer("BAAI/bge-small-en-v1.5")
-        logger.info("✅ Embedder ready")
+        with _embedder_lock:
+            if _embedder is None:
+                try:
+                    from sentence_transformers import SentenceTransformer
+                    _embedder = SentenceTransformer(EMBED_MODEL)
+                    logger.info("Embedder loaded: %s", EMBED_MODEL)
+                except Exception as e:
+                    logger.error("Embedder load failed: %s", e)
     return _embedder
 
-
-def _get_collection():
-    global _client, _collection
-    if _collection is not None:
-        return _collection
-    import chromadb
-    os.makedirs(DB_DIR, exist_ok=True)
-    _client     = chromadb.PersistentClient(path=DB_DIR)
-    _collection = _client.get_or_create_collection(
-        name=COLLECTION_NAME, metadata={"hnsw:space": "cosine"}
-    )
-    logger.info(f"✅ ChromaDB — {_collection.count()} vectors")
-    return _collection
-
-
-def embed(text: str) -> List[float]:
+def _embed(text: str):
+    emb = _get_embedder()
+    if emb is None:
+        return None
     try:
-        return _get_embedder().encode(text).tolist()
+        return emb.encode(text, normalize_embeddings=True).tolist()
     except Exception as e:
-        logger.error(f"Embedding error: {e}")
-        return []
+        logger.error("Embed error: %s", e)
+        return None
 
+_table      = None
+_table_lock = threading.Lock()
 
-# ── Decay score — recent memories rank higher ─────────────────────────────
-def _decay_score(similarity: float, stored_ts: float) -> float:
-    age_seconds = _time.time() - stored_ts
-    decay       = 0.5 ** (age_seconds / DECAY_HALF_LIFE)
-    return similarity * (0.7 + 0.3 * decay)   # 70% semantic, 30% recency
+def _get_table():
+    global _table
+    if _table is not None:
+        return _table
+    with _table_lock:
+        if _table is not None:
+            return _table
+        try:
+            import lancedb, pyarrow as pa
+            os.makedirs(DB_DIR, exist_ok=True)
+            db = lancedb.connect(DB_DIR)
+            schema = pa.schema([
+                pa.field("id",        pa.string()),
+                pa.field("text",      pa.string()),
+                pa.field("vector",    pa.list_(pa.float32(), 384)),
+                pa.field("source",    pa.string()),
+                pa.field("user",      pa.string()),
+                pa.field("user_id",   pa.string()),
+                pa.field("fact_type", pa.string()),
+                pa.field("priority",  pa.float32()),
+                pa.field("ts",        pa.float64()),
+            ])
+            if TABLE_NAME in db.table_names():
+                _table = db.open_table(TABLE_NAME)
+            else:
+                _table = db.create_table(TABLE_NAME, schema=schema)
+                logger.info("LanceDB table created: %s", TABLE_NAME)
+            logger.info("LanceDB connected at %s", DB_DIR)
+            return _table
+        except Exception as e:
+            logger.error("LanceDB init failed: %s", e)
+            return None
 
-
-# ── Contradiction detection — before storing ──────────────────────────────
-def _is_contradictory(new_text: str, threshold: float = 0.85) -> Optional[str]:
-    """
-    Returns the existing contradicting text if found, None otherwise.
-    Simple heuristic: very high similarity but opposite polarity words.
-    """
-    try:
-        facts, _ = semantic_search(new_text, top_k=3)
-        neg_words = {"not", "no", "never", "don't", "isn't", "wasn't", "hate", "dislike"}
-        new_words = set(new_text.lower().split())
-        for hit in facts:
-            if hit["score"] > threshold:
-                existing_words = set(hit["text"].lower().split())
-                # Contradiction: one has negation the other doesn't
-                new_neg      = bool(new_words & neg_words)
-                existing_neg = bool(existing_words & neg_words)
-                if new_neg != existing_neg:
-                    return hit["text"]
-    except Exception as _e:
-        logger.debug('vector_store contradiction check: %s', _e)
-    return None
-
-
-def store_vector(text: str, source: str = "fact",
-                 metadata: Optional[Dict] = None, priority: int = 1) -> bool:
-    if not text or not text.strip():
+def store_fact(fact: str, fact_type: str = "fact",
+               user_name: str = "user", user_id: str = "default",
+               priority: float = 0.8) -> bool:
+    vector = _embed(fact)
+    if vector is None:
+        return False
+    tbl = _get_table()
+    if tbl is None:
         return False
     try:
-        collection = _get_collection()
-        vector     = embed(text)
-        if not vector:
+        existing, _ = semantic_search(fact, top_k=1, user_id=user_id)
+        if existing and existing[0]["score"] > 0.92:
             return False
-
-        import hashlib
-        doc_id = hashlib.md5(text.encode()).hexdigest()
-
-        existing = collection.get(ids=[doc_id])
-        if existing["ids"]:
-            return True   # already stored
-
-        ts    = _time.time()
-        meta  = {
-            "source":   source,
-            "ts":       ts,
-            "priority": priority,
-            **(metadata or {})
-        }
-        collection.add(ids=[doc_id], embeddings=[vector], documents=[text], metadatas=[meta])
-        logger.debug(f"📥 [{source}] stored: {text[:60]}")
+        import pyarrow as pa
+        tbl.add(pa.table({
+            "id": [str(uuid.uuid4())], "text": [fact], "vector": [vector],
+            "source": ["fact"], "user": [user_name], "user_id": [user_id],
+            "fact_type": [fact_type], "priority": [float(priority)],
+            "ts": [time.time()],
+        }))
+        logger.info("stored fact | user=%s text=%s", user_name, fact[:60])
         return True
     except Exception as e:
-        logger.error(f"Store error: {e}")
+        logger.error("store_fact error: %s", e)
         return False
 
-
-def store_fact(fact: str, fact_type: str = "fact", user_name: str = "user",
-               priority: int = 1) -> bool:
-    # If storing a name/location, remove old ones first
-    t = fact.lower()
-    if fact_type in ("identity", "name") or "name is" in t:
-        old_facts, _ = semantic_search("user name", top_k=5)
-        for o in old_facts:
-            if "name" in o["text"].lower():
-                _remove_by_text(o["text"])
-                logger.info(f"🔄 Replaced old name fact: {o['text'][:40]}")
-    elif "lives in" in t or fact_type == "location":
-        old_facts, _ = semantic_search("user location city", top_k=3)
-        for o in old_facts:
-            if "live" in o["text"].lower() or "city" in o["text"].lower():
-                _remove_by_text(o["text"])
-    # Check for contradiction before storing
-    contradiction = _is_contradictory(fact)
-    if contradiction:
-        logger.info(f"🔄 Contradiction detected — updating: {contradiction[:50]}")
-        _remove_by_text(contradiction)
-
-    return store_vector(text=fact, source="fact", priority=priority,
-                        metadata={"type": fact_type, "user": user_name})
-
-
-def store_exchange(user_msg: str, assistant_msg: str, user_name: str = "user") -> bool:
+def store_exchange(user_msg: str, assistant_msg: str,
+                   user_name: str = "user", user_id: str = "default") -> bool:
+    if len(user_msg.strip()) < 10 or len(assistant_msg.strip()) < 10:
+        return False
     combined = f"User: {user_msg}\nASTRA: {assistant_msg}"
-    return store_vector(text=combined, source="exchange",
-                        metadata={"user": user_name})
-
-
-def _remove_by_text(text: str) -> bool:
+    vector = _embed(combined)
+    if vector is None:
+        return False
+    tbl = _get_table()
+    if tbl is None:
+        return False
     try:
-        import hashlib
-        doc_id = hashlib.md5(text.encode()).hexdigest()
-        _get_collection().delete(ids=[doc_id])
+        import pyarrow as pa
+        tbl.add(pa.table({
+            "id": [str(uuid.uuid4())], "text": [combined], "vector": [vector],
+            "source": ["exchange"], "user": [user_name], "user_id": [user_id],
+            "fact_type": ["exchange"], "priority": [0.5], "ts": [time.time()],
+        }))
         return True
-    except Exception:
+    except Exception as e:
+        logger.error("store_exchange error: %s", e)
         return False
 
-
-def semantic_search(query: str, top_k: int = TOP_K) -> Tuple[List[Dict], List[Dict]]:
-    if not query or not query.strip():
+def semantic_search(query: str, top_k: int = TOP_K,
+                    user_id: str = None) -> Tuple[List[Dict], List[Dict]]:
+    vector = _embed(query)
+    if vector is None:
+        return [], []
+    tbl = _get_table()
+    if tbl is None:
         return [], []
     try:
-        collection = _get_collection()
-        if collection.count() == 0:
-            return [], []
-        vector = embed(query)
-        if not vector:
-            return [], []
-
-        results = collection.query(
-            query_embeddings=[vector],
-            n_results=min(top_k * 2, collection.count()),   # fetch more, rerank with decay
-            include=["documents", "metadatas", "distances"]
-        )
-
-        facts: List[Dict]     = []
-        exchanges: List[Dict] = []
-
-        if not results:
-            return [], []
-
-        docs      = (results["documents"] or [[]])[0]
-        metas     = (results["metadatas"] or [[]])[0]
-        distances = (results["distances"] or [[]])[0]
-
-        for doc, meta, dist in zip(docs, metas, distances):
-            similarity = 1.0 - float(dist)
-            source     = meta.get("source", "fact")
-            stored_ts  = float(meta.get("ts", _time.time()))
-            priority   = int(meta.get("priority", 1))
-
-            # Apply decay and priority weighting
-            adjusted   = _decay_score(similarity, stored_ts) * (1.0 + 0.1 * (priority - 1))
-            hit = {"text": doc, "score": round(adjusted, 3),
-                   "raw_score": round(similarity, 3),
-                   "source": source, "metadata": meta}
-
-            if source == "fact" and adjusted >= FACT_THRESHOLD:
+        now    = time.time()
+        oldest = now - 60 * 60 * 24 * 90
+        results = tbl.search(vector).limit(top_k * 3).to_list()
+        facts, exchanges = [], []
+        for r in results:
+            if user_id and r.get("user_id", "default") != user_id:
+                continue
+            raw_score = 1.0 - float(r.get("_distance", 1.0))
+            age_score = max(0, (r["ts"] - oldest) / (now - oldest + 1))
+            score     = SEMANTIC_WEIGHT * raw_score + RECENCY_WEIGHT * age_score
+            if score < SCORE_THRESHOLD:
+                continue
+            hit = {"text": r["text"], "score": round(score, 3),
+                   "fact_type": r.get("fact_type", ""), "ts": r["ts"]}
+            if r["source"] == "fact":
                 facts.append(hit)
-            elif source == "exchange" and adjusted >= EXCHANGE_THRESHOLD:
+            else:
                 exchanges.append(hit)
-
         facts.sort(key=lambda x: x["score"], reverse=True)
         exchanges.sort(key=lambda x: x["score"], reverse=True)
-
-        logger.info(f"🔍 search | facts={len(facts)} exchanges={len(exchanges)} query='{query[:40]}'")
-        return facts[:top_k], exchanges[:3]
-
+        return facts[:top_k], exchanges[:top_k]
     except Exception as e:
-        logger.error(f"Search error: {e}")
+        logger.error("semantic_search error: %s", e)
         return [], []
 
-
-def get_collection_size() -> int:
+def get_memory_count() -> int:
+    tbl = _get_table()
+    if tbl is None:
+        return 0
     try:
-        return _get_collection().count()
+        return tbl.count_rows()
     except Exception:
         return 0
 
-
-def clear_collection() -> bool:
-    global _client, _collection
-    try:
-        if _client and _collection:
-            _client.delete_collection(COLLECTION_NAME)
-            _collection = None
-        logger.warning("🗑️ Vector store cleared")
-        return True
-    except Exception as e:
-        logger.error(f"Clear error: {e}")
-        return False
-
-
-# ── Memory compression — prune low-score old exchanges ────────────────────
 def compress_memory(max_exchanges: int = 200, user_id: str = None) -> int:
-    """Remove oldest low-priority exchanges when collection gets large."""
+    tbl = _get_table()
+    if tbl is None:
+        return 0
     try:
-        collection = _get_collection()
-        count = collection.count()
-        if count < max_exchanges:
+        df = tbl.to_pandas()
+        exchanges = df[df["source"] == "exchange"]
+        if user_id:
+            exchanges = exchanges[exchanges["user_id"] == user_id]
+        if len(exchanges) <= max_exchanges:
             return 0
-
-        results = collection.get(include=["metadatas"], where={"source": "exchange", "user_id": user_id if user_id else "default"})
-        if not results or not results["ids"]:
-            return 0
-
-        # Sort by timestamp, remove oldest 20%
-        pairs = list(zip(results["ids"], results["metadatas"]))
-        pairs.sort(key=lambda x: float(x[1].get("ts", 0)))
-        to_remove = pairs[:max(1, len(pairs) // 5)]
-        ids_to_remove = [p[0] for p in to_remove]
-        collection.delete(ids=ids_to_remove)
-        logger.info(f"🗜️ Compressed {len(ids_to_remove)} old exchanges")
-        return len(ids_to_remove)
+        cutoff = int(len(exchanges) * 0.20)
+        oldest = exchanges.nsmallest(cutoff, "ts")
+        ids    = oldest["id"].tolist()
+        ids_sql = ", ".join(f'"{i}"' for i in ids)
+        tbl.delete(f"id IN ({ids_sql})")
+        logger.info("compressed %d exchanges", len(ids))
+        return len(ids)
     except Exception as e:
-        logger.error(f"Compress error: {e}")
+        logger.error("compress_memory error: %s", e)
         return 0
