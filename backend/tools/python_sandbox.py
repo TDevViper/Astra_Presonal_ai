@@ -94,7 +94,7 @@ def execute_python(code: str) -> Dict:
 # ── Docker sandbox shim ──────────────────────────────────────────────────────
 # Tries Docker container isolation first; falls back to AST sandbox if Docker
 # is unavailable (e.g. running outside compose without Docker Desktop).
-def _legacy_run_code(code: str) -> dict:
+def _legacy_run_code(code: str) -> dict:  # calls execute_python, NOT itself
     try:
         from tools.docker_sandbox import run_python
         result = run_python(code)
@@ -105,7 +105,7 @@ def _legacy_run_code(code: str) -> dict:
         }
     except Exception:
         pass  # fall through to legacy below
-    return _legacy_run_code(code)
+    return execute_python(code)
 
 
 # ── Docker sandbox shim ──────────────────────────────────────────────────────
@@ -122,5 +122,5 @@ def run_code(code: str) -> dict:
         }
     except Exception:
         pass  # fall through to legacy below
-    return _legacy_run_code(code)
+    return execute_python(code)
 

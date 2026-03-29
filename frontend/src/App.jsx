@@ -28,6 +28,7 @@ const agentLabel = (a) => {
   if (a === "system_controller") return "SYSTEM";
   return (a || "ASTRA").toUpperCase().slice(0, 10);
 };
+
 const intentColor = (intent) => ({
   casual:    "#34d399",
   technical: "#60a5fa",
@@ -36,6 +37,7 @@ const intentColor = (intent) => ({
   reasoning: "#fb923c",
   general:   "#94a3b8",
 }[intent?.toLowerCase()] || "#94a3b8");
+
 const MODE_THEMES = {
   jarvis: {
     accent:      "#38bdf8",
@@ -88,10 +90,59 @@ const MODE_THEMES = {
     hint:        "SYSTEM TRACE MODE",
   },
 };
+
 const modeAccent = (id) => (MODE_THEMES[id] || MODE_THEMES.jarvis).accent;
 const modeTheme  = (id) =>  MODE_THEMES[id] || MODE_THEMES.jarvis;
 
+// ── Fonts injection ───────────────────────────────────────────────────────────
+const FONTS = `
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap');
+`;
 
+// ── Global styles ─────────────────────────────────────────────────────────────
+const GLOBAL_CSS = `
+  ${FONTS}
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body, #root { height: 100%; }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.15); border-radius: 4px; }
+
+  textarea:focus { outline: none; }
+  button { cursor: pointer; font-family: inherit; }
+
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse-ring {
+    0%   { transform: scale(1);    opacity: 0.6; }
+    100% { transform: scale(1.55); opacity: 0; }
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position:  200% center; }
+  }
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  @keyframes thinking {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40%           { transform: scale(1);   opacity: 1;   }
+  }
+`;
+
+// ── Thinking dots ─────────────────────────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MAIN APP
+// ══════════════════════════════════════════════════════════════════════════════
 export default function App() {
   const [messages,     setMessages]     = useState([]);
   const [, setProactiveAlerts] = useState([]);
