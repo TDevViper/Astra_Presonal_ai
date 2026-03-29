@@ -90,7 +90,7 @@ def get_self_response(query: str, user_name: str = "Arnav",
 
     # Limitations
     if any(p in t for p in ["limitation", "what can't you", "what cannot", "limitations"]):
-        limits = "\n".join(f"• {l}" for ln in ASTRA_LIMITATIONS)
+        limits = "\n".join(f"• {ln}" for ln in ASTRA_LIMITATIONS)
         return f"My current limitations:\n{limits}"
 
     # How do you work

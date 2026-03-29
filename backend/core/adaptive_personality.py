@@ -92,7 +92,7 @@ def maybe_refine(force: bool = False) -> Optional[str]:
             return None
 
         # Detect response length preference from ratings
-        high_rated = [l for ln in logs if (ln.get("rating") or ln.get("h_score", 0)) >= 0.7]
+        high_rated = [ln for ln in logs if (ln.get("rating") or ln.get("h_score", 0)) >= 0.7]
         if high_rated:
             avg_words = sum(len(ln.get("response","").split())
                             for ln in high_rated) / len(high_rated)
