@@ -235,4 +235,4 @@ def _check_tasks(last_alerts: dict):
             _broadcast(f"📌 You have {len(pending)} pending tasks. Want to review them?")
             last_alerts["tasks"] = now
     except Exception:
-        pass  # TODO: handle
+        logger.warning("proactive _check_tasks parse error: %s", e)
