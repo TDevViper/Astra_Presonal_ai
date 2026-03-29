@@ -225,7 +225,7 @@ async def _act_llm(user_input: str, context: Dict, prior_results: str = "") -> T
             alive = False
 
         # routed through LLMEngine — no direct ollama coupling
-        model  = self._model_manager.select_model("reasoning") if alive else self._model_manager.select_model("fast")
+        model  = _llm.select_model("reasoning") if alive else _llm.select_model("fast")
 
         system = (
             "You are ASTRA, a smart personal AI assistant. "
@@ -249,14 +249,6 @@ async def _act_llm(user_input: str, context: Dict, prior_results: str = "") -> T
             return reply.strip(), 0.75
         except Exception as e:
             return f"LLM error: {e}", 0.0
-
-        response = client.chat(
-            model=model,
-            messages=messages,
-            options={"temperature": 0.5, "num_predict": 200}
-        )
-        reply = response["message"]["content"].strip()
-        return reply, 0.80
 
     except Exception as e:
         logger.error(f"LLM act failed: {e}")
@@ -282,7 +274,7 @@ async def _act_reflect(user_input: str, draft_reply: str,
             alive = False
 
         # routed through LLMEngine — no direct ollama coupling
-        model  = self._model_manager.select_model("reasoning") if alive else self._model_manager.select_model("fast")
+        model  = _llm.select_model("reasoning") if alive else _llm.select_model("fast")
 
         prompt = f"""You are reviewing an AI assistant's response.
 
@@ -299,14 +291,14 @@ If needs fixing → reply with the improved version only, no preamble.
 
 Output:"""
 
-        response = client.chat(
-            model=model,
-            messages=[{"role": "user", "content": prompt}],
-            options={"temperature": 0.1, "num_predict": 200}
-        )
-        result = response["message"]["content"].strip()
-
-        if result.upper().startswith("APPROVED"):
+        try:
+            result = _llm.call(
+                messages=[{"role": "user", "content": prompt}],
+                model=model, num_predict=200
+            ).strip()
+        except Exception as e:
+            logger.error("reflect LLM call failed: %s", e)
+            return draft_reply, 0.70
             log_event(agent_logger, "reflect_approved")
             return draft_reply, 0.95
         else:
