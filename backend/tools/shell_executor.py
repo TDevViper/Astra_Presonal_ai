@@ -1,3 +1,4 @@
+import asyncio
 # tools/shell_executor.py
 # ASTRA shell executor with 3-tier safety model
 # safe → elevated → root (each requires explicit confirmation)
@@ -94,7 +95,8 @@ def execute_shell(command: str, confirmed: bool = False,
 
     try:
         logger.info("shell_executor [%s]: %s", tier, command[:80])
-        result = subprocess.run(
+        loop = asyncio.get_event_loop()
+result = loop.run_in_executor(None, lambda: subprocess.run(
             shlex.split(command), shell=False, capture_output=True, text=True,
             timeout=30, cwd=os.path.expanduser("~")
         )

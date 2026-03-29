@@ -235,7 +235,7 @@ def clear_collection() -> bool:
 
 
 # ── Memory compression — prune low-score old exchanges ────────────────────
-def compress_memory(max_exchanges: int = 200) -> int:
+def compress_memory(max_exchanges: int = 200, user_id: str = None) -> int:
     """Remove oldest low-priority exchanges when collection gets large."""
     try:
         collection = _get_collection()

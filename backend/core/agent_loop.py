@@ -324,7 +324,7 @@ class AgentLoop:
     def __init__(self, max_iterations: int = MAX_ITERATIONS):
         self.max_iterations = max_iterations
 
-    def run(self, user_input: str, context: Dict) -> LoopResult:
+    async def run(self, user_input: str, context: Dict) -> LoopResult:
         start  = time.time()
         result = LoopResult(final_reply="")
         steps  = []
@@ -351,7 +351,7 @@ class AgentLoop:
                     break
 
                 step_start = time.time()
-                observation_text, confidence = _act(
+                observation_text, confidence = await _act(
                     plan_step, user_input, context, previous_results
                 )
                 elapsed = round(time.time() - step_start, 2)
