@@ -49,6 +49,7 @@ MODEL_PROFILES = {
 }
 
 INTENT_MODEL_MAP = {
+    "fast":      "phi3:mini",
     "casual": "phi3:mini", "memory": "phi3:mini",
     "greeting": "phi3:mini", "simple_question": "phi3:mini",
     "reasoning": "llama3.2:3b", "step_by_step": "llama3.2:3b", "analysis": "llama3.2:3b",

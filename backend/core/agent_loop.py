@@ -244,8 +244,10 @@ async def _act_llm(user_input: str, context: Dict, prior_results: str = "") -> T
         messages.append({"role": "user", "content": user_input})
 
         try:
-            reply = _llm.call(messages=messages, model=model, num_predict=300)
-            return reply.strip(), 0.75
+            import ollama
+            resp = ollama.Client().chat(model=model, messages=messages,
+                                        options={"num_predict": 300, "temperature": 0.65})
+            return resp["message"]["content"].strip(), 0.75
         except Exception as e:
             return f"LLM error: {e}", 0.0
 
@@ -290,10 +292,11 @@ If needs fixing → reply with the improved version only, no preamble.
 Output:"""
 
         try:
-            result = _llm.call(
+            import ollama
+            result = ollama.Client().chat(model=model,
                 messages=[{"role": "user", "content": prompt}],
-                model=model, num_predict=200
-            ).strip()
+                options={"num_predict": 200, "temperature": 0.1}
+            )["message"]["content"].strip()
         except Exception as e:
             logger.error("reflect LLM call failed: %s", e)
             return draft_reply, 0.70
