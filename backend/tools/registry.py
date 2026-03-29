@@ -73,7 +73,7 @@ def _autoload():
 
     # Load plugins/
     import sys
-    import importlib.util
+    import importlib.util as _ilib_util
     plugins_dir = os.path.join(os.path.dirname(tools_dir), "plugins")
     if os.path.isdir(plugins_dir):
         for fname in sorted(os.listdir(plugins_dir)):
@@ -83,8 +83,8 @@ def _autoload():
             mod_name = f"plugins.{fname[:-3]}"
             try:
                 if mod_name not in sys.modules:
-                    spec = importlib.util.spec_from_file_location(mod_name, fpath)
-                    mod  = importlib.util.module_from_spec(spec)
+                    spec = _ilib_util.spec_from_file_location(mod_name, fpath)
+                    mod  = _ilib_util.module_from_spec(spec)
                     sys.modules[mod_name] = mod
                     spec.loader.exec_module(mod)
                     logger.info(f"Plugin loaded: {fname}")

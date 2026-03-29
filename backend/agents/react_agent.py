@@ -180,7 +180,7 @@ Be concise. Max {MAX_STEPS} cycles."""
             final = full_out.split("Final Answer:")[-1].strip().split("\n\n")[0].strip()
         else:
             lines = [ln.strip() for ln in full_out.split("\n")
-                     if ln.strip() and not any(l.startswith(p)
+                     if ln.strip() and not any(ln.startswith(p)
                      for p in ["Thought:", "Action:", "Observation:"])]
             final = lines[-1] if lines else full_out.strip()
 
