@@ -1,7 +1,24 @@
 import React, { useState, useEffect } from "react";
-import { StatBar } from "./Atoms";
+import API from "../config";
 
-function SystemSidebar({ health, memory, models, currentModel, onSwitchModel }) {
+function StatBar({ label, value = 0 }) {
+  const color = value > 85 ? "bg-red-400" : value > 65 ? "bg-amber-400" : "bg-emerald-400";
+  const textColor = value > 85 ? "text-red-400" : value > 65 ? "text-amber-400" : "text-emerald-400";
+  return (
+    <div className="mb-3">
+      <div className="flex justify-between text-[10px] font-mono mb-1">
+        <span className="text-slate-500">{label}</span>
+        <span className={textColor}>{value.toFixed(0)}%</span>
+      </div>
+      <div className="h-[3px] bg-slate-800 rounded-full overflow-hidden">
+        <div className={`h-full ${color} rounded-full transition-all duration-1000`}
+          style={{ width: `${value}%` }} />
+      </div>
+    </div>
+  );
+}
+
+export function SystemSidebar({ health, memory, models, currentModel, onSwitchModel }) {
   const [sysInfo, setSysInfo] = useState(null);
   const [time, setTime] = useState(new Date());
 
@@ -11,20 +28,20 @@ function SystemSidebar({ health, memory, models, currentModel, onSwitchModel }) 
   }, []);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetch_ = async () => {
       try {
         const r = await fetch(API.stats);
         if (r.ok) setSysInfo(await r.json());
-      } catch { /* ignore */ }
+      } catch {}
     };
-    fetchStats();
-    const t = setInterval(fetchStats, 10000);
+    fetch_();
+    const t = setInterval(fetch_, 10000);
     return () => clearInterval(t);
   }, []);
 
-  const cpu  = sysInfo?.cpu?.percent  ?? 0;
+  const cpu  = sysInfo?.cpu?.percent    ?? 0;
   const ram  = sysInfo?.memory?.percent ?? 0;
-  const disk = sysInfo?.disk?.percent  ?? 0;
+  const disk = sysInfo?.disk?.percent   ?? 0;
 
   const services = [
     { name: "BRAIN",  ok: health?.brain  ?? false },
@@ -34,123 +51,66 @@ function SystemSidebar({ health, memory, models, currentModel, onSwitchModel }) 
   ];
 
   return (
-    <div style={{
-      width: 200, flexShrink: 0,
-      borderLeft: "1px solid rgba(148,163,184,0.07)",
-      background: "#030912",
-      backdropFilter: "blur(24px)",
-      padding: "20px 14px",
-      display: "flex", flexDirection: "column", gap: 0,
-      overflowY: "auto",
-    }}>
+    <div className="w-48 shrink-0 flex flex-col gap-0 overflow-y-auto
+      border-r border-white/5 bg-slate-950/60 backdrop-blur-xl p-4">
 
-      {/* Clock */}
-      <div style={{
-        textAlign: "center", marginBottom: 20,
-        paddingBottom: 16, borderBottom: "1px solid rgba(148,163,184,0.06)",
-      }}>
-        <div style={{
-          fontSize: 22, fontWeight: 300, letterSpacing: "0.12em",
-          fontFamily: "'JetBrains Mono', monospace", color: "#e2e8f0",
-        }}>
-          {time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}
+      <div className="text-center mb-5 pb-4 border-b border-white/5">
+        <div className="text-xl font-light font-mono tracking-widest text-slate-200">
+          {time.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false })}
         </div>
-        <div style={{
-          fontSize: 9, letterSpacing: "0.15em", marginTop: 4,
-          color: "#2a4a6a", fontFamily: "'JetBrains Mono', monospace",
-        }}>
-          {time.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" }).toUpperCase()}
+        <div className="text-[9px] font-mono tracking-widest text-slate-600 mt-1">
+          {time.toLocaleDateString([], { weekday:"short", day:"numeric", month:"short" }).toUpperCase()}
         </div>
       </div>
 
-      {/* System stats */}
-      <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid rgba(148,163,184,0.06)" }}>
-        <div style={{
-          fontSize: 8, letterSpacing: "0.2em", color: "#1e3a5f",
-          fontFamily: "'JetBrains Mono', monospace", marginBottom: 12,
-        }}>SYSTEM</div>
-        <StatBar label="CPU"  value={cpu} />
-        <StatBar label="RAM"  value={ram} />
+      <div className="mb-4 pb-4 border-b border-white/5">
+        <div className="text-[8px] font-mono tracking-widest text-slate-600 mb-3">SYSTEM</div>
+        <StatBar label="CPU"  value={cpu}  />
+        <StatBar label="RAM"  value={ram}  />
         <StatBar label="DISK" value={disk} />
       </div>
 
-      {/* Services */}
-      <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid rgba(148,163,184,0.06)" }}>
-        <div style={{
-          fontSize: 8, letterSpacing: "0.2em", color: "#1e3a5f",
-          fontFamily: "'JetBrains Mono', monospace", marginBottom: 12,
-        }}>SERVICES</div>
+      <div className="mb-4 pb-4 border-b border-white/5">
+        <div className="text-[8px] font-mono tracking-widest text-slate-600 mb-3">SERVICES</div>
         {services.map(({ name, ok }) => (
-          <div key={name} style={{
-            display: "flex", justifyContent: "space-between", alignItems: "center",
-            marginBottom: 8,
-          }}>
-            <span style={{ fontSize: 10, color: "#2a4a6a", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.05em" }}>
-              {name}
-            </span>
-            <div style={{
-              width: 6, height: 6, borderRadius: "50%",
-              background: ok ? "#34d399" : "#475569",
-              boxShadow: ok ? "0 0 6px #34d39966" : "none",
-              transition: "all 0.3s",
-            }} />
+          <div key={name} className="flex justify-between items-center mb-2">
+            <span className="text-[10px] font-mono text-slate-600">{name}</span>
+            <div className={`w-1.5 h-1.5 rounded-full transition-all duration-300
+              ${ok ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" : "bg-slate-600"}`} />
           </div>
         ))}
       </div>
 
-      {/* Models */}
-      <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid rgba(148,163,184,0.06)" }}>
-        <div style={{
-          fontSize: 8, letterSpacing: "0.2em", color: "#1e3a5f",
-          fontFamily: "'JetBrains Mono', monospace", marginBottom: 12,
-        }}>MODELS</div>
+      <div className="mb-4 pb-4 border-b border-white/5">
+        <div className="text-[8px] font-mono tracking-widest text-slate-600 mb-3">MODELS</div>
         {(models || ["phi3:mini"]).map(m => {
           const active = m === currentModel;
           return (
-            <div key={m} onClick={() => onSwitchModel?.(m)} style={{
-              padding: "6px 9px", marginBottom: 4, borderRadius: 6,
-              fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.05em",
-              cursor: "pointer",
-              background: active ? "rgba(56,189,248,0.1)" : "transparent",
-              color: active ? "#38bdf8" : "#2a4a6a",
-              border: `1px solid ${active ? "rgba(56,189,248,0.2)" : "transparent"}`,
-              transition: "all 0.18s ease",
-            }}>
+            <div key={m} onClick={() => onSwitchModel?.(m)}
+              className={`px-2 py-1.5 mb-1 rounded-md text-[9px] font-mono tracking-wider cursor-pointer
+                transition-all duration-200
+                ${active
+                  ? "bg-sky-400/10 text-sky-400 border border-sky-400/20"
+                  : "text-slate-600 hover:text-slate-400 border border-transparent"}`}>
               {m.toUpperCase()}
             </div>
           );
         })}
       </div>
 
-      {/* Memory core */}
       <div>
-        <div style={{
-          fontSize: 8, letterSpacing: "0.2em", color: "#1e3a5f",
-          fontFamily: "'JetBrains Mono', monospace", marginBottom: 12,
-        }}>MEMORY CORE</div>
+        <div className="text-[8px] font-mono tracking-widest text-slate-600 mb-3">MEMORY CORE</div>
         {[
-          { label: "FACTS",  val: memory?.user_facts?.length ?? 0,                              color: "#38bdf8" },
-          { label: "TASKS",  val: memory?.tasks?.filter(t => t.status === "todo").length ?? 0,  color: "#fbbf24" },
-          { label: "CONVOS", val: memory?.conversation_count ?? 0,                              color: "#34d399" },
+          { label: "FACTS",  val: memory?.user_facts?.length ?? 0,                             color: "text-sky-400"     },
+          { label: "TASKS",  val: memory?.tasks?.filter(t => t.status==="todo").length ?? 0,   color: "text-amber-400"   },
+          { label: "CONVOS", val: memory?.conversation_count ?? 0,                             color: "text-emerald-400" },
         ].map(({ label, val, color }) => (
-          <div key={label} style={{
-            display: "flex", justifyContent: "space-between", alignItems: "center",
-            marginBottom: 7,
-          }}>
-            <span style={{ fontSize: 10, color: "#2a4a6a", fontFamily: "'JetBrains Mono', monospace" }}>
-              {label}
-            </span>
-            <span style={{
-              fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-              color, fontWeight: 500,
-            }}>{val}</span>
+          <div key={label} className="flex justify-between items-center mb-2">
+            <span className="text-[10px] font-mono text-slate-600">{label}</span>
+            <span className={`text-[11px] font-mono font-medium ${color}`}>{val}</span>
           </div>
         ))}
       </div>
     </div>
   );
 }
-
-// ── Message bubble ────────────────────────────────────────────────────────────
-
-export { SystemSidebar };

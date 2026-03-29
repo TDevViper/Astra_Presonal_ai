@@ -1,4 +1,6 @@
 import asyncio
+from core.llm_engine import LLMEngine as _LLMEngine
+_llm = _LLMEngine()
 import os
 # ==========================================
 # core/agent_loop.py — Autonomous Agent Loop
@@ -222,7 +224,7 @@ async def _act_llm(user_input: str, context: Dict, prior_results: str = "") -> T
         except Exception:
             alive = False
 
-        client = ollama.Client(host=GPU_HOST if alive else LOCAL_HOST)
+        # routed through LLMEngine — no direct ollama coupling
         model  = self._model_manager.select_model("reasoning") if alive else self._model_manager.select_model("fast")
 
         system = (
@@ -241,6 +243,12 @@ async def _act_llm(user_input: str, context: Dict, prior_results: str = "") -> T
                               "content": f"Previous findings:\n{prior_results}"})
 
         messages.append({"role": "user", "content": user_input})
+
+        try:
+            reply = _llm.call(messages=messages, model=model, num_predict=300)
+            return reply.strip(), 0.75
+        except Exception as e:
+            return f"LLM error: {e}", 0.0
 
         response = client.chat(
             model=model,
@@ -273,7 +281,7 @@ async def _act_reflect(user_input: str, draft_reply: str,
         except Exception:
             alive = False
 
-        client = ollama.Client(host=GPU_HOST if alive else LOCAL_HOST)
+        # routed through LLMEngine — no direct ollama coupling
         model  = self._model_manager.select_model("reasoning") if alive else self._model_manager.select_model("fast")
 
         prompt = f"""You are reviewing an AI assistant's response.
