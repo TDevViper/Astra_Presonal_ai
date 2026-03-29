@@ -73,3 +73,7 @@ backend/logs/
 backend/.coverage
 backend/logs/
 backend/memory/vector_store/ 
+
+# LanceDB vector store data
+backend/data/lancedb/
+*.lance

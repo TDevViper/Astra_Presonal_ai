@@ -1,6 +1,10 @@
-import json, os, logging, threading, re
+import json
+import os
+import logging
+import threading
+import re
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 logger   = logging.getLogger(__name__)
 _BACKEND = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
