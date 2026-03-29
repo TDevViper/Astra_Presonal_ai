@@ -143,7 +143,7 @@ class TrendTracker:
         if len(self._scores) < 3:
             return None
         scores = list(self._scores)
-        times  = list(self._times)
+        list(self._times)
         diffs  = [scores[i+1] - scores[i] for i in range(len(scores)-1)]
         avg_per_check = sum(diffs) / len(diffs)
         if avg_per_check >= 0:
@@ -197,7 +197,7 @@ def smart_message(stats: Dict, trend_summary: Dict) -> Optional[str]:
     if level == "critical":
         msg = f"🔴 System critical ({score}/100): {detail}."
         if ttc:
-            msg += f" Trending critical."
+            msg += " Trending critical."
         msg += " Auto-heal initiated."
         return msg
 

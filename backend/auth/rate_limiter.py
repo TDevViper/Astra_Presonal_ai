@@ -2,7 +2,9 @@
 Per-user rate limiting using Redis (sliding window).
 Falls back to in-memory if Redis is unavailable.
 """
-import time, logging, os
+import time
+import logging
+import os
 from collections import defaultdict, deque
 from typing import Dict
 from fastapi import HTTPException, status, Depends

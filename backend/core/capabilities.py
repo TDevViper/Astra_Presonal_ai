@@ -1,4 +1,5 @@
-import os, logging
+import os
+import logging
 logger = logging.getLogger(__name__)
 
 _DEFAULTS = {

@@ -25,7 +25,6 @@ def test_load_returns_default_when_missing(mem_file):
     import memory.memory_engine as me
     me.invalidate_memory_cache()
     load_memory = me.load_memory
-    DEFAULT_MEMORY = me.DEFAULT_MEMORY
     result = load_memory()
     assert result["user_facts"] == []
     assert result["preferences"]["name"] == "User"

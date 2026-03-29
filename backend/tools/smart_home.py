@@ -1,4 +1,5 @@
-import os, requests
+import os
+import requests
 
 HASS_URL   = os.getenv("HASS_URL",  "http://localhost:8123")
 HASS_TOKEN = os.getenv("HASS_TOKEN", "")

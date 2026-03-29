@@ -33,7 +33,7 @@ class EvalCase:
         for check in self.checks:
             try:
                 passed = check(reply)
-            except Exception as e:
+            except Exception:
                 passed = False
             results.append({"check": check.__name__, "passed": passed})
         passed_all = all(r["passed"] for r in results)

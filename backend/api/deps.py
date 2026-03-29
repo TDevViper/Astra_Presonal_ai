@@ -1,4 +1,5 @@
-import os, hmac
+import os
+import hmac
 from fastapi import Header, HTTPException
 
 async def require_api_key(x_api_key: str = Header(default="")):

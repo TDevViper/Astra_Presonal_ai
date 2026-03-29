@@ -1,10 +1,14 @@
-import logging, re, os, threading
+import logging
+import re
+import os
+import threading
 from typing import Generator, List, Dict
 import ollama
 def _cloud_fallback(prompt: str, system: str = "") -> str:
     import config as cfg
     if cfg.FALLBACK_ANTHROPIC_KEY:
-        import urllib.request, json
+        import urllib.request
+        import json
         payload = json.dumps({"model": "claude-haiku-4-5-20251001", "max_tokens": 1024,
             "system": system, "messages": [{"role": "user", "content": prompt}]}).encode()
         req = urllib.request.Request("https://api.anthropic.com/v1/messages",

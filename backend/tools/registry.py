@@ -1,3 +1,4 @@
+import importlib
 # tools/registry.py — Plugin registry for ReAct tools
 # Usage:
 #   from tools.registry import tool
@@ -9,7 +10,6 @@
 # Any file in tools/ that uses @tool is auto-loaded on first import of this module.
 
 import os
-import importlib
 import logging
 from typing import Callable
 
@@ -72,7 +72,8 @@ def _autoload():
             logger.debug(f"Autoload skipped {fname}: {e}")
 
     # Load plugins/
-    import sys, importlib.util
+    import sys
+    import importlib.util
     plugins_dir = os.path.join(os.path.dirname(tools_dir), "plugins")
     if os.path.isdir(plugins_dir):
         for fname in sorted(os.listdir(plugins_dir)):

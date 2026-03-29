@@ -1,7 +1,10 @@
 # core/adaptive_personality.py
 # Learns user's communication preferences from response logs
 # Auto-tunes system prompt weekly based on quality scores
-import json, os, logging, time
+import json
+import os
+import logging
+import time
 from typing import Dict, Optional
 
 logger       = logging.getLogger(__name__)
@@ -89,10 +92,10 @@ def maybe_refine(force: bool = False) -> Optional[str]:
             return None
 
         # Detect response length preference from ratings
-        high_rated = [l for l in logs if (l.get("rating") or l.get("h_score", 0)) >= 0.7]
+        high_rated = [l for ln in logs if (ln.get("rating") or ln.get("h_score", 0)) >= 0.7]
         if high_rated:
-            avg_words = sum(len(l.get("response","").split())
-                            for l in high_rated) / len(high_rated)
+            avg_words = sum(len(ln.get("response","").split())
+                            for ln in high_rated) / len(high_rated)
             if avg_words < 40:
                 style["response_length"] = "short"
             elif avg_words > 150:
@@ -101,8 +104,8 @@ def maybe_refine(force: bool = False) -> Optional[str]:
                 style["response_length"] = "medium"
 
         # Detect format preference
-        bullet_count = sum(1 for l in high_rated
-                           if "•" in l.get("response","") or "- " in l.get("response",""))
+        bullet_count = sum(1 for ln in high_rated
+                           if "•" in ln.get("response","") or "- " in ln.get("response",""))
         if bullet_count > len(high_rated) * 0.6:
             style["format_preference"] = "bullets"
         else:

@@ -84,7 +84,7 @@ def capture_camera(camera_index: int = 1, save_path: Optional[str] = None) -> Op
         # Encode to base64
         _, buffer = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 60])
         encoded = base64.b64encode(buffer).decode("utf-8")
-        logger.info(f"📷 Camera frame captured")
+        logger.info("📷 Camera frame captured")
         return encoded
 
     except Exception as e:

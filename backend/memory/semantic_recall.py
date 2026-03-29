@@ -45,7 +45,7 @@ def build_semantic_context(query: str, user_name: str = "user") -> Tuple[str, fl
 
     # ── Exchanges as supporting context (lower priority) ─────
     if exchanges:
-        lines.append(f"\nRecent relevant context:")
+        lines.append("\nRecent relevant context:")
         for hit in exchanges[:2]:
             lines.append(f"- {hit['text'][:120]}")
             logger.info(

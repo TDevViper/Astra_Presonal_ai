@@ -2,7 +2,10 @@
 Per-user usage tracking.
 Logs every request: endpoint, tokens, response time, status.
 """
-import sqlite3, os, time, logging
+import sqlite3
+import os
+import time
+import logging
 from typing import Dict, List, Optional
 from datetime import datetime, timezone
 

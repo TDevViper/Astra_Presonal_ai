@@ -23,28 +23,36 @@ def classify_intent(text: str) -> str:
 def _load_logs() -> List[Dict]:
     try:
         if os.path.exists(LOG_FILE):
-            with open(LOG_FILE) as f: return json.load(f)
-    except Exception: pass
+            with open(LOG_FILE) as f:
+                return json.load(f)
+    except Exception:
+        pass
     return []
 
 def _save_logs(logs):
     try:
         os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
-        with open(LOG_FILE, "w") as f: json.dump(logs[-MAX_LOGS:], f, indent=2)
-    except Exception: pass
+        with open(LOG_FILE, "w") as f:
+            json.dump(logs[-MAX_LOGS:], f, indent=2)
+    except Exception:
+        pass
 
 def _load_tips() -> Dict:
     try:
         if os.path.exists(TIPS_FILE):
-            with open(TIPS_FILE) as f: return json.load(f)
-    except Exception: pass
+            with open(TIPS_FILE) as f:
+                return json.load(f)
+    except Exception:
+        pass
     return {}
 
 def _save_tips(tips):
     try:
         os.makedirs(os.path.dirname(TIPS_FILE), exist_ok=True)
-        with open(TIPS_FILE, "w") as f: json.dump(tips, f, indent=2)
-    except Exception: pass
+        with open(TIPS_FILE, "w") as f:
+            json.dump(tips, f, indent=2)
+    except Exception:
+        pass
 
 
 def _score_reply(user_input: str, reply: str, intent: str) -> float:
@@ -94,7 +102,8 @@ Output ONLY: {{"score": X, "issue": "one-line issue or empty"}}"""
                     tips[intent].append(issue)
                     tips[intent] = tips[intent][-10:]
                 _save_tips(tips)
-    except Exception: pass
+    except Exception:
+        pass
 
 
 _log_counter = 0

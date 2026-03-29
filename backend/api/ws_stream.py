@@ -1,6 +1,8 @@
 # api/ws_stream.py
 # WebSocket streaming — full Brain pipeline, real-time token delivery
-import json, threading, logging
+import json
+import threading
+import logging
 from flask_sock import Sock
 
 logger = logging.getLogger(__name__)

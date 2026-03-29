@@ -492,7 +492,7 @@ export default function App() {
           {tab === "chat" && (
             <>
               {/* Messages */}
-              <div ref={chatBoxRef} style={{ flex: 1, overflowY: "auto", minHeight: 0, padding: "24px 28px", background: theme.chatBg, transition: "background 0.6s ease" }}>
+              <div ref={chatBoxRef} style={{ flex: 1, overflowY: "auto", minHeight: 0, padding: "24px 28px 140px 28px", background: theme.chatBg, transition: "background 0.6s ease" }}>
                 {messages.length === 0 && (
                   <div style={{
                     height: "100%", display: "flex", flexDirection: "column",
@@ -554,87 +554,108 @@ export default function App() {
                 <div ref={bottomRef} />
               </div>
 
-              {/* Input bar */}
+              {/* Dynamic 3D Island Input */}
               <div style={{
-                padding: "14px 24px 18px",
-                background: "rgba(6,13,26,0.6)",
-                backdropFilter: "blur(24px)",
-                borderTop: "1px solid rgba(148,163,184,0.06)",
+                position: "absolute", bottom: 28, left: "50%", transform: "translateX(-50%)",
+                width: "100%", maxWidth: "840px", padding: "0 24px",
+                zIndex: 50,
               }}>
                 <div style={{
-                  display: "flex", alignItems: "center", gap: 12,
-                  background: "rgba(4,12,24,0.9)",
-                  border: `1px solid ${loading ? accent + "30" : "#0d1f33"}`,
-                  borderRadius: 14,
-                  padding: "10px 14px",
-                  transition: "border-color 0.3s ease",
-                  boxShadow: loading ? `0 0 20px ${accent}10` : "none",
-                }}>
-                  {/* Accent line */}
-                  <div style={{
-                    width: 2, height: 22, borderRadius: 2,
-                    background: loading
-                      ? `linear-gradient(to bottom, ${accent}, ${accent}44)`
-                      : "#1e3a5f",
-                    transition: "background 0.3s ease",
-                    flexShrink: 0,
-                  }} />
+                  display: "flex", flexDirection: "column", gap: 10,
+                  background: "rgba(10,15,25,0.75)",
+                  backdropFilter: "blur(32px)",
+                  WebkitBackdropFilter: "blur(32px)",
+                  borderTop: "1px solid rgba(255,255,255,0.15)",
+                  borderLeft: "1px solid rgba(255,255,255,0.05)",
+                  borderBottom: "1px solid rgba(0,0,0,0.8)",
+                  borderRight: "1px solid rgba(0,0,0,0.8)",
+                  borderRadius: 24,
+                  padding: "12px 16px",
+                  transition: "all 0.4s cubic-bezier(0.16,1,0.3,1)",
+                  boxShadow: `0 20px 40px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1), ${loading ? `0 0 40px ${accent}30` : '0 0 0 transparent'}`,
+                }}
+                onFocus={(e) => { e.currentTarget.style.boxShadow = `0 20px 40px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1), 0 0 30px ${accent}25, inset 0 0 20px ${accent}10`; e.currentTarget.style.borderColor = `${accent}50`; }}
+                onBlur={(e) => { e.currentTarget.style.boxShadow = `0 20px 40px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1), ${loading ? `0 0 40px ${accent}30` : '0 0 0 transparent'}`; e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    {/* Glowing input accent dot */}
+                    <div style={{
+                      width: 10, height: 10, borderRadius: "50%",
+                      background: loading ? accent : "#1e3a5f",
+                      boxShadow: loading ? `0 0 16px ${accent}, inset 0 2px 4px rgba(255,255,255,0.5)` : "inset 0 2px 4px rgba(0,0,0,0.6)",
+                      border: `1px solid ${loading ? 'transparent' : 'rgba(255,255,255,0.1)'}`,
+                      transition: "all 0.3s ease",
+                      flexShrink: 0,
+                    }} />
 
-                  <textarea
-                    ref={inputRef}
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    onKeyDown={onKey}
-                    placeholder="Speak to ASTRA..."
-                    rows={1}
-                    style={{
-                      flex: 1, background: "transparent", border: "none",
-                      color: "rgba(226,232,240,0.9)", fontSize: 14,
-                      resize: "none", fontFamily: "'Space Grotesk', sans-serif",
-                      lineHeight: 1.5, minHeight: 24, maxHeight: 120, padding: 0,
-                    }}
-                  />
+                    <textarea
+                      ref={inputRef}
+                      value={input}
+                      onChange={e => setInput(e.target.value)}
+                      onKeyDown={onKey}
+                      placeholder="Message ASTRA..."
+                      rows={1}
+                      style={{
+                        flex: 1, background: "transparent", border: "none",
+                        color: "rgba(255,255,255,0.9)", fontSize: 15,
+                        resize: "none", fontFamily: "'Space Grotesk', sans-serif",
+                        lineHeight: 1.5, minHeight: 24, maxHeight: 160, padding: "4px 0",
+                      }}
+                    />
 
-                  {/* Stream toggle */}
-                  <button onClick={() => setUseStream(s => !s)} style={{
-                    fontSize: 9, fontFamily: "'JetBrains Mono', monospace",
-                    letterSpacing: "0.1em", padding: "4px 8px", borderRadius: 6,
-                    background: useStream ? `${accent}18` : "transparent",
-                    border: `1px solid ${useStream ? accent + "40" : "#0d1f33"}`,
-                    color: useStream ? accent : "#1e3a5f",
-                    transition: "all 0.18s",
-                  }}>
-                    {useStream ? "STREAM" : "STATIC"}
-                  </button>
+                    {/* Controls */}
+                    <div style={{display: "flex", gap: 8, alignItems: "center"}}>
+                      <button onClick={() => setUseStream(s => !s)} title="Toggle Stream" style={{
+                        fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
+                        letterSpacing: "0.1em", padding: "6px 12px", borderRadius: 10,
+                        background: useStream ? `linear-gradient(to bottom, ${accent}30, ${accent}10)` : "rgba(0,0,0,0.4)",
+                        borderTop: `1px solid ${useStream ? accent + "60" : "rgba(255,255,255,0.1)"}`,
+                        borderBottom: "1px solid rgba(0,0,0,0.6)",
+                        borderLeft: `1px solid ${useStream ? accent + "40" : "transparent"}`,
+                        borderRight: `1px solid ${useStream ? accent + "40" : "transparent"}`,
+                        color: useStream ? accent : "#64748b",
+                        boxShadow: useStream ? `inset 0 1px 2px rgba(255,255,255,0.2), 0 4px 10px rgba(0,0,0,0.3)` : "inset 0 2px 4px rgba(0,0,0,0.4)",
+                        transition: "all 0.2s transform active:scale-95",
+                      }}>
+                        SSE
+                      </button>
 
-                  {streaming ? (
-                    <button onClick={stopStream} style={{
-                      padding: "7px 16px", borderRadius: 8, fontSize: 11,
-                      fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em",
-                      background: "rgba(248,113,113,0.12)",
-                      border: "1px solid rgba(248,113,113,0.25)",
-                      color: "#f87171",
-                    }}>STOP</button>
-                  ) : (
-                    <button onClick={send} disabled={!input.trim() || loading} style={{
-                      padding: "7px 18px", borderRadius: 8, fontSize: 11,
-                      fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em",
-                      background: input.trim() ? `${accent}18` : "rgba(148,163,184,0.05)",
-                      border: `1px solid ${input.trim() ? accent + "40" : "#0d1f33"}`,
-                      color: input.trim() ? accent : "#1e3a5f",
-                      transition: "all 0.18s ease",
-                    }}>SEND</button>
+                      {streaming ? (
+                        <button onClick={stopStream} style={{
+                          padding: "8px 20px", borderRadius: 12, fontSize: 11, fontWeight: "bold",
+                          fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em",
+                          background: "linear-gradient(to bottom, #ef4444, #b91c1c)",
+                          borderTop: "1px solid #fca5a5", borderBottom: "1px solid #7f1d1d",
+                          color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.6)",
+                          boxShadow: "0 6px 16px rgba(239, 68, 68, 0.4), inset 0 1px 2px rgba(255,255,255,0.3)",
+                          cursor: "pointer", transition: "transform 0.1s active:scale-95"
+                        }}>STOP</button>
+                      ) : (
+                        <button onClick={send} disabled={!input.trim() || loading} style={{
+                          padding: "8px 22px", borderRadius: 12, fontSize: 11, fontWeight: "bold",
+                          fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em",
+                          background: (input.trim() && !loading) ? `linear-gradient(to bottom, ${accent}, ${accent}b0)` : "linear-gradient(to bottom, #1e293b, #0f172a)",
+                          borderTop: `1px solid ${(input.trim() && !loading) ? "#ffffff60" : "rgba(255,255,255,0.1)"}`, 
+                          borderBottom: "1px solid rgba(0,0,0,0.8)",
+                          color: (input.trim() && !loading) ? "#fff" : "#475569",
+                          textShadow: (input.trim() && !loading) ? "0 1px 2px rgba(0,0,0,0.6)" : "none",
+                          boxShadow: (input.trim() && !loading) ? `0 6px 16px ${accent}60, inset 0 1px 2px rgba(255,255,255,0.4)` : "inset 0 2px 4px rgba(0,0,0,0.4)",
+                          transition: "all 0.2s ease cursor-pointer active:scale-95",
+                          cursor: (input.trim() && !loading) ? "pointer" : "not-allowed"
+                        }}>SEND</button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Subtle island hint */}
+                  {(!input.trim() && !loading) && (
+                    <div style={{
+                      textAlign: "center", fontSize: 9, fontFamily: "'JetBrains Mono', monospace",
+                      color: "#475569", letterSpacing: "0.15em", marginTop: -2, paddingBottom: 2
+                    }}>
+                      {currentMode.toUpperCase()} MODE · {currentModel.toUpperCase()}
+                    </div>
                   )}
-                </div>
-
-                <div style={{
-                  display: "flex", justifyContent: "space-between",
-                  marginTop: 7, paddingLeft: 4,
-                  fontSize: 9, fontFamily: "'JetBrains Mono', monospace",
-                  color: "#0f2040", letterSpacing: "0.08em",
-                }}>
-                  <span>↵ ENTER to send · ⇧ENTER newline</span>
-                  <span>{currentMode.toUpperCase()} MODE · {currentModel.toUpperCase()}</span>
                 </div>
               </div>
             </>

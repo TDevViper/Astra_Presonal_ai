@@ -58,7 +58,9 @@ class RequestTrace:
         }
 
 
-import json, os, collections
+import json
+import os
+import collections
 
 _TRACE_FILE = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),

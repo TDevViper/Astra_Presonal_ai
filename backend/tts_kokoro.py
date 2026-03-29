@@ -1,5 +1,7 @@
 import platform
-import threading, os, sys
+import threading
+import os
+import sys
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -10,7 +12,9 @@ _VOICES = os.path.join(_BASE, "voices")
 # region agent log
 def _dbg(hypothesis_id: str, message: str, data: dict):
     try:
-        import time, json, urllib.request
+        import time
+        import json
+        import urllib.request
         payload = {
             "sessionId": "4c1d8e",
             "runId": "kokoro-403-debug",

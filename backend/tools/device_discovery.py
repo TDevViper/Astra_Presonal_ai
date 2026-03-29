@@ -1,4 +1,7 @@
-import socket, threading, subprocess, asyncio
+import socket
+import threading
+import subprocess
+import asyncio
 from zeroconf import Zeroconf, ServiceBrowser
 from bleak import BleakScanner
 

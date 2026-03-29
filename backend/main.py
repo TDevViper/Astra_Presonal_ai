@@ -1,4 +1,6 @@
-import os, logging, sys
+import os
+import logging
+import sys
 from contextlib import asynccontextmanager
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -44,7 +46,8 @@ async def lifespan(app: FastAPI):
         from api.ws_stream import broadcast as _ws_broadcast
     except Exception as e:
         logging.warning("WebSocket broadcast unavailable: %s", e)
-        _ws_broadcast = lambda msg: None
+        def _ws_broadcast(msg):
+            return None
 
     # Eager Brain init — eliminates 8-15s first-request latency (P-1)
     try:

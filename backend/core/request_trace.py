@@ -1,7 +1,10 @@
 # core/request_trace.py
 # Request tracing — one UUID per query, logged at every pipeline step
 # grep any request_id across all logs to trace a slow/broken query
-import uuid, logging, time, threading
+import uuid
+import logging
+import time
+import threading
 from typing import Optional
 
 logger = logging.getLogger(__name__)

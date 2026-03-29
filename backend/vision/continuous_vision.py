@@ -1,4 +1,5 @@
-import threading, time
+import threading
+import time
 
 class ContinuousVision:
     def __init__(self, broadcast_fn, get_frame_fn, interval=8):

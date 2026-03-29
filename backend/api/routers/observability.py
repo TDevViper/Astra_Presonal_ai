@@ -28,5 +28,5 @@ async def self_improve_report():
             "report":      generate_report(),
             "weak_spots":  analyze_weak_spots(),
         }
-    except Exception as e:
+    except Exception:
         raise
