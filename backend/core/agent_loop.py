@@ -1,3 +1,4 @@
+import asyncio
 import os
 # ==========================================
 # core/agent_loop.py — Autonomous Agent Loop
@@ -136,7 +137,7 @@ def _plan(observation: Dict) -> List[Dict]:
 # ACT — execute one plan step
 # ══════════════════════════════════════════
 
-def _act(step: Dict, user_input: str, context: Dict,
+async def _act(step: Dict, user_input: str, context: Dict,
          previous_results: List[str]) -> Tuple[str, float]:
     """
     Execute a single plan step.
@@ -169,7 +170,7 @@ def _act(step: Dict, user_input: str, context: Dict,
         return "", 0.0
 
 
-def _act_memory(user_input: str, context: Dict) -> Tuple[str, float]:
+async def _act_memory(user_input: str, context: Dict) -> Tuple[str, float]:
     try:
         from memory.memory_recall import memory_recall
         from memory.memory_engine import load_memory
@@ -190,7 +191,7 @@ def _act_memory(user_input: str, context: Dict) -> Tuple[str, float]:
         return "", 0.0
 
 
-def _act_tool(user_input: str, context: Dict) -> Tuple[str, float]:
+async def _act_tool(user_input: str, context: Dict) -> Tuple[str, float]:
     try:
         from tools.tool_router import detect_tool
         from core.orchestrator import _run_tool
@@ -208,7 +209,7 @@ def _act_tool(user_input: str, context: Dict) -> Tuple[str, float]:
         return "", 0.0
 
 
-def _act_llm(user_input: str, context: Dict, prior_results: str = "") -> Tuple[str, float]:
+async def _act_llm(user_input: str, context: Dict, prior_results: str = "") -> Tuple[str, float]:
     try:
         import ollama
         import requests
@@ -254,7 +255,7 @@ def _act_llm(user_input: str, context: Dict, prior_results: str = "") -> Tuple[s
         return "", 0.0
 
 
-def _act_reflect(user_input: str, draft_reply: str,
+async def _act_reflect(user_input: str, draft_reply: str,
                  context: Dict) -> Tuple[str, float]:
     """
     Critic pass — check if the draft reply actually answers the question.
