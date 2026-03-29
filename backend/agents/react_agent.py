@@ -66,21 +66,11 @@ def _execute_tool(tool_name: str, arg: str, user_name: str = "User") -> str:
             import os
             if os.getenv("ALLOW_CODE_EXECUTION", "false").lower() != "true":
                 return "Code execution is disabled. Set ALLOW_CODE_EXECUTION=true in .env to enable."
-            import subprocess, sys, tempfile, resource
-            # Write to temp file instead of -c to avoid shell injection
-            with tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False) as tmp:
-                tmp.write(arg)
-                tmp_path = tmp.name
-            try:
-                result = subprocess.run(
-                    [sys.executable, tmp_path],
-                    capture_output=True, text=True, timeout=10,
-                    cwd=tempfile.gettempdir()  # restrict working dir
-                )
-                out = result.stdout.strip() or result.stderr.strip()
-                return out[:800] if out else "(no output)"
-            finally:
-                os.unlink(tmp_path)
+            from tools.python_sandbox import run_code as _sandbox_run
+            result = _sandbox_run(arg)
+            if result.get("error"):
+                return f"Sandbox error: {result['error']}"
+            return (result.get("output") or "(no output)")[:800]
         elif tool_name == "memory_recall":
             from memory.vector_store import semantic_search
             facts, exchanges = semantic_search(arg, top_k=3)

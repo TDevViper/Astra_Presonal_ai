@@ -29,7 +29,18 @@ ROOT_COMMANDS = {"sudo", "su "}
 BLOCKED = {"rm -rf /", "rm -rf ~", ":(){ :|:& };:", "mkfs", "dd if="}
 
 
+# Shell metacharacters that enable chaining / injection
+_SHELL_METACHAR = frozenset([';', '&&', '||', '`', '$(', '|'])
+
+def _has_shell_injection(cmd: str) -> bool:
+    for ch in _SHELL_METACHAR:
+        if ch in cmd:
+            return True
+    return False
+
 def classify_command(cmd: str) -> str:
+    if _has_shell_injection(cmd):
+        return "dangerous"  # piped/chained commands always elevated
     """Returns: safe | elevated | root | blocked"""
     c = cmd.strip().lower()
     if any(b in c for b in BLOCKED):

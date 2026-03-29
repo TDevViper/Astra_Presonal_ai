@@ -1,94 +1,59 @@
 import React from "react";
-import { StreamCursor } from "./Atoms";
 
-function Message({ msg, isStreaming, accent, theme }) {
-  theme = theme || MODE_THEMES.jarvis;
+function StreamCursor() {
+  return (
+    <span className="inline-block w-0.5 h-[1em] bg-sky-400 ml-0.5 align-middle
+      animate-[blink_0.65s_steps(1)_infinite] rounded-sm" />
+  );
+}
+
+export function Message({ msg, isStreaming, accent, theme }) {
   const isUser = msg.role === "user";
-  const iColor = intentColor(msg.intent);
 
   return (
-    <div style={{
-      display: "flex",
-      flexDirection: isUser ? "row-reverse" : "row",
-      gap: 12, marginBottom: 20,
-      alignItems: "flex-start",
-      animation: "fadeSlideUp 0.25s ease forwards",
-    }}>
-      {/* Avatar */}
-      {!isUser
-        ? <AstraOrb active={isStreaming} accent={accent} size={34} />
-        : (
-          <div style={{
-            width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
-            background: "#0a1628",
-            border: "1.5px solid rgba(148,163,184,0.12)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 12, color: "#4a6fa5",
-            fontFamily: "'JetBrains Mono', monospace",
-          }}>U</div>
-        )
-      }
+    <div className={`flex gap-3 mb-5 items-start animate-[fadeSlideUp_0.25s_ease_forwards]
+      ${isUser ? "flex-row-reverse" : "flex-row"}`}>
 
-      <div style={{ maxWidth: "68%", minWidth: 60 }}>
-        {/* Bubble */}
-        <div style={{
-          padding: "13px 17px",
-          background: isUser
-            ? (theme?.userBubble  || "#0d1e35")
-            : (theme?.astraBubble || "#080f1c"),
-          border: isUser
-            ? "1px solid rgba(56,189,248,0.14)"
-            : "1px solid rgba(255,255,255,0.07)",
-          borderRadius: isUser ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-          backdropFilter: "blur(16px)",
-          boxShadow: isUser
-            ? "0 4px 24px rgba(56,189,248,0.06)"
-            : "0 4px 24px rgba(0,0,0,0.25)",
-          color: "rgba(226,232,240,0.92)",
-          fontSize: 14, lineHeight: 1.7,
-          fontFamily: "'Space Grotesk', sans-serif",
-          whiteSpace: "pre-wrap", wordBreak: "break-word",
-          position: "relative", overflow: "hidden",
-        }}>
-          {/* Top sheen */}
-          <div style={{
-            position: "absolute", top: 0, left: 0, right: 0, height: 1,
-            background: isUser
-              ? "linear-gradient(90deg, transparent, rgba(56,189,248,0.25), transparent)"
-              : "linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)",
-            pointerEvents: "none",
-          }} />
+      {isUser ? (
+        <div className="w-8 h-8 rounded-full shrink-0 bg-slate-900
+          border border-white/10 flex items-center justify-center
+          text-xs text-slate-500 font-mono">U</div>
+      ) : (
+        <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center
+          text-sm font-mono font-medium border border-white/10
+          bg-gradient-to-br from-sky-500/20 to-violet-500/10"
+          style={{ color: accent, borderColor: `${accent}33`,
+            boxShadow: isStreaming ? `0 0 16px ${accent}30` : "none" }}>
+          A
+        </div>
+      )}
+
+      <div className="max-w-[68%] min-w-[60px]">
+        <div className={`px-4 py-3 backdrop-blur-xl text-sm leading-relaxed
+          text-slate-200/90 whitespace-pre-wrap break-words relative overflow-hidden
+          ${isUser
+            ? "rounded-[18px_18px_4px_18px] bg-slate-800/60 border border-white/10 shadow-lg"
+            : "rounded-[18px_18px_18px_4px] bg-black/30 border border-white/5 shadow-2xl"}`}>
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r
+            from-transparent via-white/5 to-transparent pointer-events-none" />
           {msg.content}
           {isStreaming && <StreamCursor />}
         </div>
 
-        {/* Meta row */}
         {!isUser && (msg.agent || msg.intent) && (
-          <div style={{
-            display: "flex", gap: 10, marginTop: 5, alignItems: "center",
-            paddingLeft: 4,
-          }}>
+          <div className="flex gap-2 mt-1.5 pl-1 items-center">
             {msg.agent && (
-              <span style={{
-                fontSize: 9, fontFamily: "'JetBrains Mono', monospace",
-                color: "#1e3a5f", letterSpacing: "0.08em",
-              }}>
-                {agentLabel(msg.agent)}
+              <span className="text-[9px] font-mono text-slate-700 tracking-wider">
+                {msg.agent.toUpperCase().slice(0, 10)}
               </span>
             )}
             {msg.confidence && (
-              <span style={{
-                fontSize: 9, fontFamily: "'JetBrains Mono', monospace",
-                color: "#1e3a5f",
-              }}>
+              <span className="text-[9px] font-mono text-slate-700">
                 {Math.round(msg.confidence * 100)}%
               </span>
             )}
             {msg.intent && (
-              <span style={{
-                fontSize: 9, fontFamily: "'JetBrains Mono', monospace",
-                color: iColor, opacity: 0.7, letterSpacing: "0.05em",
-              }}>
+              <span className="text-[9px] font-mono text-slate-600 tracking-wide">
                 {msg.intent.toUpperCase()}
               </span>
             )}
@@ -98,7 +63,3 @@ function Message({ msg, isStreaming, accent, theme }) {
     </div>
   );
 }
-
-// ── Mode pill ─────────────────────────────────────────────────────────────────
-
-export { Message };

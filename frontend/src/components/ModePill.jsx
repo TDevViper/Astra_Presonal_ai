@@ -1,25 +1,15 @@
 import React from "react";
 
-function ModePill({ mode, active, onClick }) {
-  const accent = modeAccent(mode.id);
+export function ModePill({ mode, active, onClick, accent }) {
   return (
-    <button onClick={onClick} title={mode.description} style={{
-      padding: "5px 12px", borderRadius: 20,
-      fontSize: 9, fontFamily: "'JetBrains Mono', monospace",
-      letterSpacing: "0.1em",
-      background: active ? `${accent}18` : "transparent",
-      border: `1px solid ${active ? accent + "44" : "#0d1f33"}`,
-      color: active ? accent : "#2a4a6a",
-      transition: "all 0.18s ease",
-      boxShadow: active ? `0 0 12px ${accent}22` : "none",
-    }}>
+    <button onClick={onClick} title={mode.description}
+      className={`px-3 py-1 rounded-full text-[9px] font-mono tracking-widest
+        transition-all duration-200 border
+        ${active
+          ? "border-current shadow-[0_0_12px_currentColor/20]"
+          : "border-transparent text-slate-600 hover:text-slate-400"}`}
+      style={active ? { color: accent, backgroundColor: `${accent}18`, borderColor: `${accent}44` } : {}}>
       {mode.emoji} {mode.name?.toUpperCase()}
     </button>
   );
 }
-
-// ══════════════════════════════════════════════════════════════════════════════
-// MAIN APP
-// ══════════════════════════════════════════════════════════════════════════════
-
-export { ModePill };
