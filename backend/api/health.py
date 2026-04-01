@@ -3,14 +3,13 @@ logger = logging.getLogger(__name__)
 import os
 import ollama
 from core.smart_guardian import get_full_stats as _smart_stats, get_trend_summary as _trend_summary
-from flask import Blueprint, jsonify
 from core.proactive import get_welcome_back, analyze_patterns
-
-health_bp   = Blueprint("health", __name__)
+from fastapi import APIRouter
+health_bp = APIRouter()
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
 
-@health_bp.route("/health", methods=["GET"])
+@health_bp.get("/health")
 def health():
     ollama_result = _check_ollama()
     status = {
@@ -45,7 +44,7 @@ def health():
     status["ollama"] = status.get("ollama", {}).get("status") == "ok"
     status["redis"]  = status.get("redis",  {}).get("status") == "ok"
     status["disk"]   = status.get("disk",   {}).get("status") in ("ok", "warning")
-    return jsonify(status), 200 if status["status"] == "ok" else 207
+    return JSONResponse(content=status, status_code=200 if status["status"] == "ok" else 207)
 
 
 def _check_ollama() -> dict:
@@ -142,11 +141,11 @@ def _check_vectors() -> dict:
         return {"status": "error", "error": str(e)}
 
 
-@health_bp.route("/health/score", methods=["GET"])
+@health_bp.get("/health/score")
 def health_score():
     try:
         stats = _smart_stats()
         stats["trend"] = _trend_summary()
-        return jsonify(stats)
+        return JSONResponse(content=stats)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}, status_code=500)
