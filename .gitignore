@@ -19,3 +19,6 @@ backend/astra_memory.db
 backend/*.onnx
 backend/*.bin
 backend/voices/
+backend/.env
+backend/.env.bak
+.env.bak
