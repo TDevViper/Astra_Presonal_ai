@@ -77,3 +77,16 @@ backend/memory/vector_store/
 # LanceDB vector store data
 backend/data/lancedb/
 *.lance
+
+# Frontend build
+frontend/dist/
+
+# Voice models
+voices/
+backend/voices/
+backend/voices.bin
+backend/kokoro-v0_19.onnx
+
+# Runtime data
+backend/ai_news.txt
+backend/data/traces.json
