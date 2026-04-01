@@ -25,7 +25,7 @@ def stats(request: Request):
 
 
 @knowledge_bp.get("/knowledge/entity/<n>")
-def entity(n):
+def entity(n, request: Request):
     try:
         depth = int(request.query_params.get("depth", 1))
         return JSONResponse(content=get_relations(n, depth=depth))
