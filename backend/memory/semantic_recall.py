@@ -10,8 +10,8 @@ from memory.vector_store import semantic_search, store_fact, store_exchange
 
 logger = logging.getLogger(__name__)
 
-CONFIDENCE_BOOST_THRESHOLD = 0.70   # Priority 4: boost confidence if hit >= this
-BOOSTED_CONFIDENCE         = 0.85
+CONFIDENCE_BOOST_THRESHOLD = 0.70  # Priority 4: boost confidence if hit >= this
+BOOSTED_CONFIDENCE = 0.85
 
 
 def build_semantic_context(query: str, user_name: str = "user") -> Tuple[str, float]:
@@ -68,7 +68,9 @@ def index_user_fact(fact_dict: Dict, user_name: str = "user") -> None:
             logger.info(f"📥 indexed_fact | text='{fact_text[:60]}'")
 
 
-def index_exchange(user_msg: str, assistant_reply: str, user_name: str = "user") -> None:
+def index_exchange(
+    user_msg: str, assistant_reply: str, user_name: str = "user"
+) -> None:
     """Index a conversation exchange — only if both sides are substantive."""
     if len(user_msg.strip()) > 20 and len(assistant_reply.strip()) > 20:
         store_exchange(user_msg, assistant_reply, user_name=user_name)

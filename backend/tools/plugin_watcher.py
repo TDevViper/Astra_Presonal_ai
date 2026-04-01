@@ -7,16 +7,16 @@ import threading
 import importlib
 import logging
 
-logger       = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 _BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PLUGINS_DIR  = os.path.join(_BACKEND_DIR, "plugins")
+PLUGINS_DIR = os.path.join(_BACKEND_DIR, "plugins")
 
-_watched: dict = {}   # filepath → mtime
+_watched: dict = {}  # filepath → mtime
 _running = False
 
 
 def _load_plugin(filepath: str) -> bool:
-    fname  = os.path.basename(filepath)
+    fname = os.path.basename(filepath)
     mod_name = f"plugins.{fname[:-3]}"
     try:
         if mod_name in __import__("sys").modules:
@@ -25,7 +25,7 @@ def _load_plugin(filepath: str) -> bool:
             logger.info("♻️  Reloaded plugin: %s", fname)
         else:
             spec = importlib.util.spec_from_file_location(mod_name, filepath)
-            mod  = importlib.util.module_from_spec(spec)
+            mod = importlib.util.module_from_spec(spec)
             __import__("sys").modules[mod_name] = mod
             spec.loader.exec_module(mod)
             logger.info("🔌 Loaded plugin: %s", fname)
@@ -74,7 +74,7 @@ After saving, ASTRA's ReAct agent can immediately use:
   Action: weather(London)
 """)
     _running = True
-    _scan()   # load existing plugins immediately
+    _scan()  # load existing plugins immediately
     t = threading.Thread(target=_watch_loop, daemon=True, name="plugin-watcher")
     t.start()
     logger.info("🔌 Plugin watcher started (dir=%s)", PLUGINS_DIR)

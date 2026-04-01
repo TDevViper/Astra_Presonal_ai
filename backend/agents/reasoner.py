@@ -7,20 +7,41 @@ logger = logging.getLogger(__name__)
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
 _DEEP_REASON_TRIGGERS = [
-    "why", "how does", "explain how", "what causes", "difference between",
-    "compare", "pros and cons", "should i", "which is better", "analyze",
-    "walk me through", "break down", "step by step", "reason", "think"
+    "why",
+    "how does",
+    "explain how",
+    "what causes",
+    "difference between",
+    "compare",
+    "pros and cons",
+    "should i",
+    "which is better",
+    "analyze",
+    "walk me through",
+    "break down",
+    "step by step",
+    "reason",
+    "think",
 ]
 _SIMPLE_TRIGGERS = [
-    "hi", "hello", "hey", "thanks", "ok", "bye",
-    "what's my name", "who am i", "tell me a joke"
+    "hi",
+    "hello",
+    "hey",
+    "thanks",
+    "ok",
+    "bye",
+    "what's my name",
+    "who am i",
+    "tell me a joke",
 ]
+
 
 def _needs_deep_reason(text: str) -> bool:
     t = text.lower()
     if any(t.startswith(s) or s == t for s in _SIMPLE_TRIGGERS):
         return False
     return any(trigger in t for trigger in _DEEP_REASON_TRIGGERS)
+
 
 def _basic_clean(text: str) -> str:
     txt = text.strip()
@@ -31,6 +52,7 @@ def _basic_clean(text: str) -> str:
         topic = txt.replace("?", "").strip()
         return f"Explain {topic} briefly."
     return txt
+
 
 def reason(user_text: str, model: str = "phi3:mini") -> str:
     if not user_text or not user_text.strip():
@@ -52,11 +74,11 @@ Rules:
 Original: {user_text}
 Rewritten:"""
     try:
-        client   = ollama.Client(host=OLLAMA_HOST)
+        client = ollama.Client(host=OLLAMA_HOST)
         response = client.chat(
             model=model,
             messages=[{"role": "user", "content": prompt}],
-            options={"temperature": 0.2, "num_predict": 120}
+            options={"temperature": 0.2, "num_predict": 120},
         )
         rewritten = response["message"]["content"].strip()
         if len(rewritten) < 5 or len(rewritten) > len(user_text) * 8:

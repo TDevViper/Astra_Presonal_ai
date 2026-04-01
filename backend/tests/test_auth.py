@@ -1,4 +1,5 @@
 """Tests for API authentication."""
+
 import os
 import sys
 import pytest
@@ -10,6 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 def app():
     from flask import Flask, jsonify
     from api.auth import require_api_key
+
     app = Flask(__name__)
     app.config["TESTING"] = True
 

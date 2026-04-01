@@ -17,12 +17,12 @@ TOOL_SCHEMAS = [
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "The search query, concise and specific"
+                        "description": "The search query, concise and specific",
                     }
                 },
-                "required": ["query"]
-            }
-        }
+                "required": ["query"],
+            },
+        },
     },
     {
         "type": "function",
@@ -35,12 +35,12 @@ TOOL_SCHEMAS = [
                     "detail": {
                         "type": "string",
                         "enum": ["summary", "full"],
-                        "description": "summary for quick stats, full for all processes"
+                        "description": "summary for quick stats, full for all processes",
                     }
                 },
-                "required": []
-            }
-        }
+                "required": [],
+            },
+        },
     },
     {
         "type": "function",
@@ -52,12 +52,12 @@ TOOL_SCHEMAS = [
                 "properties": {
                     "path": {
                         "type": "string",
-                        "description": "The file path to read, e.g. 'backend/main.py' or '~/Documents/notes.txt'"
+                        "description": "The file path to read, e.g. 'backend/main.py' or '~/Documents/notes.txt'",
                     }
                 },
-                "required": ["path"]
-            }
-        }
+                "required": ["path"],
+            },
+        },
     },
     {
         "type": "function",
@@ -70,16 +70,16 @@ TOOL_SCHEMAS = [
                     "action": {
                         "type": "string",
                         "enum": ["add", "list", "complete", "delete"],
-                        "description": "The action to perform"
+                        "description": "The action to perform",
                     },
                     "task": {
                         "type": "string",
-                        "description": "The task title or description (required for add/complete/delete)"
-                    }
+                        "description": "The task title or description (required for add/complete/delete)",
+                    },
                 },
-                "required": ["action"]
-            }
-        }
+                "required": ["action"],
+            },
+        },
     },
     {
         "type": "function",
@@ -92,12 +92,12 @@ TOOL_SCHEMAS = [
                     "operation": {
                         "type": "string",
                         "enum": ["status", "log", "branch", "diff"],
-                        "description": "The git operation to run"
+                        "description": "The git operation to run",
                     }
                 },
-                "required": ["operation"]
-            }
-        }
+                "required": ["operation"],
+            },
+        },
     },
     {
         "type": "function",
@@ -109,12 +109,12 @@ TOOL_SCHEMAS = [
                 "properties": {
                     "code": {
                         "type": "string",
-                        "description": "The Python code to execute"
+                        "description": "The Python code to execute",
                     }
                 },
-                "required": ["code"]
-            }
-        }
+                "required": ["code"],
+            },
+        },
     },
     {
         "type": "function",
@@ -126,12 +126,12 @@ TOOL_SCHEMAS = [
                 "properties": {
                     "command": {
                         "type": "string",
-                        "description": "The natural language command, e.g. 'open Spotify', 'pause music', 'volume up', 'take screenshot'"
+                        "description": "The natural language command, e.g. 'open Spotify', 'pause music', 'volume up', 'take screenshot'",
                     }
                 },
-                "required": ["command"]
-            }
-        }
+                "required": ["command"],
+            },
+        },
     },
     {
         "type": "function",
@@ -144,21 +144,22 @@ TOOL_SCHEMAS = [
                     "action": {
                         "type": "string",
                         "enum": ["turn_on", "turn_off", "lock", "unlock", "status"],
-                        "description": "The action to perform"
+                        "description": "The action to perform",
                     },
                     "device": {
                         "type": "string",
-                        "description": "The device or room name, e.g. 'bedroom light', 'front door'"
-                    }
+                        "description": "The device or room name, e.g. 'bedroom light', 'front door'",
+                    },
                 },
-                "required": ["action", "device"]
-            }
-        }
+                "required": ["action", "device"],
+            },
+        },
     },
 ]
 
 # Quick lookup: tool name → schema
 TOOL_SCHEMA_MAP = {s["function"]["name"]: s for s in TOOL_SCHEMAS}
+
 
 def get_schemas_for_model(model: str) -> list:
     """
@@ -166,8 +167,16 @@ def get_schemas_for_model(model: str) -> list:
     Return schemas only for models that do.
     Tool-call capable models as of 2025: llama3.x, mistral, phi3.5+, qwen2+
     """
-    TOOL_CAPABLE = {"llama3", "mistral", "qwen2", "phi3.5", "phi4",
-                    "command-r", "granite", "nemotron"}
+    TOOL_CAPABLE = {
+        "llama3",
+        "mistral",
+        "qwen2",
+        "phi3.5",
+        "phi4",
+        "command-r",
+        "granite",
+        "nemotron",
+    }
     model_lower = model.lower()
     if any(cap in model_lower for cap in TOOL_CAPABLE):
         return TOOL_SCHEMAS

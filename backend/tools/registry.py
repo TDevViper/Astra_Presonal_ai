@@ -15,15 +15,17 @@ from typing import Callable
 
 logger = logging.getLogger(__name__)
 
-_REGISTRY: dict[str, dict] = {}   # name → {fn, description}
+_REGISTRY: dict[str, dict] = {}  # name → {fn, description}
 
 
 def tool(name: str, description: str = ""):
     """Decorator that registers a function as a ReAct tool."""
+
     def decorator(fn: Callable):
         _REGISTRY[name.lower()] = {"fn": fn, "description": description}
         logger.debug(f"Tool registered: {name}")
         return fn
+
     return decorator
 
 
@@ -74,17 +76,18 @@ def _autoload():
     # Load plugins/
     import sys
     import importlib.util as _ilib_util
+
     plugins_dir = os.path.join(os.path.dirname(tools_dir), "plugins")
     if os.path.isdir(plugins_dir):
         for fname in sorted(os.listdir(plugins_dir)):
             if fname.startswith("_") or not fname.endswith(".py"):
                 continue
-            fpath    = os.path.join(plugins_dir, fname)
+            fpath = os.path.join(plugins_dir, fname)
             mod_name = f"plugins.{fname[:-3]}"
             try:
                 if mod_name not in sys.modules:
                     spec = _ilib_util.spec_from_file_location(mod_name, fpath)
-                    mod  = _ilib_util.module_from_spec(spec)
+                    mod = _ilib_util.module_from_spec(spec)
                     sys.modules[mod_name] = mod
                     spec.loader.exec_module(mod)
                     logger.info(f"Plugin loaded: {fname}")

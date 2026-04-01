@@ -1,4 +1,5 @@
 """Tests for TruthGuard — hallucination and identity protection."""
+
 import os
 import sys
 import pytest
@@ -14,6 +15,7 @@ def guard():
 
 
 # ── Static forbidden patterns ─────────────────────────────────
+
 
 def test_blocks_created_by_anthropic(guard):
     ok, vtype = guard.validate("I was created by Anthropic.")
@@ -52,6 +54,7 @@ def test_allows_correct_identity(guard):
 
 # ── Location guard ────────────────────────────────────────────
 
+
 def test_blocks_wrong_location(guard):
     ok, vtype = guard.validate("You live in Mumbai.")
     assert ok is False
@@ -71,6 +74,7 @@ def test_no_location_guard_when_location_unknown():
 
 # ── Name hallucination guard ──────────────────────────────────
 
+
 def test_blocks_name_hallucination(guard):
     ok, vtype = guard.validate("I don't know your name.")
     assert ok is False
@@ -84,6 +88,7 @@ def test_blocks_user_name_hallucination(guard):
 
 
 # ── update_user_info ──────────────────────────────────────────
+
 
 def test_update_user_info_changes_location_guard():
     g = TruthGuard(user_name="Arnav", user_location="Delhi")
@@ -101,6 +106,7 @@ def test_update_user_info_name():
 
 # ── Safe reply ────────────────────────────────────────────────
 
+
 def test_safe_reply_wrong_creator_mentions_user(guard):
     reply = guard.get_safe_reply("wrong_creator")
     assert "ASTRA" in reply
@@ -117,6 +123,7 @@ def test_safe_reply_unknown_violation_returns_default(guard):
 
 
 # ── Case insensitivity ────────────────────────────────────────
+
 
 def test_validation_is_case_insensitive(guard):
     ok, vtype = guard.validate("I WAS CREATED BY ANTHROPIC.")

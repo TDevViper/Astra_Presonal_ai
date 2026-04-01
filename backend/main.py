@@ -2,9 +2,11 @@ import os
 import logging
 import sys
 from contextlib import asynccontextmanager
+
 sys.path.insert(0, os.path.dirname(__file__))
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 from fastapi import FastAPI
@@ -20,13 +22,17 @@ from utils.telemetry import init_telemetry, instrument_fastapi
 from config import config
 
 logging.basicConfig(level=logging.INFO)
+
+
 def _api_key_or_ip(request):
     """Key rate limiter on API key if present, fall back to IP."""
     return request.headers.get("X-API-Key") or get_remote_address(request)
 
+
 limiter = Limiter(key_func=_api_key_or_ip, default_limits=["120/minute"])
 init_request_id_logging()
 init_telemetry()
+
 
 def _validate_startup():
     if not os.getenv("JWT_SECRET_KEY"):
@@ -35,6 +41,7 @@ def _validate_startup():
         logging.warning("STARTUP WARNING: ASTRA_API_KEY not set")
     if not os.getenv("OLLAMA_HOST") and not os.getenv("DEFAULT_MODEL"):
         logging.warning("STARTUP WARNING: OLLAMA_HOST not set")
+
 
 _validate_startup()
 
@@ -48,6 +55,7 @@ async def lifespan(app: FastAPI):
         from api.ws_stream import broadcast as _ws_broadcast
     except Exception as e:
         logging.warning("WebSocket broadcast unavailable: %s", e)
+
         def _ws_broadcast(msg):
             return None
 
@@ -55,6 +63,7 @@ async def lifespan(app: FastAPI):
     try:
         from core.brain_singleton import get_brain
         import asyncio as _asyncio
+
         loop = _asyncio.get_event_loop()
         await loop.run_in_executor(None, get_brain)
         logging.info("🧠 Brain pre-initialized")
@@ -62,6 +71,7 @@ async def lifespan(app: FastAPI):
         logging.warning("Brain pre-init failed: %s", e)
 
     from core.background import start_all
+
     _tasks = await start_all(_ws_broadcast)
 
     yield  # ── App is running ─────────────────────────────────────────────────
@@ -69,14 +79,17 @@ async def lifespan(app: FastAPI):
     # ── Shutdown ──────────────────────────────────────────────────────────────
     logging.info("🛑 ASTRA shutting down")
     from core.background import stop_all
+
     await stop_all(_tasks)
     try:
         from core.brain_singleton import teardown_brain
+
         teardown_brain(None)
     except Exception as e:
         logging.warning("Brain teardown: %s", e)
     try:
         from core.observability import get_store
+
         get_store().flush()
     except Exception:
         pass
@@ -98,10 +111,17 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 
 
 app.add_middleware(RequestIDMiddleware)
-app.add_middleware(CORSMiddleware,
-    allow_origins=["http://localhost:3000","http://localhost:3001",
-                   "http://localhost:5173","http://127.0.0.1:3000","http://127.0.0.1:3001"],
-    allow_methods=["*"], allow_headers=["*"],
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+    ],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 from api.routers.auth import router as auth_router
@@ -109,7 +129,17 @@ from api.routers.users import router as users_router
 from api.routers.threads import router as threads_router
 from api.routers.dashboard import router as dashboard_router
 from auth.usage_middleware import UsageMiddleware
-from api.routers import chat, chat_stream, memory, model, health, feedback, observability, execute
+from api.routers import (
+    chat,
+    chat_stream,
+    memory,
+    model,
+    health,
+    feedback,
+    observability,
+    execute,
+)
+
 app.add_middleware(UsageMiddleware)
 app.include_router(auth_router)
 app.include_router(users_router)
@@ -126,4 +156,5 @@ app.include_router(execute.router)
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("main:app", host=config.host, port=config.port, reload=config.debug)

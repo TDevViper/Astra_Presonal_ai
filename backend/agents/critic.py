@@ -6,14 +6,28 @@ logger = logging.getLogger(__name__)
 
 _MIN_REVIEW_LEN = 40
 _SKIP_INTENTS = {
-    "shortcut", "memory_storage", "calendar", "whatsapp",
-    "system_control", "git_operation", "task_management",
-    "web_search", "file_operation", "python_execution_proposal",
+    "shortcut",
+    "memory_storage",
+    "calendar",
+    "whatsapp",
+    "system_control",
+    "git_operation",
+    "task_management",
+    "web_search",
+    "file_operation",
+    "python_execution_proposal",
 }
 _FILLER_STARTERS = [
-    "sure!", "certainly!", "of course!", "great question",
-    "absolutely!", "i'd be happy to", "happy to help",
-    "i'm happy to", "of course, i", "great, let me",
+    "sure!",
+    "certainly!",
+    "of course!",
+    "great question",
+    "absolutely!",
+    "i'd be happy to",
+    "happy to help",
+    "i'm happy to",
+    "of course, i",
+    "great, let me",
 ]
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
@@ -33,7 +47,7 @@ def _fast_fix(reply: str) -> str:
         if r.lower().startswith(filler):
             idx = r.find(".")
             if 0 < idx < 80:
-                r = r[idx + 1:].strip()
+                r = r[idx + 1 :].strip()
                 break
     return r
 
@@ -52,11 +66,11 @@ Reply to review:
 
 Output ONLY the corrected reply. No commentary. No preamble. If the reply is already good, output it unchanged."""
     try:
-        client   = ollama.Client(host=OLLAMA_HOST)
+        client = ollama.Client(host=OLLAMA_HOST)
         response = client.chat(
             model=model,
             messages=[{"role": "user", "content": prompt}],
-            options={"temperature": 0.1, "num_predict": 300}
+            options={"temperature": 0.1, "num_predict": 300},
         )
         result = response["message"]["content"].strip()
         # Safety: reject if LLM returned something suspiciously short or ballooned
@@ -69,7 +83,9 @@ Output ONLY the corrected reply. No commentary. No preamble. If the reply is alr
         return _fast_fix(reply)
 
 
-def critic_review(reply, user_name, memory, user_input="", model=None, intent="general"):
+def critic_review(
+    reply, user_name, memory, user_input="", model=None, intent="general"
+):
     if not reply or len(reply.strip()) < 5:
         return reply
 

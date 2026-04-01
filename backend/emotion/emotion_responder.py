@@ -1,4 +1,4 @@
-#==========================================
+# ==========================================
 # astra_engine/emotion/emotion_responder.py
 # ==========================================
 
@@ -10,17 +10,17 @@ def choose_reply(
     emotion_label: str,
     score: float,
     user_name: str = None,
-    memory: Optional[Dict] = None
+    memory: Optional[Dict] = None,
 ) -> str:
     """
     Generate empathetic response based on detected emotion.
-    
+
     Args:
         emotion_label: Detected emotion
         score: Confidence score
         user_name: User's name for personalization
         memory: Memory dict for context
-        
+
     Returns:
         Empathetic response string
     """
@@ -60,7 +60,7 @@ def choose_reply(
             "Got it.",
             "Alright.",
             "I'm listening.",
-        ]
+        ],
     }
 
     # Select random response for variety
@@ -74,9 +74,9 @@ def choose_reply(
     if memory and random.random() < 0.20:
         patterns = memory.get("emotional_patterns", {})
         stats = patterns.get("emotion_stats", {})
-        
+
         emotion_count = stats.get(emotion_label, {}).get("count", 0)
-        
+
         if emotion_count > 3 and emotion_label != "neutral":
             insights = {
                 "sad": "You've been feeling down lately.",
@@ -84,7 +84,7 @@ def choose_reply(
                 "anxious": "You've been stressed quite a bit.",
                 "tired": "You've been exhausted lately.",
             }
-            
+
             if emotion_label in insights:
                 reply += f" {insights[emotion_label]}"
 

@@ -5,6 +5,7 @@ import asyncio
 from zeroconf import Zeroconf, ServiceBrowser
 from bleak import BleakScanner
 
+
 class DeviceDiscovery:
     def __init__(self):
         self.devices = {}
@@ -13,9 +14,13 @@ class DeviceDiscovery:
     def scan_mdns(self):
         ServiceBrowser(
             self.zc,
-            ["_http._tcp.local.", "_hap._tcp.local.",
-             "_googlecast._tcp.local.", "_airplay._tcp.local."],
-            handlers=[self._on_service_found]
+            [
+                "_http._tcp.local.",
+                "_hap._tcp.local.",
+                "_googlecast._tcp.local.",
+                "_airplay._tcp.local.",
+            ],
+            handlers=[self._on_service_found],
         )
 
     def _on_service_found(self, zeroconf, type, name, state_change):
@@ -32,7 +37,7 @@ class DeviceDiscovery:
                     parts = line.split()
                     if len(parts) >= 2:
                         name = parts[0]
-                        ip   = parts[1].strip("()")
+                        ip = parts[1].strip("()")
                         self.devices[name] = {"ip": ip, "protocol": "arp"}
         except Exception as e:
             print(f"[DeviceDiscovery] scan_network error: {e}")
@@ -43,7 +48,10 @@ class DeviceDiscovery:
             devices = await BleakScanner.discover()
             for d in devices:
                 if d.name:
-                    self.devices[d.name] = {"address": d.address, "protocol": "bluetooth"}
+                    self.devices[d.name] = {
+                        "address": d.address,
+                        "protocol": "bluetooth",
+                    }
         except Exception as e:
             print(f"[DeviceDiscovery] bluetooth error: {e}")
 
@@ -51,8 +59,7 @@ class DeviceDiscovery:
         self.scan_network()
         self.scan_mdns()
         threading.Thread(
-            target=lambda: asyncio.run(self._scan_bluetooth_async()),
-            daemon=True
+            target=lambda: asyncio.run(self._scan_bluetooth_async()), daemon=True
         ).start()
         return self.devices
 

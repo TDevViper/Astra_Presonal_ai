@@ -1,4 +1,5 @@
 """Tests for ResponseCache — local dict fallback (no Redis needed)."""
+
 import os
 import sys
 import time
@@ -10,15 +11,26 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 @pytest.fixture
 def cache(monkeypatch):
     monkeypatch.delenv("REDIS_HOST", raising=False)
-    monkeypatch.setenv("REDIS_URL", "redis://localhost:1")  # unreachable → local fallback
+    monkeypatch.setenv(
+        "REDIS_URL", "redis://localhost:1"
+    )  # unreachable → local fallback
     from core.response_cache import ResponseCache
+
     return ResponseCache(ttl=2)  # 2s TTL for fast expiry tests
 
 
 def _reply(text="hello", intent="general"):
-    return {"reply": text, "intent": intent, "agent": "test", "emotion": "neutral",
-            "confidence": 0.9, "tool_used": False, "memory_updated": False,
-            "confidence_label": "HIGH", "confidence_emoji": "🟢"}
+    return {
+        "reply": text,
+        "intent": intent,
+        "agent": "test",
+        "emotion": "neutral",
+        "confidence": 0.9,
+        "tool_used": False,
+        "memory_updated": False,
+        "confidence_label": "HIGH",
+        "confidence_emoji": "🟢",
+    }
 
 
 def test_cache_miss_on_empty(cache):
@@ -77,8 +89,8 @@ def test_flush_clears_all(cache):
 
 def test_stats_tracks_hits_and_misses(cache):
     cache.set("q", _reply("a"))
-    cache.get("q")       # hit
-    cache.get("missing") # miss
+    cache.get("q")  # hit
+    cache.get("missing")  # miss
     s = cache.stats()
     assert s["hits"] == 1
     assert s["misses"] == 1
@@ -89,6 +101,7 @@ def test_stats_tracks_hits_and_misses(cache):
 def test_skips_long_reply(cache, monkeypatch):
     monkeypatch.setenv("CACHE_MAX_WORDS", "5")
     from core import response_cache
+
     monkeypatch.setattr(response_cache, "_MAX_REPLY_WORDS", 5)
     long_reply = _reply("word " * 10)
     cache.set("long question", long_reply)

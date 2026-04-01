@@ -21,10 +21,9 @@ logger = logging.getLogger(__name__)
 
 
 class StructuredToolCaller:
-
     def __init__(self, model_manager, tool_executor, build_reply_fn):
-        self._mm          = model_manager
-        self._tools       = tool_executor
+        self._mm = model_manager
+        self._tools = tool_executor
         self._build_reply = build_reply_fn
 
     def try_tool_call(
@@ -42,9 +41,12 @@ class StructuredToolCaller:
         None means: fall through to normal LLM path.
         """
         from tools.tool_schemas import get_schemas_for_model
+
         schemas = get_schemas_for_model(selected_model)
         if not schemas:
-            logger.debug("Model %s doesn't support tool calling — skipping", selected_model)
+            logger.debug(
+                "Model %s doesn't support tool calling — skipping", selected_model
+            )
             return None
 
         tool_call, args = self._ask_llm_for_tool(
@@ -65,8 +67,7 @@ class StructuredToolCaller:
 
         # Send result back to LLM for natural language synthesis
         final_reply = self._synthesize_reply(
-            user_input, tool_call, tool_result,
-            system_prompt, selected_model, history
+            user_input, tool_call, tool_result, system_prompt, selected_model, history
         )
 
         reply = self._build_reply(
@@ -120,9 +121,9 @@ class StructuredToolCaller:
 
             # Take the first tool call
             first = tool_calls[0]
-            fn    = first.get("function", {})
-            name  = fn.get("name", "")
-            args  = fn.get("arguments", {})
+            fn = first.get("function", {})
+            name = fn.get("name", "")
+            args = fn.get("arguments", {})
 
             # Ollama sometimes returns args as a JSON string
             if isinstance(args, str):
@@ -155,6 +156,7 @@ class StructuredToolCaller:
 
             if tool_name == "system_monitor":
                 from tools.system_monitor import get_system_info, analyze_performance
+
                 info = get_system_info()
                 if info.get("success"):
                     return (
@@ -163,13 +165,15 @@ class StructuredToolCaller:
                         f"Disk: {info['disk']['free_gb']}GB free\n"
                         f"Top process: {info['top_processes'][0]['name']} "
                         f"({info['top_processes'][0]['cpu']}% CPU)"
-                        if info.get("top_processes") else ""
+                        if info.get("top_processes")
+                        else ""
                     )
                 return f"System monitor error: {info.get('error')}"
 
             if tool_name == "file_reader":
                 from tools.file_reader import read_file
-                path   = args.get("path", "")
+
+                path = args.get("path", "")
                 result = read_file(path)
                 if result.get("success"):
                     return f"File: {result['filepath']} ({result['lines']} lines)\n\n{result['content'][:3000]}"
@@ -177,9 +181,10 @@ class StructuredToolCaller:
 
             if tool_name == "task_manager":
                 from tools.task_manager import TaskManager
-                tm     = TaskManager(memory)
+
+                tm = TaskManager(memory)
                 action = args.get("action", "list")
-                task   = args.get("task", "")
+                task = args.get("task", "")
                 if action == "add" and task:
                     r = tm.add_task(task)
                     return r.get("message", f"Added task: {task}")
@@ -188,7 +193,7 @@ class StructuredToolCaller:
                     if r["count"] == 0:
                         return "No tasks."
                     return "\n".join(
-                        f"{'✅' if t['status']=='done' else '⏳'} {t['title']}"
+                        f"{'✅' if t['status'] == 'done' else '⏳'} {t['title']}"
                         for t in r["tasks"]
                     )
                 elif action == "complete" and task:
@@ -201,7 +206,14 @@ class StructuredToolCaller:
                 return "Task action done."
 
             if tool_name == "git":
-                from tools.git_tool import git_status, git_log, git_branch, git_diff, is_git_repo
+                from tools.git_tool import (
+                    git_status,
+                    git_log,
+                    git_branch,
+                    git_diff,
+                    is_git_repo,
+                )
+
                 if not is_git_repo():
                     return "Not in a git repository."
                 op = args.get("operation", "status")
@@ -210,9 +222,12 @@ class StructuredToolCaller:
                     if r.get("clean"):
                         return "Git repo is clean — no changes."
                     parts = []
-                    if r.get("modified"):  parts.append(f"Modified: {', '.join(r['modified'])}")
-                    if r.get("added"):     parts.append(f"Added: {', '.join(r['added'])}")
-                    if r.get("untracked"): parts.append(f"Untracked: {', '.join(r['untracked'])}")
+                    if r.get("modified"):
+                        parts.append(f"Modified: {', '.join(r['modified'])}")
+                    if r.get("added"):
+                        parts.append(f"Added: {', '.join(r['added'])}")
+                    if r.get("untracked"):
+                        parts.append(f"Untracked: {', '.join(r['untracked'])}")
                     return "\n".join(parts) or "No changes."
                 elif op == "log":
                     r = git_log(5)
@@ -229,19 +244,22 @@ class StructuredToolCaller:
 
             if tool_name == "python_sandbox":
                 from tools.python_sandbox import execute_python, _code_execution_allowed
+
                 if not _code_execution_allowed():
                     return "Code execution is disabled. Set ALLOW_CODE_EXECUTION=true to enable."
-                code   = args.get("code", "")
+                code = args.get("code", "")
                 result = execute_python(code)
                 return result.get("output", "No output.")
 
             if tool_name == "system_controller":
                 from tools.system_controller import handle_system_command
+
                 return handle_system_command(args.get("command", user_input))
 
             if tool_name == "smart_home":
                 from tools.smart_home import SmartHome
-                sh     = SmartHome()
+
+                sh = SmartHome()
                 action = args.get("action", "status")
                 device = args.get("device", "light")
                 if action == "turn_on":
@@ -268,6 +286,7 @@ class StructuredToolCaller:
     def _run_web_search(self, query: str) -> str:
         try:
             from websearch.search import serper_search, format_results_for_llm
+
             results = serper_search(query, num_results=3)
             return format_results_for_llm(results) if results else "No results found."
         except Exception as e:
@@ -302,7 +321,7 @@ class StructuredToolCaller:
 
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user",   "content": synthesis_prompt},
+            {"role": "user", "content": synthesis_prompt},
         ]
 
         try:

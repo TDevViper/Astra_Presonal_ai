@@ -12,22 +12,24 @@ multimodal_bp = Blueprint("multimodal", __name__)
 @multimodal_bp.route("/talk", methods=["POST"])
 def talk():
     try:
-        data  = request.get_json() or {}
+        data = request.get_json() or {}
         image = data.get("image")
-        text  = data.get("text", "").strip()
+        text = data.get("text", "").strip()
         speak = data.get("speak", True)
 
         # ── Step 1: Analyze image if provided ────────────────
         visual_context = ""
         if image:
             from vision.analyzer import analyze
-            vision_result  = analyze(image, mode="camera", user_context=text)
-            summary        = vision_result.get("summary", "")
+
+            vision_result = analyze(image, mode="camera", user_context=text)
+            summary = vision_result.get("summary", "")
             vision_result.get("objects_detected", [])
-            jarvis         = vision_result.get("jarvis_response", "")
+            jarvis = vision_result.get("jarvis_response", "")
             visual_context = jarvis or summary
 
         from memory.memory_engine import load_memory
+
         user_name = load_memory().get("preferences", {}).get("name", "User")
 
         # ── Step 2: Build prompt cleanly ──────────────────────
@@ -45,13 +47,14 @@ def talk():
 
         # ── Step 3: Get reply from brain ──────────────────────
         from core.brain_singleton import get_brain
+
         _brain = get_brain()
         result = _brain.process(prompt, vision_mode=True)
-        reply  = result.get("reply", "").strip()
+        reply = result.get("reply", "").strip()
         # Cap at 40 words for conversational feel
         words = reply.split()
         if len(words) > 40:
-            reply = " ".join(words[:40]) + "."  
+            reply = " ".join(words[:40]) + "."
 
         # If vision context exists and reply is generic, prepend vision observation
         if visual_context and reply and len(visual_context) > 20:
@@ -64,34 +67,44 @@ def talk():
 
         # ── Step 4: Clean reply ───────────────────────────────
         # Remove any leaked internal context
-        for marker in ["[You can see", "[ASTRA sees", "You are a real-time", "(Vision:"]:
+        for marker in [
+            "[You can see",
+            "[ASTRA sees",
+            "You are a real-time",
+            "(Vision:",
+        ]:
             if marker in reply:
-                reply = reply[:reply.index(marker)].strip()
+                reply = reply[: reply.index(marker)].strip()
 
         if not reply:
             reply = "I'm here. What do you need?"
 
         # ── Step 5: Speak ─────────────────────────────────────
         if speak and reply:
-            clean = reply.replace('"', '').replace("'", "")[:300]
+            clean = reply.replace('"', "").replace("'", "")[:300]
             try:
                 from voice.speaker import speak_async
+
                 speak_async(clean)
             except Exception:
                 import platform
+
                 if platform.system() == "Darwin":
                     subprocess.Popen(
                         ["say", "-v", "Samantha", "-r", "185", clean],
-                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
                     )
 
-        return jsonify({
-            "reply":          reply,
-            "visual_context": visual_context,
-            "agent":          result.get("agent"),
-            "emotion":        result.get("emotion"),
-            "confidence":     result.get("confidence"),
-        })
+        return jsonify(
+            {
+                "reply": reply,
+                "visual_context": visual_context,
+                "agent": result.get("agent"),
+                "emotion": result.get("emotion"),
+                "confidence": result.get("confidence"),
+            }
+        )
 
     except Exception as e:
         logger.error(f"❌ Talk error: {e}")
@@ -101,9 +114,10 @@ def talk():
 @multimodal_bp.route("/talk/listen", methods=["POST"])
 def talk_listen():
     try:
-        data     = request.get_json() or {}
+        data = request.get_json() or {}
         duration = data.get("duration", 5)
         from voice.listener import listen
+
         text = listen(duration=duration)
         return jsonify({"text": text, "heard": bool(text.strip())})
     except Exception as e:

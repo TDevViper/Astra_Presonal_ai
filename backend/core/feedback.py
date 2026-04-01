@@ -5,6 +5,7 @@ Stores thumbs up/down ratings against message IDs.
 Writes a JSONL fine-tuning dataset that can feed future model training.
 Low ratings immediately trigger deep LLM scoring.
 """
+
 import json
 import os
 import threading
@@ -12,13 +13,13 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-logger   = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 _BACKEND = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Human feedback log — one JSON object per line (JSONL)
 FEEDBACK_FILE = os.path.join(_BACKEND, "memory", "data", "feedback.jsonl")
 # Fine-tuning dataset — prompt/completion pairs with rating >= "up"
-DATASET_FILE  = os.path.join(_BACKEND, "memory", "data", "finetune_dataset.jsonl")
+DATASET_FILE = os.path.join(_BACKEND, "memory", "data", "finetune_dataset.jsonl")
 
 _lock = threading.Lock()
 
@@ -31,7 +32,7 @@ def record_feedback(
     message_id: str,
     user_input: str,
     reply: str,
-    rating: str,           # "up" or "down"
+    rating: str,  # "up" or "down"
     intent: str = "general",
     comment: str = "",
     confidence: float = 0.0,
@@ -42,14 +43,14 @@ def record_feedback(
     """
     _ensure_dirs()
     entry = {
-        "ts":          datetime.utcnow().isoformat(),
-        "message_id":  message_id,
-        "input":       user_input[:300],
-        "reply":       reply[:600],
-        "rating":      rating,
-        "intent":      intent,
-        "comment":     comment[:200],
-        "confidence":  confidence,
+        "ts": datetime.utcnow().isoformat(),
+        "message_id": message_id,
+        "input": user_input[:300],
+        "reply": reply[:600],
+        "rating": rating,
+        "intent": intent,
+        "comment": comment[:200],
+        "confidence": confidence,
     }
 
     with _lock:
@@ -65,7 +66,7 @@ def record_feedback(
         threading.Thread(
             target=_trigger_deep_score,
             args=(user_input, reply, entry["ts"]),
-            daemon=True
+            daemon=True,
         ).start()
         logger.info("👎 Feedback DOWN [%s] — deep score triggered", message_id[:8])
     else:
@@ -84,11 +85,13 @@ _pending_lock = threading.Lock()
 
 def _input_hash(user_input: str, reply: str) -> str:
     import hashlib
+
     return hashlib.sha256(f"{user_input[:200]}:{reply[:400]}".encode()).hexdigest()[:16]
 
 
-def _append_to_dataset(user_input: str, reply: str, intent: str,
-                       session_id: str = "default"):
+def _append_to_dataset(
+    user_input: str, reply: str, intent: str, session_id: str = "default"
+):
     """
     Quality-gated dataset append (E-10 fix).
     Requires _QUALITY_GATE unique sessions to approve before adding to dataset.
@@ -109,28 +112,36 @@ def _append_to_dataset(user_input: str, reply: str, intent: str,
 
     if approved_count >= _QUALITY_GATE:
         record = {
-            "ts":         datetime.utcnow().isoformat(),
-            "intent":     intent,
-            "prompt":     user_input[:300],
+            "ts": datetime.utcnow().isoformat(),
+            "intent": intent,
+            "prompt": user_input[:300],
             "completion": reply[:600],
-            "approvals":  approved_count,
+            "approvals": approved_count,
         }
         with _lock:
             with open(DATASET_FILE, "a") as f:
                 f.write(json.dumps(record) + "\n")
         with _pending_lock:
             _pending_approvals.pop(key, None)
-        logger.info("✅ Dataset entry approved (%d sessions): %s...",
-                    approved_count, user_input[:40])
+        logger.info(
+            "✅ Dataset entry approved (%d sessions): %s...",
+            approved_count,
+            user_input[:40],
+        )
     else:
-        logger.debug("⏳ Pending dataset entry (%d/%d sessions): %s...",
-                     approved_count, _QUALITY_GATE, user_input[:40])
+        logger.debug(
+            "⏳ Pending dataset entry (%d/%d sessions): %s...",
+            approved_count,
+            _QUALITY_GATE,
+            user_input[:40],
+        )
 
 
 def _trigger_deep_score(user_input: str, reply: str, ts: str):
     """Run LLM deep scoring immediately for thumbs-down responses."""
     try:
         from core.self_improve import _deep_score_async
+
         _deep_score_async(user_input, reply, ts)
     except Exception as e:
         logger.warning("Deep score failed: %s", e)
@@ -146,7 +157,7 @@ def get_stats() -> dict:
         with open(FEEDBACK_FILE) as f:
             for line in f:
                 try:
-                    entry  = json.loads(line)
+                    entry = json.loads(line)
                     intent = entry.get("intent", "general")
                     rating = entry.get("rating", "")
                     counts.setdefault(intent, {"up": 0, "down": 0})
@@ -163,11 +174,11 @@ def get_stats() -> dict:
 
     total = total_up + total_down
     return {
-        "total":      total,
-        "thumbs_up":  total_up,
+        "total": total,
+        "thumbs_up": total_up,
         "thumbs_down": total_down,
         "approval_rate": round(total_up / total * 100, 1) if total else 0,
-        "by_intent":  counts,
+        "by_intent": counts,
         "dataset_size": _count_lines(DATASET_FILE),
     }
 

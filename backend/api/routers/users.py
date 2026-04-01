@@ -4,6 +4,7 @@ User management endpoints — admin/owner only.
   PATCH  /users/{id}/role change role
   DELETE /users/{id}      deactivate user
 """
+
 import logging
 import sqlite3
 import os
@@ -36,14 +37,19 @@ def list_users(current_user=Depends(require_permission("user_manage"))):
 
 
 @router.patch("/{user_id}/role")
-def update_role(user_id: str, body: RoleUpdate,
-                current_user=Depends(require_permission("user_manage"))):
+def update_role(
+    user_id: str,
+    body: RoleUpdate,
+    current_user=Depends(require_permission("user_manage")),
+):
     if body.role not in ROLE_RANK:
         raise HTTPException(status_code=400, detail=f"Invalid role: {body.role}")
     # Prevent privilege escalation — cannot assign role higher than your own
     if ROLE_RANK[body.role] >= ROLE_RANK[current_user["role"]]:
-        raise HTTPException(status_code=403,
-                            detail="Cannot assign a role equal to or higher than your own")
+        raise HTTPException(
+            status_code=403,
+            detail="Cannot assign a role equal to or higher than your own",
+        )
     with _conn() as c:
         c.execute("UPDATE users SET role=? WHERE id=?", (body.role, user_id))
         c.commit()
@@ -51,8 +57,9 @@ def update_role(user_id: str, body: RoleUpdate,
 
 
 @router.delete("/{user_id}")
-def deactivate_user(user_id: str,
-                    current_user=Depends(require_permission("user_delete"))):
+def deactivate_user(
+    user_id: str, current_user=Depends(require_permission("user_delete"))
+):
     if user_id == current_user["id"]:
         raise HTTPException(status_code=400, detail="Cannot deactivate yourself")
     with _conn() as c:

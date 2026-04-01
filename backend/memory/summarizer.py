@@ -16,10 +16,7 @@ def should_summarize(conversation_history: List[Dict]) -> bool:
 
 
 def summarize_conversation(
-    history: List[Dict],
-    memory: Dict,
-    user_name: str,
-    model: str = "phi3:mini"
+    history: List[Dict], memory: Dict, user_name: str, model: str = "phi3:mini"
 ) -> str:
     """
     Use LLM to summarize recent conversation into 2-3 sentences.
@@ -31,10 +28,9 @@ def summarize_conversation(
 
     # Format last 10 messages
     recent = history[-10:]
-    formatted = "\n".join([
-        f"{m['role'].upper()}: {m['content'][:100]}"
-        for m in recent
-    ])
+    formatted = "\n".join(
+        [f"{m['role'].upper()}: {m['content'][:100]}" for m in recent]
+    )
 
     prompt = f"""Summarize this conversation between {user_name} and ASTRA in 2-3 sentences.
 Focus on: what {user_name} asked about, what topics were discussed, any decisions made.
@@ -48,12 +44,15 @@ Summary:"""
     try:
         import os
         from core.model_manager import _check_server
-        if not _check_server(os.environ.get("OLLAMA_HOST", "http://localhost:11434"), timeout=1):
+
+        if not _check_server(
+            os.environ.get("OLLAMA_HOST", "http://localhost:11434"), timeout=1
+        ):
             os.environ["OLLAMA_HOST"] = "http://localhost:11434"
         response = ollama.chat(
             model=model,
             messages=[{"role": "user", "content": prompt}],
-            options={"temperature": 0.3, "num_predict": 150}
+            options={"temperature": 0.3, "num_predict": 150},
         )
         summary = response["message"]["content"].strip()
         logger.info(f"📝 Generated summary: {summary[:80]}...")
@@ -77,11 +76,13 @@ def store_summary(memory: Dict, summary: str) -> Dict:
     if "conversation_summary" not in memory:
         memory["conversation_summary"] = []
 
-    memory["conversation_summary"].append({
-        "summary": summary,
-        "timestamp": datetime.utcnow().isoformat(),
-        "message_count": len(memory.get("conversation_summary", [])) * 10 + 10
-    })
+    memory["conversation_summary"].append(
+        {
+            "summary": summary,
+            "timestamp": datetime.utcnow().isoformat(),
+            "message_count": len(memory.get("conversation_summary", [])) * 10 + 10,
+        }
+    )
 
     # Keep only last 10 summaries
     if len(memory["conversation_summary"]) > 10:

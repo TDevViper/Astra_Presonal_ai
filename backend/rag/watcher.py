@@ -4,19 +4,20 @@ import time
 import logging
 import threading
 
-logger    = logging.getLogger(__name__)
-DOCS_DIR  = os.path.expanduser("~/ASTRA/docs")
-_EXTS     = {".pdf", ".txt", ".md"}  # .py excluded — never index source code
-_ingested = set()   # track already-processed files in this session
-_thread   = None
+logger = logging.getLogger(__name__)
+DOCS_DIR = os.path.expanduser("~/ASTRA/docs")
+_EXTS = {".pdf", ".txt", ".md"}  # .py excluded — never index source code
+_ingested = set()  # track already-processed files in this session
+_thread = None
 
 
 def _scan_and_ingest():
     from rag.ingest import ingest_file
+
     os.makedirs(DOCS_DIR, exist_ok=True)
     for fname in os.listdir(DOCS_DIR):
         path = os.path.join(DOCS_DIR, fname)
-        ext  = os.path.splitext(fname)[1].lower()
+        ext = os.path.splitext(fname)[1].lower()
         if not os.path.isfile(path) or ext not in _EXTS:
             continue
         # Use (path, mtime) as cache key so re-saved files re-ingest
@@ -49,17 +50,20 @@ def start_watcher(interval: int = 30):
     os.makedirs(DOCS_DIR, exist_ok=True)
     _thread = threading.Thread(target=_watch_loop, args=(interval,), daemon=True)
     _thread.start()
-    logger.info(f"✅ Doc watcher running (interval={interval}s) — drop files into {DOCS_DIR}")
+    logger.info(
+        f"✅ Doc watcher running (interval={interval}s) — drop files into {DOCS_DIR}"
+    )
 
 
 def ingest_now() -> dict:
     """Manually trigger a scan. Returns {filename: chunk_count}."""
     from rag.ingest import ingest_file
+
     os.makedirs(DOCS_DIR, exist_ok=True)
     results = {}
     for fname in os.listdir(DOCS_DIR):
         path = os.path.join(DOCS_DIR, fname)
-        ext  = os.path.splitext(fname)[1].lower()
+        ext = os.path.splitext(fname)[1].lower()
         if not os.path.isfile(path) or ext not in _EXTS:
             continue
         try:

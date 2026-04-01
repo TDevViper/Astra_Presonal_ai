@@ -8,6 +8,7 @@ Replaces AST-walking python_sandbox.py with Docker isolation.
 - Runs as unprivileged user
 - Container auto-deleted after run
 """
+
 import subprocess
 import tempfile
 import os
@@ -16,10 +17,10 @@ import json
 
 logger = logging.getLogger(__name__)
 
-SANDBOX_IMAGE   = "astra-sandbox:latest"
+SANDBOX_IMAGE = "astra-sandbox:latest"
 TIMEOUT_SECONDS = 10
-MEMORY_LIMIT    = "128m"
-CPU_LIMIT       = "0.5"
+MEMORY_LIMIT = "128m"
+CPU_LIMIT = "0.5"
 
 
 def _is_docker_available() -> bool:
@@ -38,8 +39,14 @@ def run_python(code: str, timeout: int = TIMEOUT_SECONDS) -> dict:
     if not _is_docker_available():
         logger.warning("Docker not available — falling back to AST sandbox")
         from tools.python_sandbox import run_code as legacy_run
+
         result = legacy_run(code)
-        return {"stdout": result.get("output", ""), "stderr": "", "exit_code": 0, "error": result.get("error")}
+        return {
+            "stdout": result.get("output", ""),
+            "stderr": "",
+            "exit_code": 0,
+            "error": result.get("error"),
+        }
 
     # Write code to a temp file
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -48,18 +55,28 @@ def run_python(code: str, timeout: int = TIMEOUT_SECONDS) -> dict:
 
     try:
         cmd = [
-            "docker", "run",
+            "docker",
+            "run",
             "--rm",
-            "--network", "none",
-            "--memory", MEMORY_LIMIT,
-            "--cpus", CPU_LIMIT,
+            "--network",
+            "none",
+            "--memory",
+            MEMORY_LIMIT,
+            "--cpus",
+            CPU_LIMIT,
             "--read-only",
-            "--tmpfs", "/tmp:size=32m,noexec",
-            "--tmpfs", "/code:size=8m",
-            "--security-opt", "no-new-privileges",
-            "--pids-limit", "64",
-            "--cap-drop", "ALL",
-            "-v", f"{script_path}:/code/script.py:ro",
+            "--tmpfs",
+            "/tmp:size=32m,noexec",
+            "--tmpfs",
+            "/code:size=8m",
+            "--security-opt",
+            "no-new-privileges",
+            "--pids-limit",
+            "64",
+            "--cap-drop",
+            "ALL",
+            "-v",
+            f"{script_path}:/code/script.py:ro",
             SANDBOX_IMAGE,
         ]
 
@@ -71,17 +88,24 @@ def run_python(code: str, timeout: int = TIMEOUT_SECONDS) -> dict:
         )
 
         return {
-            "stdout":    result.stdout[:8000],   # cap output size
-            "stderr":    result.stderr[:2000],
+            "stdout": result.stdout[:8000],  # cap output size
+            "stderr": result.stderr[:2000],
             "exit_code": result.returncode,
-            "error":     None,
+            "error": None,
         }
 
     except subprocess.TimeoutExpired:
         # Kill the container if it's still running
-        subprocess.run(["docker", "kill", "--signal=SIGKILL"] +
-                      [f"astra-sandbox-{os.getpid()}"], capture_output=True)
-        return {"stdout": "", "stderr": "", "exit_code": -1, "error": f"Execution timed out after {timeout}s"}
+        subprocess.run(
+            ["docker", "kill", "--signal=SIGKILL"] + [f"astra-sandbox-{os.getpid()}"],
+            capture_output=True,
+        )
+        return {
+            "stdout": "",
+            "stderr": "",
+            "exit_code": -1,
+            "error": f"Execution timed out after {timeout}s",
+        }
 
     except Exception as e:
         logger.error("Docker sandbox error: %s", e)

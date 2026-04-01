@@ -1,4 +1,4 @@
-#==========================================
+# ==========================================
 # astra_engine/emotion/emotion_memory.py
 # ==========================================
 
@@ -28,12 +28,12 @@ def ensure_emotion_memory(memory: Dict) -> Dict:
 def update_emotion(memory: Dict, emotion_label: str, score: float) -> Dict:
     """
     Update emotion memory with new detection.
-    
+
     Args:
         memory: Memory dict
         emotion_label: Detected emotion
         score: Confidence score
-        
+
     Returns:
         Updated memory dict
     """
@@ -44,15 +44,17 @@ def update_emotion(memory: Dict, emotion_label: str, score: float) -> Dict:
     patterns["last_emotion"] = {
         "label": emotion_label,
         "score": float(score),
-        "timestamp": datetime.now(timezone.utc).isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
     # Add to history
-    patterns["history"].append({
-        "label": emotion_label,
-        "score": float(score),
-        "timestamp": datetime.now(timezone.utc).isoformat()
-    })
+    patterns["history"].append(
+        {
+            "label": emotion_label,
+            "score": float(score),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+    )
 
     # Keep only last 30 emotions
     if len(patterns["history"]) > 30:
@@ -61,15 +63,15 @@ def update_emotion(memory: Dict, emotion_label: str, score: float) -> Dict:
     # Update statistics
     if emotion_label not in patterns["emotion_stats"]:
         patterns["emotion_stats"][emotion_label] = {"count": 0, "avg_score": 0.0}
-    
+
     stats = patterns["emotion_stats"][emotion_label]
     old_count = stats["count"]
     old_avg = stats["avg_score"]
-    
+
     # Update running average
     stats["count"] = old_count + 1
     stats["avg_score"] = ((old_avg * old_count) + score) / stats["count"]
-    
+
     patterns["emotion_stats"][emotion_label] = stats
     memory["emotional_patterns"] = patterns
 
@@ -86,14 +88,13 @@ def get_dominant_emotion(memory: Dict) -> str:
     """Get most frequent emotion from history."""
     memory = ensure_emotion_memory(memory)
     stats = memory["emotional_patterns"].get("emotion_stats", {})
-    
+
     if not stats:
         return "neutral"
-    
+
     # Find emotion with highest count
     dominant = max(stats.items(), key=lambda x: x[1]["count"])
     return dominant[0]
-
 
 
 # ── Cross-session persistent emotion tracking ─────────────────
@@ -102,18 +103,22 @@ import os as _os
 from datetime import datetime, timezone as _dt
 from collections import Counter as _Counter
 
-_BACKEND_DIR2        = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
-EMOTION_HISTORY_FILE = _os.path.join(_BACKEND_DIR2, "memory", "data", "emotion_history.json")
+_BACKEND_DIR2 = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+EMOTION_HISTORY_FILE = _os.path.join(
+    _BACKEND_DIR2, "memory", "data", "emotion_history.json"
+)
 
 
 def log_emotion_persistent(emotion: str, context: str, user_name: str = "Arnav"):
     history = _load_emotion_history()
-    history.append({
-        "timestamp": _dt.now().isoformat(),
-        "emotion":   emotion,
-        "context":   context[:100],
-        "user":      user_name
-    })
+    history.append(
+        {
+            "timestamp": _dt.now().isoformat(),
+            "emotion": emotion,
+            "context": context[:100],
+            "user": user_name,
+        }
+    )
     _save_emotion_history(history[-200:])
 
 
@@ -122,7 +127,7 @@ def get_emotional_trend(last_n: int = 50) -> str:
     if not history:
         return "No emotional history yet."
     counts = _Counter(e["emotion"] for e in history[-last_n:])
-    top    = counts.most_common(3)
+    top = counts.most_common(3)
     return "Emotional pattern: " + ", ".join(f"{e}({c}x)" for e, c in top)
 
 
@@ -144,4 +149,3 @@ def _save_emotion_history(history):
     _os.makedirs(_os.path.dirname(EMOTION_HISTORY_FILE), exist_ok=True)
     with open(EMOTION_HISTORY_FILE, "w") as f:
         _json.dump(history, f, indent=2)
-

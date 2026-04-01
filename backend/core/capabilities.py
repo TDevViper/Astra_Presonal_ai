@@ -1,14 +1,25 @@
 import os
 import logging
+
 logger = logging.getLogger(__name__)
 
 _DEFAULTS = {
-    "web_search": True, "file_reader": True, "system_monitor": True,
-    "task_manager": True, "git": True, "python_sandbox": True,
-    "system_controller": True, "face_recognition": True,
-    "smart_home": False, "screen_watcher": False, "device_discovery": False,
-    "voice": True, "vision": True, "calendar": False,
+    "web_search": True,
+    "file_reader": True,
+    "system_monitor": True,
+    "task_manager": True,
+    "git": True,
+    "python_sandbox": True,
+    "system_controller": True,
+    "face_recognition": True,
+    "smart_home": False,
+    "screen_watcher": False,
+    "device_discovery": False,
+    "voice": True,
+    "vision": True,
+    "calendar": False,
 }
+
 
 class CapabilityManager:
     def __init__(self):
@@ -37,13 +48,24 @@ class CapabilityManager:
 
     def get_status(self) -> dict:
         cats = {
-            "web_search":"search","file_reader":"files","python_sandbox":"execution",
-            "git":"execution","system_monitor":"system","system_controller":"system",
-            "task_manager":"productivity","calendar":"productivity","voice":"io",
-            "vision":"io","face_recognition":"io","smart_home":"iot",
-            "screen_watcher":"monitoring","device_discovery":"network",
+            "web_search": "search",
+            "file_reader": "files",
+            "python_sandbox": "execution",
+            "git": "execution",
+            "system_monitor": "system",
+            "system_controller": "system",
+            "task_manager": "productivity",
+            "calendar": "productivity",
+            "voice": "io",
+            "vision": "io",
+            "face_recognition": "io",
+            "smart_home": "iot",
+            "screen_watcher": "monitoring",
+            "device_discovery": "network",
         }
-        return {"capabilities": {
-            name: {"enabled": enabled, "category": cats.get(name, "general")}
-            for name, enabled in self._flags.items()
-        }}
+        return {
+            "capabilities": {
+                name: {"enabled": enabled, "category": cats.get(name, "general")}
+                for name, enabled in self._flags.items()
+            }
+        }

@@ -7,6 +7,7 @@ import threading
 
 logger = logging.getLogger(__name__)
 
+
 class RequestTrace:
     def __init__(self, request_id: str, user_input: str):
         self.request_id = request_id
@@ -18,42 +19,53 @@ class RequestTrace:
 
     def step_start(self, name: str):
         self._current_step = name
-        self._step_start   = time.time()
+        self._step_start = time.time()
 
     def step_end(self, name: str = None, meta: str = ""):
         name = name or self._current_step or "unknown"
-        duration_ms = round((time.time() - (self._step_start or self.start_time)) * 1000)
-        self.steps.append({
-            "step":     name,
-            "ms":       duration_ms,
-            "meta":     meta,
-        })
-        logger.info("⏱  [%s] %s: %dms%s",
-                    self.request_id[:8],
-                    name,
-                    duration_ms,
-                    f" ({meta})" if meta else "")
-        self._step_start   = None
+        duration_ms = round(
+            (time.time() - (self._step_start or self.start_time)) * 1000
+        )
+        self.steps.append(
+            {
+                "step": name,
+                "ms": duration_ms,
+                "meta": meta,
+            }
+        )
+        logger.info(
+            "⏱  [%s] %s: %dms%s",
+            self.request_id[:8],
+            name,
+            duration_ms,
+            f" ({meta})" if meta else "",
+        )
+        self._step_start = None
         self._current_step = None
 
     def finish(self, intent: str = "", agent: str = "") -> Dict:
         total_ms = round((time.time() - self.start_time) * 1000)
         result = {
             "request_id": self.request_id,
-            "total_ms":   total_ms,
-            "intent":     intent,
-            "agent":      agent,
-            "steps":      self.steps,
+            "total_ms": total_ms,
+            "intent": intent,
+            "agent": agent,
+            "steps": self.steps,
         }
-        logger.info("✅ [%s] total: %dms | intent=%s agent=%s",
-                    self.request_id[:8], total_ms, intent, agent)
+        logger.info(
+            "✅ [%s] total: %dms | intent=%s agent=%s",
+            self.request_id[:8],
+            total_ms,
+            intent,
+            agent,
+        )
         return result
 
     def to_dict(self) -> Dict:
         return {
             "request_id": self.request_id,
-            "input":      self.user_input,
-            "steps":      self.steps,
+            "input": self.user_input,
+            "steps": self.steps,
             "elapsed_ms": round((time.time() - self.start_time) * 1000),
         }
 
@@ -63,19 +75,20 @@ import os
 import collections
 
 _TRACE_FILE = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "data", "traces.json"
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "traces.json"
 )
+
 
 class ObservabilityStore:
     """
     In-memory ring buffer for traces — O(1) writes, no disk I/O on hot path.
     Flushes to disk only every N writes or on explicit flush().
     """
+
     def __init__(self, maxlen: int = 50, flush_every: int = 10):
-        self.maxlen      = maxlen
+        self.maxlen = maxlen
         self.flush_every = flush_every
-        self._lock       = threading.Lock()
+        self._lock = threading.Lock()
         self._buffer: collections.deque = collections.deque(maxlen=maxlen)
         self._write_count = 0
         os.makedirs(os.path.dirname(_TRACE_FILE), exist_ok=True)
@@ -123,17 +136,15 @@ class ObservabilityStore:
             for s in t.get("steps", []):
                 step_times.setdefault(s["step"], []).append(s["ms"])
         return {
-            "requests":     len(traces),
+            "requests": len(traces),
             "avg_total_ms": round(sum(totals) / len(totals)),
-            "p95_ms":       sorted(totals)[int(len(totals) * 0.95)] if totals else 0,
-            "per_step_avg": {
-                k: round(sum(v) / len(v))
-                for k, v in step_times.items()
-            },
+            "p95_ms": sorted(totals)[int(len(totals) * 0.95)] if totals else 0,
+            "per_step_avg": {k: round(sum(v) / len(v)) for k, v in step_times.items()},
         }
 
 
 _store = ObservabilityStore()
+
 
 def get_store() -> ObservabilityStore:
     return _store

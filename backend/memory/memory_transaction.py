@@ -11,6 +11,7 @@ Usage:
         tx.commit()                 # single atomic write at end
     # Outside the with block — write is done or rolled back
 """
+
 import copy
 import logging
 import threading
@@ -26,13 +27,14 @@ _write_lock = threading.Lock()
 class MemoryTransaction:
     def __init__(self):
         self._original: Dict[str, Any] = {}
-        self.memory:    Dict[str, Any] = {}
+        self.memory: Dict[str, Any] = {}
         self._committed = False
 
     def __enter__(self):
         from memory.memory_engine import load_memory
+
         self._original = load_memory()
-        self.memory    = copy.deepcopy(self._original)
+        self.memory = copy.deepcopy(self._original)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -49,6 +51,7 @@ class MemoryTransaction:
             return
         with _write_lock:
             from memory.memory_engine import save_memory
+
             save_memory(self.memory)
             self._committed = True
             logger.debug("MemoryTransaction committed")

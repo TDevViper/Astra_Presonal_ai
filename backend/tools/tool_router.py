@@ -1,15 +1,21 @@
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 def detect_compound(user_input: str):
     """Handle compound commands like open whatsapp and send message to X saying Y."""
     t = user_input.lower()
-    if ("whatsapp" in t or ("message" in t and "send" in t)) and ("send" in t or "say" in t):
+    if ("whatsapp" in t or ("message" in t and "send" in t)) and (
+        "send" in t or "say" in t
+    ):
         from tools.whatsapp_tool import handle_whatsapp_command
+
         result = handle_whatsapp_command(user_input)
         if result:
             return result
     return None
+
 
 # ==========================================
 # tools/tool_router.py
@@ -19,69 +25,160 @@ def detect_compound(user_input: str):
 
 
 FACE_TRIGGERS = [
-    "who is this", "who is that", "who are they", "recognize this person",
-    "remember this person", "remember this face", "learn this face",
-    "who do you see", "identify this person", "do you know this person",
-    "forget this person", "who are my faces", "list known faces",
-    "who is in front", "who is in the room",
+    "who is this",
+    "who is that",
+    "who are they",
+    "recognize this person",
+    "remember this person",
+    "remember this face",
+    "learn this face",
+    "who do you see",
+    "identify this person",
+    "do you know this person",
+    "forget this person",
+    "who are my faces",
+    "list known faces",
+    "who is in front",
+    "who is in the room",
 ]
 
-TOOLS             = ["file_reader", "system_monitor", "task_manager", "git", "python_sandbox", "screen_watcher", "smart_home", "device_discovery", "system_controller", "face_recognition"]
+TOOLS = [
+    "file_reader",
+    "system_monitor",
+    "task_manager",
+    "git",
+    "python_sandbox",
+    "screen_watcher",
+    "smart_home",
+    "device_discovery",
+    "system_controller",
+    "face_recognition",
+]
 APPROVAL_REQUIRED = ["git", "python_sandbox"]
 
 FILE_TRIGGERS = [
-    "read ", "open file", "show file", "read file",
-    "cat ", "view file", "load file", "contents of"
+    "read ",
+    "open file",
+    "show file",
+    "read file",
+    "cat ",
+    "view file",
+    "load file",
+    "contents of",
 ]
 
 SYSTEM_MONITOR_TRIGGERS = [
-    "cpu", "ram", "memory usage", "disk", "system stats",
-    "system load", "machine performance", "how slow", "why slow",
-    "performance", "usage", "processes", "running apps",
-    "how much memory", "how much cpu", "system info"
+    "cpu",
+    "ram",
+    "memory usage",
+    "disk",
+    "system stats",
+    "system load",
+    "machine performance",
+    "how slow",
+    "why slow",
+    "performance",
+    "usage",
+    "processes",
+    "running apps",
+    "how much memory",
+    "how much cpu",
+    "system info",
 ]
 
 TASK_TRIGGERS = [
-    "add task", "new task", "my tasks", "show tasks",
-    "list tasks", "remind me", "todo", "to do",
-    "complete task", "finish task", "task list",
-    "pending task", "see tasks", "view tasks", "what are my tasks"
+    "add task",
+    "new task",
+    "my tasks",
+    "show tasks",
+    "list tasks",
+    "remind me",
+    "todo",
+    "to do",
+    "complete task",
+    "finish task",
+    "task list",
+    "pending task",
+    "see tasks",
+    "view tasks",
+    "what are my tasks",
 ]
 
 GIT_TRIGGERS = [
-    "git status", "git log", "git commit", "git branch",
-    "git diff", "what changed", "show commits", "git info"
+    "git status",
+    "git log",
+    "git commit",
+    "git branch",
+    "git diff",
+    "what changed",
+    "show commits",
+    "git info",
 ]
 
 PYTHON_TRIGGERS = [
-    "```python", "run python", "execute python",
-    "run this code", "run code", "execute code",
-    "run script", "python script"
+    "```python",
+    "run python",
+    "execute python",
+    "run this code",
+    "run code",
+    "execute code",
+    "run script",
+    "python script",
 ]
 
 SYSTEM_CONTROL_TRIGGERS = [
-    "open app", "close app", "quit app", "launch app",
-    "play music", "pause music", "skip song",
-    "next song", "previous song",
-    "volume up", "volume down", "mute", "unmute",
-    "take screenshot", "lock screen",
-    "sleep display", "empty trash"
+    "open app",
+    "close app",
+    "quit app",
+    "launch app",
+    "play music",
+    "pause music",
+    "skip song",
+    "next song",
+    "previous song",
+    "volume up",
+    "volume down",
+    "mute",
+    "unmute",
+    "take screenshot",
+    "lock screen",
+    "sleep display",
+    "empty trash",
 ]
 
 SCREEN_TRIGGERS = [
-    "what's on my screen", "whats on my screen",
-    "what am i working on", "look at my screen",
-    "read my screen", "what does my screen show",
-    "screen analysis", "analyze my screen",
-    "screen error", "error on screen"
+    "what's on my screen",
+    "whats on my screen",
+    "what am i working on",
+    "look at my screen",
+    "read my screen",
+    "what does my screen show",
+    "screen analysis",
+    "analyze my screen",
+    "screen error",
+    "error on screen",
 ]
 
 DEVICE_TRIGGERS = [
-    "turn on", "turn off", "switch on", "switch off",
-    "dim the", "brighten the", "set brightness", "set color",
-    "lock the", "unlock the", "scan devices", "what devices",
-    "show devices", "connect to", "camera feed", "thermostat",
-    "robot vacuum", "smart home", "home assistant"
+    "turn on",
+    "turn off",
+    "switch on",
+    "switch off",
+    "dim the",
+    "brighten the",
+    "set brightness",
+    "set color",
+    "lock the",
+    "unlock the",
+    "scan devices",
+    "what devices",
+    "show devices",
+    "connect to",
+    "camera feed",
+    "thermostat",
+    "robot vacuum",
+    "smart home",
+    "home assistant",
 ]
 
 
@@ -90,7 +187,10 @@ def detect_tool(user_input: str) -> str | None:
 
     if any(t in text for t in SCREEN_TRIGGERS):
         return "screen_watcher"
-    if any(t in text for t in ["scan devices", "what devices", "show devices", "find devices"]):
+    if any(
+        t in text
+        for t in ["scan devices", "what devices", "show devices", "find devices"]
+    ):
         return "device_discovery"
     if any(t in text for t in DEVICE_TRIGGERS):
         return "smart_home"
@@ -101,8 +201,19 @@ def detect_tool(user_input: str) -> str | None:
     if any(t in text for t in TASK_TRIGGERS):
         return "task_manager"
     # Skip system_monitor for personal/memory statements
-    _personal = ["i live", "i am", "my name", "i work", "i like", "i prefer",
-                 "i study", "i hate", "i love", "remember", "i'm from"]
+    _personal = [
+        "i live",
+        "i am",
+        "my name",
+        "i work",
+        "i like",
+        "i prefer",
+        "i study",
+        "i hate",
+        "i love",
+        "remember",
+        "i'm from",
+    ]
     if any(p in text for p in _personal):
         pass  # fall through to memory handler
     elif any(t in text for t in SYSTEM_MONITOR_TRIGGERS):
@@ -110,6 +221,7 @@ def detect_tool(user_input: str) -> str | None:
     if any(t in text for t in FILE_TRIGGERS):
         return "file_reader"
     from tools.system_controller import is_system_command
+
     if is_system_command(text):
         return "system_controller"
     if any(t in text for t in FACE_TRIGGERS):
@@ -130,9 +242,11 @@ def route_tool(user_text: str):
     text = user_text.lower()
     if text.startswith("read "):
         from tools.file_reader import read_file
+
         return read_file(user_text.replace("read ", "").strip())
     if text.startswith("api "):
         from tools.api_caller import call_api
+
         return call_api(user_text.replace("api ", "").strip())
 
     tool = detect_tool(user_text)
@@ -140,6 +254,7 @@ def route_tool(user_text: str):
     if tool == "screen_watcher":
         try:
             from vision.screen_watcher import ScreenWatcher
+
             return ScreenWatcher().capture_and_analyze(user_text)
         except Exception as e:
             return f"Screen watcher error: {e}"
@@ -147,8 +262,9 @@ def route_tool(user_text: str):
     if tool == "smart_home":
         try:
             from tools.smart_home import SmartHome
+
             sh = SmartHome()
-            t  = user_text.lower()
+            t = user_text.lower()
             if "turn on" in t or "switch on" in t:
                 entity = _extract_entity(t)
                 sh.control_light(entity, True)
@@ -173,6 +289,7 @@ def route_tool(user_text: str):
     if tool == "device_discovery":
         try:
             from tools.device_discovery import DeviceDiscovery
+
             devices = DeviceDiscovery().scan_all()
             if not devices:
                 return "No devices found on network."
@@ -186,8 +303,19 @@ def route_tool(user_text: str):
 
 def _extract_entity(text: str) -> str:
     """Best-effort entity extraction from natural language command."""
-    stopwords = ["turn", "on", "off", "switch", "the", "my", "please",
-                 "lock", "unlock", "dim", "brighten"]
+    stopwords = [
+        "turn",
+        "on",
+        "off",
+        "switch",
+        "the",
+        "my",
+        "please",
+        "lock",
+        "unlock",
+        "dim",
+        "brighten",
+    ]
     words = [w for w in text.split() if w not in stopwords]
     entity_name = "_".join(words[:3]) if words else "light"
     return f"light.{entity_name}"
@@ -200,12 +328,16 @@ class ToolRouter:
         try:
             # Check plugin registry first
             from tools.registry import execute as _reg_execute
-            _arg = params.get("query", params.get("text", params.get("code", str(params))))
+
+            _arg = params.get(
+                "query", params.get("text", params.get("code", str(params)))
+            )
             _reg_result = _reg_execute(tool_name, _arg)
             if _reg_result is not None:
                 return _reg_result
             if tool_name == "python_sandbox":
                 from tools.python_sandbox import execute_python
+
                 code = params.get("code", params.get("text", ""))
                 if not code:
                     return "No code provided."
@@ -214,6 +346,7 @@ class ToolRouter:
 
             if tool_name == "file_reader":
                 from tools.file_reader import read_file
+
                 path = params.get("path", params.get("text", ""))
                 result = read_file(path)
                 if result.get("success"):
@@ -222,23 +355,29 @@ class ToolRouter:
 
             if tool_name == "system_monitor":
                 from tools.system_monitor import get_system_info
+
                 return str(get_system_info())
 
             if tool_name == "task_manager":
                 from tools.task_manager import TaskManager
+
                 text = params.get("text", params.get("query", ""))
                 return TaskManager().process(text) or "Task operation done."
 
             if tool_name == "git":
                 from tools.git_tool import git_status
+
                 result = git_status()
                 return str(result) if result else "Git command executed."
 
             if tool_name == "web_search":
                 from websearch.search import serper_search, format_results_for_llm
+
                 query = params.get("query", params.get("text", ""))
                 results = serper_search(query, num_results=3)
-                return format_results_for_llm(results) if results else "No results found."
+                return (
+                    format_results_for_llm(results) if results else "No results found."
+                )
 
             text = params.get("text", params.get("query", str(params)))
             result = route_tool(text)

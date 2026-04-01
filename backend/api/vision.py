@@ -9,7 +9,10 @@ vision_bp = Blueprint("vision", __name__)
 
 # Snapshot directory (defined once globally)
 from config import config as _cfg
-SNAP_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "snapshots")
+
+SNAP_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "snapshots"
+)
 os.makedirs(SNAP_DIR, exist_ok=True)
 
 
@@ -20,10 +23,9 @@ os.makedirs(SNAP_DIR, exist_ok=True)
 def vision_screen():
     try:
         from vision.vision_engine import vision_engine
+
         data = request.get_json(silent=True) or {}
-        result = vision_engine.analyze_screen(
-            user_context=data.get("context", "")
-        )
+        result = vision_engine.analyze_screen(user_context=data.get("context", ""))
         return jsonify(result)
     except Exception as e:
         logger.error(f"/vision/screen error: {e}", exc_info=True)
@@ -37,10 +39,9 @@ def vision_screen():
 def vision_camera():
     try:
         from vision.vision_engine import vision_engine
+
         data = request.get_json(silent=True) or {}
-        result = vision_engine.analyze_camera(
-            user_context=data.get("context", "")
-        )
+        result = vision_engine.analyze_camera(user_context=data.get("context", ""))
         return jsonify(result)
     except Exception as e:
         logger.error(f"/vision/camera error: {e}", exc_info=True)
@@ -64,8 +65,8 @@ def vision_analyze_b64():
         if not data or "image" not in data:
             return jsonify({"error": "No image provided"}), 400
 
-        b64     = data["image"]
-        mode    = data.get("mode", "camera")
+        b64 = data["image"]
+        mode = data.get("mode", "camera")
         context = data.get("context", "")
 
         result = analyze(b64, mode=mode, user_context=context)
@@ -102,10 +103,7 @@ def vision_analyze():
         if not os.path.exists(path):
             return jsonify({"error": "File does not exist"}), 404
 
-        result = vision_engine.analyze_image(
-            path,
-            user_context=data.get("context", "")
-        )
+        result = vision_engine.analyze_image(path, user_context=data.get("context", ""))
 
         return jsonify(result)
 
@@ -145,6 +143,7 @@ def vision_last(source):
 def vision_watch_start():
     try:
         from vision.vision_engine import vision_engine
+
         data = request.get_json(silent=True) or {}
 
         interval = int(data.get("interval", 15))
@@ -164,6 +163,7 @@ def vision_watch_start():
 def vision_watch_stop():
     try:
         from vision.vision_engine import vision_engine
+
         vision_engine.stop_watch()
         return jsonify({"status": "stopped"})
     except Exception as e:
@@ -189,21 +189,23 @@ def vision_status():
                 if hasattr(m, "model") and isinstance(m.model, str)
             ]
 
-        return jsonify({
-            "llava_ready": any("llava" in model.lower() for model in models),
-            "models": models,
-            "endpoints": [
-                "POST /vision/screen",
-                "POST /vision/camera",
-                "POST /vision/analyze_b64",
-                "POST /vision/analyze",
-                "GET  /vision/last/<source>",
-                "POST /vision/watch/start",
-                "POST /vision/watch/stop",
-                "GET  /vision/status"
-            ]
-        })
+        return jsonify(
+            {
+                "llava_ready": any("llava" in model.lower() for model in models),
+                "models": models,
+                "endpoints": [
+                    "POST /vision/screen",
+                    "POST /vision/camera",
+                    "POST /vision/analyze_b64",
+                    "POST /vision/analyze",
+                    "GET  /vision/last/<source>",
+                    "POST /vision/watch/start",
+                    "POST /vision/watch/stop",
+                    "GET  /vision/status",
+                ],
+            }
+        )
 
     except Exception as e:
         logger.error(f"/vision/status error: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500 
+        return jsonify({"error": str(e)}), 500

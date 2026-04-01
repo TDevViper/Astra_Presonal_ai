@@ -5,10 +5,11 @@ from typing import Optional, Tuple
 
 MATH_TRIGGERS = ["calculate", "what is", "what's", "how much is", "solve", "compute"]
 
+
 def _try_math(text: str) -> Optional[str]:
     """Try to evaluate a simple math expression."""
     # Extract numbers and operators
-    expr = re.sub(r'[^0-9+\-*/().% ]', '', text)
+    expr = re.sub(r"[^0-9+\-*/().% ]", "", text)
     expr = expr.strip()
     if not expr or len(expr) < 3:
         return None
@@ -18,6 +19,7 @@ def _try_math(text: str) -> Optional[str]:
     except Exception:
         return None
 
+
 def handle_quick_tool(user_input: str) -> Optional[Tuple[str, str, str]]:
     """
     Returns (reply, intent, agent) for quick matches, or None.
@@ -25,8 +27,18 @@ def handle_quick_tool(user_input: str) -> Optional[Tuple[str, str, str]]:
     text = user_input.lower().strip()
 
     # ── Date/time ──────────────────────────────────────────────────────────
-    if any(w in text for w in ["what time", "current time", "what's the time", "what date", "today's date"]):
+    if any(
+        w in text
+        for w in [
+            "what time",
+            "current time",
+            "what's the time",
+            "what date",
+            "today's date",
+        ]
+    ):
         from datetime import datetime
+
         now = datetime.now()
         if "date" in text:
             reply = f"Today is {now.strftime('%A, %B %d, %Y')}."
@@ -41,7 +53,9 @@ def handle_quick_tool(user_input: str) -> Optional[Tuple[str, str, str]]:
             return (result, "math", "calculator")
 
     # ── Inline math expression (no trigger word needed) ───────────────────
-    if re.match(r'^[\d\s+\-*/().%]+$', text) and any(op in text for op in ['+', '-', '*', '/', '%']):
+    if re.match(r"^[\d\s+\-*/().%]+$", text) and any(
+        op in text for op in ["+", "-", "*", "/", "%"]
+    ):
         result = _try_math(text)
         if result:
             return (result, "math", "calculator")

@@ -107,16 +107,13 @@ Respond in this exact JSON format:
 
 # ── Core Analyzer ─────────────────────────────────────────────
 
+
 def analyze(image_b64: str, mode: str = "image", user_context: str = "") -> Dict:
     """
     Analyze image with LLaVA.
     mode: screen | camera | image
     """
-    prompts = {
-        "screen": SCREEN_PROMPT,
-        "camera": CAMERA_PROMPT,
-        "image":  IMAGE_PROMPT
-    }
+    prompts = {"screen": SCREEN_PROMPT, "camera": CAMERA_PROMPT, "image": IMAGE_PROMPT}
     system = prompts.get(mode, IMAGE_PROMPT)
 
     user_msg = "Analyze this."
@@ -130,9 +127,9 @@ def analyze(image_b64: str, mode: str = "image", user_context: str = "") -> Dict
             model=VISION_MODEL,
             messages=[
                 {"role": "system", "content": system},
-                {"role": "user", "content": user_msg, "images": [image_b64]}
+                {"role": "user", "content": user_msg, "images": [image_b64]},
             ],
-            options={"temperature": 0.2, "num_predict": 800}
+            options={"temperature": 0.2, "num_predict": 800},
         )
 
         raw = response["message"]["content"]
@@ -150,7 +147,7 @@ def analyze(image_b64: str, mode: str = "image", user_context: str = "") -> Dict
             "error": str(e),
             "mode": mode,
             "jarvis_response": "Vision system error. Check if llava:7b is running in Ollama.",
-            "summary": "Analysis failed"
+            "summary": "Analysis failed",
         }
 
 
@@ -162,10 +159,10 @@ def _parse_json(text: str) -> Dict:
     try:
         return json.loads(text)
     except Exception as _e:
-        logger.debug('vision analyzer: %s', _e)
+        logger.debug("vision analyzer: %s", _e)
 
     # Try extracting JSON block
-    match = re.search(r'\{[\s\S]*\}', text)
+    match = re.search(r"\{[\s\S]*\}", text)
     if match:
         try:
             return json.loads(match.group())
@@ -176,7 +173,7 @@ def _parse_json(text: str) -> Dict:
     return {
         "summary": "Analysis complete",
         "jarvis_response": text.strip()[:500],
-        "suggestions": []
+        "suggestions": [],
     }
 
 
@@ -193,7 +190,7 @@ def analyze_code_in_image(image_b64: str) -> Dict:
             fix_response = ollama.chat(
                 model="phi3:mini",
                 messages=[{"role": "user", "content": f"Fix this error:\n{error}"}],
-                options={"temperature": 0.1, "num_predict": 300}
+                options={"temperature": 0.1, "num_predict": 300},
             )
             result["fix_suggestion"] = fix_response["message"]["content"]
         except Exception:

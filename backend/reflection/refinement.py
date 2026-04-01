@@ -1,4 +1,4 @@
-#==========================================
+# ==========================================
 # FIX 2: astra_engine/reflection/refinement.py
 # Stop adding name to every response
 # ==========================================
@@ -22,27 +22,40 @@ def refine_reply(text: str, memory: dict, user_name: str) -> str:
 
     # 1. FIX "ASTRA" self-references → "I"
     import re
-    reply = re.sub(r'\bASTRA\b(?!\s*ENGINE|\s*v)', 'I', reply)
-    reply = re.sub(r'\bASTRA\'s\b', 'my', reply)
+
+    reply = re.sub(r"\bASTRA\b(?!\s*ENGINE|\s*v)", "I", reply)
+    reply = re.sub(r"\bASTRA\'s\b", "my", reply)
 
     # 2. FIX friend/buddy → user_name
-    reply = re.sub(r'\b(friend|buddy|pal)\b', user_name, reply, flags=re.IGNORECASE)
+    reply = re.sub(r"\b(friend|buddy|pal)\b", user_name, reply, flags=re.IGNORECASE)
     reply = reply.replace("you, friend", f"you, {user_name}")
 
     # 3. REMOVE "Arnav." tacked onto end (just the name alone)
     # Only remove if it's just the name added as filler at the very end
-    reply = re.sub(rf'\s+{re.escape(user_name)}\.$', '.', reply)
-    reply = re.sub(rf',\s+{re.escape(user_name)}\.$', '.', reply)
-    reply = re.sub(rf'\s+{re.escape(user_name)}!$', '!', reply)
+    reply = re.sub(rf"\s+{re.escape(user_name)}\.$", ".", reply)
+    reply = re.sub(rf",\s+{re.escape(user_name)}\.$", ".", reply)
+    reply = re.sub(rf"\s+{re.escape(user_name)}!$", "!", reply)
 
     # 4. Clean double spaces
-    reply = re.sub(r'\s+', ' ', reply).strip()
+    reply = re.sub(r"\s+", " ", reply).strip()
 
     # 5. PERSONALIZE only for short casual replies (not technical)
     technical_keywords = [
-        'algorithm', 'neural', 'network', 'model', 'architecture',
-        'function', 'process', 'system', 'mechanism', 'transformer',
-        'attention', 'gradient', 'optimize', 'compute', 'data'
+        "algorithm",
+        "neural",
+        "network",
+        "model",
+        "architecture",
+        "function",
+        "process",
+        "system",
+        "mechanism",
+        "transformer",
+        "attention",
+        "gradient",
+        "optimize",
+        "compute",
+        "data",
     ]
     is_technical = any(kw in reply.lower() for kw in technical_keywords)
     is_long = len(reply.split()) > 25
@@ -60,5 +73,3 @@ def refine_reply(text: str, memory: dict, user_name: str) -> str:
     reply = polish_reply(reply)
 
     return reply
-
-

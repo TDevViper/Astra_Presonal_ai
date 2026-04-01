@@ -10,35 +10,35 @@ import shutil
 import gzip
 from typing import Dict, Optional, Callable
 
-logger       = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 _BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 WATCHED_SERVICES = [
     {
-        "name":     "ollama",
-        "check":    lambda: _port_open(11434),
-        "restart":  "ollama serve",
+        "name": "ollama",
+        "check": lambda: _port_open(11434),
+        "restart": "ollama serve",
         "critical": True,
     },
     {
-        "name":     "redis",
-        "check":    lambda: _port_open(6379),
-        "restart":  "redis-server --daemonize yes",
+        "name": "redis",
+        "check": lambda: _port_open(6379),
+        "restart": "redis-server --daemonize yes",
         "critical": False,
     },
 ]
 
 _CHECK_INTERVAL = 30
-_DISK_WARN_PCT  = 85
-_DISK_CRIT_PCT  = 95
-_RAM_WARN_PCT   = 85
-_RAM_CRIT_PCT   = 95
+_DISK_WARN_PCT = 85
+_DISK_CRIT_PCT = 95
+_RAM_WARN_PCT = 85
+_RAM_CRIT_PCT = 95
 
 _state: Dict = {
-    "running":    False,
-    "restarts":   {},
+    "running": False,
+    "restarts": {},
     "last_sweep": None,
-    "alerts":     [],
+    "alerts": [],
 }
 _broadcast_fn: Optional[Callable] = None
 
@@ -59,11 +59,12 @@ def _alert(msg: str):
         try:
             _broadcast_fn(msg)
         except Exception as _e:
-            logger.debug('process_guardian: %s', _e)
+            logger.debug("process_guardian: %s", _e)
 
 
 def _port_open(port: int) -> bool:
     import socket
+
     try:
         with socket.create_connection(("localhost", port), timeout=1):
             return True
@@ -74,8 +75,11 @@ def _port_open(port: int) -> bool:
 def _restart_service(service: Dict) -> bool:
     name = service["name"]
     try:
-        subprocess.Popen(service["restart"].split(),
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.Popen(
+            service["restart"].split(),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
         time.sleep(3)
         if service["check"]():
             _state["restarts"][name] = _state["restarts"].get(name, 0) + 1
@@ -92,7 +96,9 @@ def _check_services():
     for svc in WATCHED_SERVICES:
         try:
             if not svc["check"]():
-                _alert(f"💀 {svc['name']} is DOWN{'  (critical)' if svc['critical'] else ''}")
+                _alert(
+                    f"💀 {svc['name']} is DOWN{'  (critical)' if svc['critical'] else ''}"
+                )
                 _restart_service(svc)
         except Exception as e:
             logger.debug("service check error (%s): %s", svc["name"], e)
@@ -106,7 +112,7 @@ def _check_disk():
             _alert(f"🔴 Disk critically full: {pct:.0f}% — auto-compressing logs")
             _compress_logs()
         elif pct >= _DISK_WARN_PCT:
-            _alert(f"⚠️ Disk at {pct:.0f}% — {round(free/1e9,1)}GB free")
+            _alert(f"⚠️ Disk at {pct:.0f}% — {round(free / 1e9, 1)}GB free")
     except Exception as e:
         logger.debug("disk check error: %s", e)
 
@@ -114,6 +120,7 @@ def _check_disk():
 def _check_ram():
     try:
         import psutil
+
         pct = psutil.virtual_memory().percent
         if pct >= _RAM_CRIT_PCT:
             _alert(f"🔴 RAM at {pct:.0f}% — severe memory pressure")
@@ -141,7 +148,7 @@ def _compress_logs():
             except Exception as e:
                 logger.warning("compress_logs failed for %s: %s", fname, e)
     if freed > 0:
-        _alert(f"🗜️ Compressed logs — freed {round(freed/1e6, 1)}MB")
+        _alert(f"🗜️ Compressed logs — freed {round(freed / 1e6, 1)}MB")
 
 
 def _guardian_loop():

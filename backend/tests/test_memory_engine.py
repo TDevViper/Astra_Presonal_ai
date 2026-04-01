@@ -1,4 +1,5 @@
 """Tests for memory_engine — locking, load, save, corruption recovery."""
+
 import json
 import os
 import sys
@@ -13,6 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 def mem_file(tmp_path, monkeypatch):
     """Redirect MEMORY_FILE to a temp path for each test."""
     import memory.memory_engine as me
+
     me._user_caches.clear()
     f = tmp_path / "memory.json"
     monkeypatch.setattr(me, "MEMORY_FILE", str(f))
@@ -23,6 +25,7 @@ def mem_file(tmp_path, monkeypatch):
 
 def test_load_returns_default_when_missing(mem_file):
     import memory.memory_engine as me
+
     me.invalidate_memory_cache()
     load_memory = me.load_memory
     result = load_memory()
@@ -32,6 +35,7 @@ def test_load_returns_default_when_missing(mem_file):
 
 def test_save_and_load_roundtrip(mem_file):
     import memory.memory_engine as me
+
     me.invalidate_memory_cache()
     load_memory = me.load_memory
     save_memory = me.save_memory
@@ -46,6 +50,7 @@ def test_save_and_load_roundtrip(mem_file):
 
 def test_load_recovers_from_corrupted_file(mem_file):
     import memory.memory_engine as me
+
     me.invalidate_memory_cache()
     mem_file.write_text("{ invalid json !!!")
     result = me.load_memory()
@@ -56,6 +61,7 @@ def test_load_recovers_from_corrupted_file(mem_file):
 def test_save_is_atomic_no_partial_write(mem_file, monkeypatch):
     """os.replace ensures readers never see a half-written file."""
     from memory.memory_engine import save_memory, load_memory
+
     mem = load_memory()
     mem["preferences"]["name"] = "AtomicTest"
     save_memory(mem)
@@ -67,6 +73,7 @@ def test_save_is_atomic_no_partial_write(mem_file, monkeypatch):
 def test_concurrent_saves_no_corruption(mem_file):
     """50 threads writing simultaneously — final file must be valid JSON."""
     from memory.memory_engine import load_memory, save_memory
+
     errors = []
 
     def writer(i):
@@ -78,8 +85,10 @@ def test_concurrent_saves_no_corruption(mem_file):
             errors.append(e)
 
     threads = [threading.Thread(target=writer, args=(i,)) for i in range(50)]
-    for t in threads: t.start()
-    for t in threads: t.join()
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
 
     assert errors == [], f"Errors during concurrent writes: {errors}"
     # File must still be valid JSON
@@ -91,6 +100,7 @@ def test_missing_keys_backfilled_on_load(mem_file):
     """Old memory files missing new keys get defaults injected."""
     mem_file.write_text(json.dumps({"preferences": {"name": "OldUser"}}))
     from memory.memory_engine import load_memory
+
     result = load_memory()
     assert "user_facts" in result
     assert "emotional_patterns" in result

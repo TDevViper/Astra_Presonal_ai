@@ -4,6 +4,7 @@ from rag.chunker import chunk_text, chunk_by_paragraph
 from rag.embeddings import embed_batch
 from rag.vector_store import add_chunks
 
+
 def ingest_text(text: str, source: str = "manual", tags: list = None):
     chunks = chunk_by_paragraph(text)
     if not chunks:
@@ -12,12 +13,14 @@ def ingest_text(text: str, source: str = "manual", tags: list = None):
     add_chunks(chunks, embeddings, source=source, tags=tags or [])
     return len(chunks)
 
+
 def ingest_file(path: str, tags: list = None):
     ext = os.path.splitext(path)[1].lower()
     if ext == ".pdf":
         from pypdf import PdfReader
+
         reader = PdfReader(path)
-        text   = "\n".join(p.extract_text() or "" for p in reader.pages)
+        text = "\n".join(p.extract_text() or "" for p in reader.pages)
     elif ext in [".md", ".txt", ".py", ".js", ".ts"]:
         with open(path) as f:
             text = f.read()
@@ -26,6 +29,7 @@ def ingest_file(path: str, tags: list = None):
         return 0
     source = os.path.basename(path)
     return ingest_text(text, source=source, tags=tags or [ext.strip(".")])
+
 
 def ingest_folder(folder: str, extensions: list = None, tags: list = None):
     extensions = extensions or [".md", ".txt", ".pdf"]  # .py excluded by default

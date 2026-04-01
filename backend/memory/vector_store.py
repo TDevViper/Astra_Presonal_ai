@@ -1,6 +1,7 @@
 """
 Vector memory store — LanceDB backend.
 """
+
 import os
 import logging
 import time
@@ -10,16 +11,17 @@ from typing import List, Dict, Tuple, Optional
 
 logger = logging.getLogger(__name__)
 
-DB_DIR          = os.path.join(os.path.dirname(__file__), "..", "data", "lancedb")
-TABLE_NAME      = "astra_memory"
-TOP_K           = 5
-EMBED_MODEL     = "BAAI/bge-small-en-v1.5"
+DB_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "lancedb")
+TABLE_NAME = "astra_memory"
+TOP_K = 5
+EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 SCORE_THRESHOLD = 0.30
-RECENCY_WEIGHT  = 0.30
+RECENCY_WEIGHT = 0.30
 SEMANTIC_WEIGHT = 0.70
 
-_embedder      = None
+_embedder = None
 _embedder_lock = threading.Lock()
+
 
 def _get_embedder():
     global _embedder
@@ -28,11 +30,13 @@ def _get_embedder():
             if _embedder is None:
                 try:
                     from sentence_transformers import SentenceTransformer
+
                     _embedder = SentenceTransformer(EMBED_MODEL)
                     logger.info("Embedder loaded: %s", EMBED_MODEL)
                 except Exception as e:
                     logger.error("Embedder load failed: %s", e)
     return _embedder
+
 
 def _embed(text: str):
     emb = _get_embedder()
@@ -44,8 +48,10 @@ def _embed(text: str):
         logger.error("Embed error: %s", e)
         return None
 
-_table      = None
+
+_table = None
 _table_lock = threading.Lock()
+
 
 def _get_table():
     global _table
@@ -57,19 +63,22 @@ def _get_table():
         try:
             import lancedb
             import pyarrow as pa
+
             os.makedirs(DB_DIR, exist_ok=True)
             db = lancedb.connect(DB_DIR)
-            schema = pa.schema([
-                pa.field("id",        pa.string()),
-                pa.field("text",      pa.string()),
-                pa.field("vector",    pa.list_(pa.float32(), 384)),
-                pa.field("source",    pa.string()),
-                pa.field("user",      pa.string()),
-                pa.field("user_id",   pa.string()),
-                pa.field("fact_type", pa.string()),
-                pa.field("priority",  pa.float32()),
-                pa.field("ts",        pa.float64()),
-            ])
+            schema = pa.schema(
+                [
+                    pa.field("id", pa.string()),
+                    pa.field("text", pa.string()),
+                    pa.field("vector", pa.list_(pa.float32(), 384)),
+                    pa.field("source", pa.string()),
+                    pa.field("user", pa.string()),
+                    pa.field("user_id", pa.string()),
+                    pa.field("fact_type", pa.string()),
+                    pa.field("priority", pa.float32()),
+                    pa.field("ts", pa.float64()),
+                ]
+            )
             if TABLE_NAME in db.table_names():
                 _table = db.open_table(TABLE_NAME)
             else:
@@ -81,9 +90,14 @@ def _get_table():
             logger.error("LanceDB init failed: %s", e)
             return None
 
-def store_fact(fact: str, fact_type: str = "fact",
-               user_name: str = "user", user_id: str = "default",
-               priority: float = 0.8) -> bool:
+
+def store_fact(
+    fact: str,
+    fact_type: str = "fact",
+    user_name: str = "user",
+    user_id: str = "default",
+    priority: float = 0.8,
+) -> bool:
     vector = _embed(fact)
     if vector is None:
         return False
@@ -95,20 +109,32 @@ def store_fact(fact: str, fact_type: str = "fact",
         if existing and existing[0]["score"] > 0.92:
             return False
         import pyarrow as pa
-        tbl.add(pa.table({
-            "id": [str(uuid.uuid4())], "text": [fact], "vector": [vector],
-            "source": ["fact"], "user": [user_name], "user_id": [user_id],
-            "fact_type": [fact_type], "priority": [float(priority)],
-            "ts": [time.time()],
-        }))
+
+        tbl.add(
+            pa.table(
+                {
+                    "id": [str(uuid.uuid4())],
+                    "text": [fact],
+                    "vector": [vector],
+                    "source": ["fact"],
+                    "user": [user_name],
+                    "user_id": [user_id],
+                    "fact_type": [fact_type],
+                    "priority": [float(priority)],
+                    "ts": [time.time()],
+                }
+            )
+        )
         logger.info("stored fact | user=%s text=%s", user_name, fact[:60])
         return True
     except Exception as e:
         logger.error("store_fact error: %s", e)
         return False
 
-def store_exchange(user_msg: str, assistant_msg: str,
-                   user_name: str = "user", user_id: str = "default") -> bool:
+
+def store_exchange(
+    user_msg: str, assistant_msg: str, user_name: str = "user", user_id: str = "default"
+) -> bool:
     if len(user_msg.strip()) < 10 or len(assistant_msg.strip()) < 10:
         return False
     combined = f"User: {user_msg}\nASTRA: {assistant_msg}"
@@ -120,18 +146,31 @@ def store_exchange(user_msg: str, assistant_msg: str,
         return False
     try:
         import pyarrow as pa
-        tbl.add(pa.table({
-            "id": [str(uuid.uuid4())], "text": [combined], "vector": [vector],
-            "source": ["exchange"], "user": [user_name], "user_id": [user_id],
-            "fact_type": ["exchange"], "priority": [0.5], "ts": [time.time()],
-        }))
+
+        tbl.add(
+            pa.table(
+                {
+                    "id": [str(uuid.uuid4())],
+                    "text": [combined],
+                    "vector": [vector],
+                    "source": ["exchange"],
+                    "user": [user_name],
+                    "user_id": [user_id],
+                    "fact_type": ["exchange"],
+                    "priority": [0.5],
+                    "ts": [time.time()],
+                }
+            )
+        )
         return True
     except Exception as e:
         logger.error("store_exchange error: %s", e)
         return False
 
-def semantic_search(query: str, top_k: int = TOP_K,
-                    user_id: str = None) -> Tuple[List[Dict], List[Dict]]:
+
+def semantic_search(
+    query: str, top_k: int = TOP_K, user_id: str = None
+) -> Tuple[List[Dict], List[Dict]]:
     vector = _embed(query)
     if vector is None:
         return [], []
@@ -139,7 +178,7 @@ def semantic_search(query: str, top_k: int = TOP_K,
     if tbl is None:
         return [], []
     try:
-        now    = time.time()
+        now = time.time()
         oldest = now - 60 * 60 * 24 * 90
         results = tbl.search(vector).limit(top_k * 3).to_list()
         facts, exchanges = [], []
@@ -148,11 +187,15 @@ def semantic_search(query: str, top_k: int = TOP_K,
                 continue
             raw_score = 1.0 - float(r.get("_distance", 1.0))
             age_score = max(0, (r["ts"] - oldest) / (now - oldest + 1))
-            score     = SEMANTIC_WEIGHT * raw_score + RECENCY_WEIGHT * age_score
+            score = SEMANTIC_WEIGHT * raw_score + RECENCY_WEIGHT * age_score
             if score < SCORE_THRESHOLD:
                 continue
-            hit = {"text": r["text"], "score": round(score, 3),
-                   "fact_type": r.get("fact_type", ""), "ts": r["ts"]}
+            hit = {
+                "text": r["text"],
+                "score": round(score, 3),
+                "fact_type": r.get("fact_type", ""),
+                "ts": r["ts"],
+            }
             if r["source"] == "fact":
                 facts.append(hit)
             else:
@@ -164,6 +207,7 @@ def semantic_search(query: str, top_k: int = TOP_K,
         logger.error("semantic_search error: %s", e)
         return [], []
 
+
 def get_memory_count() -> int:
     tbl = _get_table()
     if tbl is None:
@@ -172,6 +216,7 @@ def get_memory_count() -> int:
         return tbl.count_rows()
     except Exception:
         return 0
+
 
 def compress_memory(max_exchanges: int = 200, user_id: str = None) -> int:
     tbl = _get_table()
@@ -186,7 +231,7 @@ def compress_memory(max_exchanges: int = 200, user_id: str = None) -> int:
             return 0
         cutoff = int(len(exchanges) * 0.20)
         oldest = exchanges.nsmallest(cutoff, "ts")
-        ids    = oldest["id"].tolist()
+        ids = oldest["id"].tolist()
         ids_sql = ", ".join(f'"{i}"' for i in ids)
         tbl.delete(f"id IN ({ids_sql})")
         logger.info("compressed %d exchanges", len(ids))

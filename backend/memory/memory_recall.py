@@ -4,25 +4,47 @@ def memory_recall(user_message: str, memory: dict, user_name: str) -> str:
     Only triggers for QUESTIONS, not statements.
     """
     text = user_message.lower().strip()
-    
+
     # IMPORTANT: Only recall for questions, not statements
     # If user is TELLING us something (has "is", "are"), don't recall
-    is_statement = any(phrase in text for phrase in [
-        " is ", " are ", " was ", " were ",
-        "my favorite", "my favourite", "i like", "i love"
-    ])
-    
+    is_statement = any(
+        phrase in text
+        for phrase in [
+            " is ",
+            " are ",
+            " was ",
+            " were ",
+            "my favorite",
+            "my favourite",
+            "i like",
+            "i love",
+        ]
+    )
+
     # If it's a statement, let it pass through to extraction
-    if is_statement and not text.startswith(("what", "where", "who", "when", "why", "how")):
+    if is_statement and not text.startswith(
+        ("what", "where", "who", "when", "why", "how")
+    ):
         return None
 
     # NAME RECALL
-    if any(phrase in text for phrase in ["what's my name", "what is my name", "whats my name", "who am i", "do you know my name"]):
+    if any(
+        phrase in text
+        for phrase in [
+            "what's my name",
+            "what is my name",
+            "whats my name",
+            "who am i",
+            "do you know my name",
+        ]
+    ):
         name = memory.get("preferences", {}).get("name", user_name)
         return f"Your name is {name}!"
 
     # LOCATION RECALL - Questions only
-    if any(phrase in text for phrase in ["where do i live", "where am i from", "what city"]):
+    if any(
+        phrase in text for phrase in ["where do i live", "where am i from", "what city"]
+    ):
         location = memory.get("preferences", {}).get("location")
         if location:
             return f"You live in {location}."
@@ -32,55 +54,88 @@ def memory_recall(user_message: str, memory: dict, user_name: str) -> str:
     if text.startswith(("what", "what's", "whats")) and "color" in text:
         # Check preferences first
         color = memory.get("preferences", {}).get("favorite_color")
-        
+
         # If not in preferences, search user_facts
         if not color:
             facts = memory.get("user_facts", [])
             for fact in facts:
-                if fact.get("type") == "preference" and "color" in fact.get("fact", "").lower():
+                if (
+                    fact.get("type") == "preference"
+                    and "color" in fact.get("fact", "").lower()
+                ):
                     color = fact.get("value")
                     break
-        
+
         if color:
             return f"Your favorite color is {color}!"
         return "I don't know your favorite color yet. What is it?"
 
-
     # HOBBIES / INTERESTS
-    if any(phrase in text for phrase in ["hobby", "hobbies", "what do i love", "what do i enjoy", "what are my interests", "what i like to do"]):
+    if any(
+        phrase in text
+        for phrase in [
+            "hobby",
+            "hobbies",
+            "what do i love",
+            "what do i enjoy",
+            "what are my interests",
+            "what i like to do",
+        ]
+    ):
         facts = memory.get("user_facts", [])
-        hobbies = [f.get("value") or f.get("fact","") for f in facts if f.get("type") == "hobby" or any(w in f.get("fact","").lower() for w in ["love", "hobby", "sport", "cricket", "play", "enjoy", "interest", "passion"])]
+        hobbies = [
+            f.get("value") or f.get("fact", "")
+            for f in facts
+            if f.get("type") == "hobby"
+            or any(
+                w in f.get("fact", "").lower()
+                for w in [
+                    "love",
+                    "hobby",
+                    "sport",
+                    "cricket",
+                    "play",
+                    "enjoy",
+                    "interest",
+                    "passion",
+                ]
+            )
+        ]
         if hobbies:
             return "Your hobbies: " + ", ".join(h.title() for h in hobbies if h) + "."
         return "I don't know your hobbies yet. Tell me what you enjoy!"
 
     # GENERAL PREFERENCES - Questions only
-    if text.startswith(("what", "tell me")) and any(word in text for word in ["like", "prefer", "favorite", "favourite"]):
+    if text.startswith(("what", "tell me")) and any(
+        word in text for word in ["like", "prefer", "favorite", "favourite"]
+    ):
         prefs = memory.get("preferences", {})
         facts = memory.get("user_facts", [])
-        
+
         pref_list = []
-        
+
         # From preferences dict
         for key, val in prefs.items():
             if val and key != "name":
                 pref_list.append(f"{key.replace('_', ' ')}: {val}")
-        
+
         # From user_facts
         for fact in facts[-5:]:
             if fact.get("type") == "preference":
                 pref_list.append(fact.get("fact", ""))
-        
+
         if pref_list:
             return "Here's what I know you like: " + ", ".join(pref_list) + "."
         return "I haven't learned your preferences yet. Tell me what you like!"
 
     # GENERAL MEMORY QUERY
-    if any(phrase in text for phrase in ["what do you know about me", "what you remember"]):
+    if any(
+        phrase in text for phrase in ["what do you know about me", "what you remember"]
+    ):
         facts = memory.get("user_facts", [])
         if not facts:
             return "I'm still learning about you! Tell me more."
-        
+
         recent_facts = [f["fact"] for f in facts[-5:]]
         return "Here's what I remember: " + ", ".join(recent_facts) + "."
 

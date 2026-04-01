@@ -1,5 +1,6 @@
 import asyncio
 from core.llm_engine import LLMEngine as _LLMEngine
+
 _llm = _LLMEngine()
 import os
 # ==========================================
@@ -23,36 +24,37 @@ CONFIDENCE_THRESHOLD = 0.75
 
 
 class LoopStatus(Enum):
-    RUNNING   = "running"
-    DONE      = "done"
-    FAILED    = "failed"
-    TIMEOUT   = "timeout"
+    RUNNING = "running"
+    DONE = "done"
+    FAILED = "failed"
+    TIMEOUT = "timeout"
 
 
 @dataclass
 class AgentStep:
-    iteration:   int
-    thought:     str
-    action:      str
+    iteration: int
+    thought: str
+    action: str
     action_input: str
     observation: str
-    confidence:  float
-    elapsed:     float
+    confidence: float
+    elapsed: float
 
 
 @dataclass
 class LoopResult:
-    final_reply:  str
-    steps:        List[AgentStep] = field(default_factory=list)
-    status:       LoopStatus      = LoopStatus.DONE
-    total_elapsed: float          = 0.0
-    iterations:   int             = 0
-    confidence:   float           = 0.0
+    final_reply: str
+    steps: List[AgentStep] = field(default_factory=list)
+    status: LoopStatus = LoopStatus.DONE
+    total_elapsed: float = 0.0
+    iterations: int = 0
+    confidence: float = 0.0
 
 
 # ══════════════════════════════════════════
 # OBSERVE — understand what is being asked
 # ══════════════════════════════════════════
+
 
 def _observe(user_input: str, context: Dict) -> Dict:
     """
@@ -69,31 +71,58 @@ def _observe(user_input: str, context: Dict) -> Dict:
         complexity += 1
     if any(w in t for w in ["and then", "after that", "first", "then", "finally"]):
         complexity += 1
-    if any(w in t for w in ["compare", "analyze", "research", "build", "create", "implement"]):
+    if any(
+        w in t
+        for w in ["compare", "analyze", "research", "build", "create", "implement"]
+    ):
         complexity += 1
 
-    requires_tools = any(w in t for w in [
-        "search", "file", "git", "run", "execute", "calendar",
-        "task", "system", "code", "python", "weather", "news"
-    ])
+    requires_tools = any(
+        w in t
+        for w in [
+            "search",
+            "file",
+            "git",
+            "run",
+            "execute",
+            "calendar",
+            "task",
+            "system",
+            "code",
+            "python",
+            "weather",
+            "news",
+        ]
+    )
 
-    requires_reflection = complexity >= 3 or any(w in t for w in [
-        "best way", "should i", "what do you think", "advice",
-        "recommend", "pros and cons", "compare"
-    ])
+    requires_reflection = complexity >= 3 or any(
+        w in t
+        for w in [
+            "best way",
+            "should i",
+            "what do you think",
+            "advice",
+            "recommend",
+            "pros and cons",
+            "compare",
+        ]
+    )
 
     observation = {
-        "input":               user_input,
-        "complexity":          complexity,
-        "requires_tools":      requires_tools,
+        "input": user_input,
+        "complexity": complexity,
+        "requires_tools": requires_tools,
         "requires_reflection": requires_reflection,
-        "context":             context,
+        "context": context,
     }
 
-    log_event(agent_logger, "observe",
-              complexity=complexity,
-              requires_tools=requires_tools,
-              requires_reflection=requires_reflection)
+    log_event(
+        agent_logger,
+        "observe",
+        complexity=complexity,
+        requires_tools=requires_tools,
+        requires_reflection=requires_reflection,
+    )
 
     return observation
 
@@ -101,6 +130,7 @@ def _observe(user_input: str, context: Dict) -> Dict:
 # ══════════════════════════════════════════
 # PLAN — decompose into steps
 # ══════════════════════════════════════════
+
 
 def _plan(observation: Dict) -> List[Dict]:
     """
@@ -113,8 +143,8 @@ def _plan(observation: Dict) -> List[Dict]:
     # Tool queries — always check tools first before simple fallback
     if observation["requires_tools"] and not observation["requires_reflection"]:
         return [
-            {"step": 1, "action": "tool_execute",  "description": user_input},
-            {"step": 2, "action": "llm_reply",     "description": "summarise tool result"},
+            {"step": 1, "action": "tool_execute", "description": user_input},
+            {"step": 2, "action": "llm_reply", "description": "summarise tool result"},
         ]
 
     # Simple queries — single step
@@ -123,15 +153,26 @@ def _plan(observation: Dict) -> List[Dict]:
 
     # Complex queries — full pipeline
     plan = [
-        {"step": 1, "action": "memory_recall",  "description": f"recall context for: {user_input}"},
-        {"step": 2, "action": "tool_execute",   "description": user_input},
-        {"step": 3, "action": "llm_reply",      "description": user_input},
-        {"step": 4, "action": "reflect",        "description": "check if answer is complete and correct"},
+        {
+            "step": 1,
+            "action": "memory_recall",
+            "description": f"recall context for: {user_input}",
+        },
+        {"step": 2, "action": "tool_execute", "description": user_input},
+        {"step": 3, "action": "llm_reply", "description": user_input},
+        {
+            "step": 4,
+            "action": "reflect",
+            "description": "check if answer is complete and correct",
+        },
     ]
 
-    log_event(agent_logger, "plan_created",
-              steps=[p["action"] for p in plan],
-              complexity=complexity)
+    log_event(
+        agent_logger,
+        "plan_created",
+        steps=[p["action"] for p in plan],
+        complexity=complexity,
+    )
     return plan
 
 
@@ -139,8 +180,10 @@ def _plan(observation: Dict) -> List[Dict]:
 # ACT — execute one plan step
 # ══════════════════════════════════════════
 
-async def _act(step: Dict, user_input: str, context: Dict,
-         previous_results: List[str]) -> Tuple[str, float]:
+
+async def _act(
+    step: Dict, user_input: str, context: Dict, previous_results: List[str]
+) -> Tuple[str, float]:
     """
     Execute a single plan step.
     Returns (result_text, confidence).
@@ -178,10 +221,11 @@ async def _act_memory(user_input: str, context: Dict) -> Tuple[str, float]:
         from memory.memory_engine import load_memory
         from memory.semantic_recall import build_semantic_context
 
-        mem    = load_memory()
+        mem = load_memory()
         result = memory_recall(user_input, mem, context.get("user_name", "User"))
-        sem, boost = build_semantic_context(user_input,
-                                            user_name=context.get("user_name", "User"))
+        sem, boost = build_semantic_context(
+            user_input, user_name=context.get("user_name", "User")
+        )
         combined = ""
         if result:
             combined += result
@@ -211,12 +255,14 @@ async def _act_tool(user_input: str, context: Dict) -> Tuple[str, float]:
         return "", 0.0
 
 
-async def _act_llm(user_input: str, context: Dict, prior_results: str = "") -> Tuple[str, float]:
+async def _act_llm(
+    user_input: str, context: Dict, prior_results: str = ""
+) -> Tuple[str, float]:
     try:
         import ollama
         import requests
 
-        GPU_HOST   = os.getenv("REMOTE_GPU_HOST", "")
+        GPU_HOST = os.getenv("REMOTE_GPU_HOST", "")
 
         try:
             alive = requests.get(GPU_HOST, timeout=1).status_code == 200
@@ -224,7 +270,7 @@ async def _act_llm(user_input: str, context: Dict, prior_results: str = "") -> T
             alive = False
 
         # routed through LLMEngine — no direct ollama coupling
-        model  = _llm.select_model("reasoning") if alive else _llm.select_model("fast")
+        model = _llm.select_model("reasoning") if alive else _llm.select_model("fast")
 
         system = (
             "You are ASTRA, a smart personal AI assistant. "
@@ -234,19 +280,25 @@ async def _act_llm(user_input: str, context: Dict, prior_results: str = "") -> T
         messages = [{"role": "system", "content": system}]
 
         if context.get("facts"):
-            messages.append({"role": "system",
-                              "content": f"User facts: {context['facts']}"})
+            messages.append(
+                {"role": "system", "content": f"User facts: {context['facts']}"}
+            )
 
         if prior_results:
-            messages.append({"role": "system",
-                              "content": f"Previous findings:\n{prior_results}"})
+            messages.append(
+                {"role": "system", "content": f"Previous findings:\n{prior_results}"}
+            )
 
         messages.append({"role": "user", "content": user_input})
 
         try:
             import ollama
-            resp = ollama.Client().chat(model=model, messages=messages,
-                                        options={"num_predict": 300, "temperature": 0.65})
+
+            resp = ollama.Client().chat(
+                model=model,
+                messages=messages,
+                options={"num_predict": 300, "temperature": 0.65},
+            )
             return resp["message"]["content"].strip(), 0.75
         except Exception as e:
             return f"LLM error: {e}", 0.0
@@ -256,8 +308,9 @@ async def _act_llm(user_input: str, context: Dict, prior_results: str = "") -> T
         return "", 0.0
 
 
-async def _act_reflect(user_input: str, draft_reply: str,
-                 context: Dict) -> Tuple[str, float]:
+async def _act_reflect(
+    user_input: str, draft_reply: str, context: Dict
+) -> Tuple[str, float]:
     """
     Critic pass — check if the draft reply actually answers the question.
     Returns (improved_reply, confidence).
@@ -266,7 +319,7 @@ async def _act_reflect(user_input: str, draft_reply: str,
         import ollama
         import requests
 
-        GPU_HOST   = os.getenv("REMOTE_GPU_HOST", "")
+        GPU_HOST = os.getenv("REMOTE_GPU_HOST", "")
 
         try:
             alive = requests.get(GPU_HOST, timeout=1).status_code == 200
@@ -274,7 +327,7 @@ async def _act_reflect(user_input: str, draft_reply: str,
             alive = False
 
         # routed through LLMEngine — no direct ollama coupling
-        model  = _llm.select_model("reasoning") if alive else _llm.select_model("fast")
+        model = _llm.select_model("reasoning") if alive else _llm.select_model("fast")
 
         prompt = f"""You are reviewing an AI assistant's response.
 
@@ -293,18 +346,28 @@ Output:"""
 
         try:
             import ollama
-            result = ollama.Client().chat(model=model,
-                messages=[{"role": "user", "content": prompt}],
-                options={"num_predict": 200, "temperature": 0.1}
-            )["message"]["content"].strip()
+
+            result = (
+                ollama.Client()
+                .chat(
+                    model=model,
+                    messages=[{"role": "user", "content": prompt}],
+                    options={"num_predict": 200, "temperature": 0.1},
+                )["message"]["content"]
+                .strip()
+            )
         except Exception as e:
             logger.error("reflect LLM call failed: %s", e)
             return draft_reply, 0.70
             log_event(agent_logger, "reflect_approved")
             return draft_reply, 0.95
         else:
-            log_event(agent_logger, "reflect_improved",
-                      original_len=len(draft_reply), new_len=len(result))
+            log_event(
+                agent_logger,
+                "reflect_improved",
+                original_len=len(draft_reply),
+                new_len=len(result),
+            )
             return result, 0.90
 
     except Exception as e:
@@ -316,6 +379,7 @@ Output:"""
 # MAIN LOOP
 # ══════════════════════════════════════════
 
+
 class AgentLoop:
     """
     Autonomous agent loop.
@@ -326,9 +390,9 @@ class AgentLoop:
         self.max_iterations = max_iterations
 
     async def run(self, user_input: str, context: Dict) -> LoopResult:
-        start  = time.time()
+        start = time.time()
         result = LoopResult(final_reply="")
-        steps  = []
+        steps = []
 
         log_event(agent_logger, "loop_start", input=user_input[:80])
 
@@ -347,8 +411,9 @@ class AgentLoop:
             for plan_step in plan:
                 if len(steps) >= self.max_iterations:
                     result.status = LoopStatus.TIMEOUT
-                    log_event(agent_logger, "loop_max_iterations",
-                              iterations=len(steps))
+                    log_event(
+                        agent_logger, "loop_max_iterations", iterations=len(steps)
+                    )
                     break
 
                 step_start = time.time()
@@ -358,61 +423,69 @@ class AgentLoop:
                 elapsed = round(time.time() - step_start, 2)
 
                 step = AgentStep(
-                    iteration    = len(steps) + 1,
-                    thought      = f"Executing: {plan_step['action']}",
-                    action       = plan_step["action"],
-                    action_input = plan_step["description"],
-                    observation  = observation_text[:200] if observation_text else "",
-                    confidence   = confidence,
-                    elapsed      = elapsed,
+                    iteration=len(steps) + 1,
+                    thought=f"Executing: {plan_step['action']}",
+                    action=plan_step["action"],
+                    action_input=plan_step["description"],
+                    observation=observation_text[:200] if observation_text else "",
+                    confidence=confidence,
+                    elapsed=elapsed,
                 )
                 steps.append(step)
 
-                log_event(agent_logger, "loop_step",
-                          step=step.iteration,
-                          action=step.action,
-                          confidence=confidence,
-                          elapsed=elapsed,
-                          has_result=bool(observation_text))
+                log_event(
+                    agent_logger,
+                    "loop_step",
+                    step=step.iteration,
+                    action=step.action,
+                    confidence=confidence,
+                    elapsed=elapsed,
+                    has_result=bool(observation_text),
+                )
 
                 if observation_text:
                     previous_results.append(observation_text)
 
                 # Track best reply from llm_reply or reflect steps
                 if plan_step["action"] in ("llm_reply", "reflect") and observation_text:
-                    final_reply      = observation_text
+                    final_reply = observation_text
                     final_confidence = confidence
 
                 # ── 4. Early exit if high confidence ──────────
-                if confidence >= CONFIDENCE_THRESHOLD and plan_step["action"] == "reflect":
-                    log_event(agent_logger, "loop_early_exit",
-                              confidence=confidence)
+                if (
+                    confidence >= CONFIDENCE_THRESHOLD
+                    and plan_step["action"] == "reflect"
+                ):
+                    log_event(agent_logger, "loop_early_exit", confidence=confidence)
                     break
 
             # Fallback — use best result from any step
             if not final_reply and previous_results:
-                final_reply      = previous_results[-1]
+                final_reply = previous_results[-1]
                 final_confidence = steps[-1].confidence if steps else 0.5
 
-            result.final_reply   = final_reply or "I wasn't able to find a good answer."
-            result.steps         = steps
-            result.iterations    = len(steps)
-            result.confidence    = final_confidence
+            result.final_reply = final_reply or "I wasn't able to find a good answer."
+            result.steps = steps
+            result.iterations = len(steps)
+            result.confidence = final_confidence
             result.total_elapsed = round(time.time() - start, 2)
 
             if result.status == LoopStatus.RUNNING:
                 result.status = LoopStatus.DONE
 
-            log_event(agent_logger, "loop_done",
-                      iterations=result.iterations,
-                      confidence=result.confidence,
-                      elapsed=result.total_elapsed,
-                      status=result.status.value)
+            log_event(
+                agent_logger,
+                "loop_done",
+                iterations=result.iterations,
+                confidence=result.confidence,
+                elapsed=result.total_elapsed,
+                status=result.status.value,
+            )
 
         except Exception as e:
             logger.error(f"AgentLoop error: {e}", exc_info=True)
-            result.final_reply   = "Something went wrong in the agent loop."
-            result.status        = LoopStatus.FAILED
+            result.final_reply = "Something went wrong in the agent loop."
+            result.status = LoopStatus.FAILED
             result.total_elapsed = round(time.time() - start, 2)
             log_event(agent_logger, "loop_error", error=str(e))
 

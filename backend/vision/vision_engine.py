@@ -14,7 +14,6 @@ SNAPSHOTS_DIR = os.path.join(_BACKEND_DIR, "data", "snapshots")
 
 
 class VisionEngine:
-
     def __init__(self):
         self._last_screen_hash = None
         self._last_camera_hash = None
@@ -30,7 +29,10 @@ class VisionEngine:
 
         b64 = capture_screen()
         if not b64:
-            return {"error": "Screen capture failed", "jarvis_response": "Can't capture screen right now."}
+            return {
+                "error": "Screen capture failed",
+                "jarvis_response": "Can't capture screen right now.",
+            }
 
         # Detect changes
         changed = self._check_changed(b64, "screen")
@@ -50,7 +52,10 @@ class VisionEngine:
 
         b64 = capture_camera()
         if not b64:
-            return {"error": "Camera capture failed", "jarvis_response": "Can't access camera. Check permissions in System Settings → Privacy → Camera."}
+            return {
+                "error": "Camera capture failed",
+                "jarvis_response": "Can't access camera. Check permissions in System Settings → Privacy → Camera.",
+            }
 
         changed = self._check_changed(b64, "camera")
         result = analyze(b64, mode="camera", user_context=user_context)
@@ -101,6 +106,7 @@ class VisionEngine:
     def _check_changed(self, b64: str, source: str) -> bool:
         """Check if image changed since last capture."""
         import hashlib
+
         h = hashlib.md5(b64[:1000].encode()).hexdigest()
         attr = f"_last_{source}_hash"
         last = getattr(self, attr, None)
@@ -110,6 +116,7 @@ class VisionEngine:
     def _save_snapshot(self, b64: str, source: str):
         """Save latest snapshot."""
         from vision.capture import save_base64_image
+
         path = os.path.join(SNAPSHOTS_DIR, f"last_{source}.jpg")
         save_base64_image(b64, path)
 
@@ -118,19 +125,23 @@ class VisionEngine:
     def identify_faces(self, image_b64: str) -> Dict:
         """Who is in this image?"""
         from vision.face_recognition_engine import identify_faces
+
         return identify_faces(image_b64)
 
     def learn_face(self, name: str, image_b64: str) -> Dict:
         """Remember this person."""
         from vision.face_recognition_engine import learn_face
+
         return learn_face(name, image_b64)
 
     def list_known_faces(self) -> Dict:
         from vision.face_recognition_engine import list_known_faces
+
         return list_known_faces()
 
     def forget_face(self, name: str) -> Dict:
         from vision.face_recognition_engine import forget_face
+
         return forget_face(name)
 
 

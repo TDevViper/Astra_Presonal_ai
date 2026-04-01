@@ -5,9 +5,13 @@ import re
 
 BASE = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # points to backend/
 
+
 def extract_filepath(text: str) -> str | None:
-    match = re.search(r'[\w./\\-]+\.(?:py|txt|json|csv|js|ts|md|yaml|yml|env|sh|html|css)', text)
+    match = re.search(
+        r"[\w./\\-]+\.(?:py|txt|json|csv|js|ts|md|yaml|yml|env|sh|html|css)", text
+    )
     return match.group(0) if match else None
+
 
 def list_files(directory: str = ".") -> dict:
     try:
@@ -15,10 +19,18 @@ def list_files(directory: str = ".") -> dict:
         entries = []
         for name in sorted(os.listdir(target))[:50]:
             full = os.path.join(target, name)
-            entries.append({"name": name, "type": "dir" if os.path.isdir(full) else "file"})
-        return {"success": True, "directory": target, "files": entries, "count": len(entries)}
+            entries.append(
+                {"name": name, "type": "dir" if os.path.isdir(full) else "file"}
+            )
+        return {
+            "success": True,
+            "directory": target,
+            "files": entries,
+            "count": len(entries),
+        }
     except Exception as e:
         return {"success": False, "error": str(e), "files": [], "count": 0}
+
 
 def read_file(path: str) -> dict:
     full_path = path if os.path.isabs(path) else os.path.join(BASE, path)
@@ -38,7 +50,7 @@ def read_file(path: str) -> dict:
             "content": content,
             "lines": lines,
             "truncated": truncated_at is not None,
-            "truncated_at": truncated_at
+            "truncated_at": truncated_at,
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
