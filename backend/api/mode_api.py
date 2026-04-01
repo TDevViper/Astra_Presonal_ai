@@ -31,7 +31,7 @@ _MODE_ALIASES = {
 
 
 @mode_bp.get("/mode/list")
-def list_all_modes():
+def list_all_modes(request: Request):
     try:
         return JSONResponse(content={"modes": list_modes(), "current": get_current_mode()})
     except Exception as e:
@@ -39,9 +39,9 @@ def list_all_modes():
 
 
 @mode_bp.post("/mode/set")
-def switch_mode():
+def switch_mode(request: Request):
     try:
-        data = request.get_json() or {}
+        data = (await request.json() if request.headers.get('content-type','').startswith('application/json') else {})
         raw = data.get("mode", "").strip().lower()
         if not raw:
             return JSONResponse(content={"error": "No mode specified"}, status_code=400)
@@ -66,7 +66,7 @@ def switch_mode():
 
 
 @mode_bp.get("/mode/current")
-def current_mode():
+def current_mode(request: Request):
     try:
         return JSONResponse(content=
             {

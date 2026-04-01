@@ -9,7 +9,7 @@ ingest_bp = APIRouter()
 
 
 @ingest_bp.get("/ingest/status")
-def ingest_status():
+def ingest_status(request: Request):
     """How many chunks are in the RAG index?"""
     try:
         from rag.vector_store import count
@@ -30,7 +30,7 @@ def ingest_status():
 
 
 @ingest_bp.post("/ingest/scan")
-def ingest_scan():
+def ingest_scan(request: Request):
     """Manually trigger a scan of the docs folder."""
     try:
         from rag.watcher import ingest_now
@@ -43,10 +43,10 @@ def ingest_scan():
 
 
 @ingest_bp.post("/ingest/text")
-def ingest_text():
+def ingest_text(request: Request):
     """Ingest raw text directly. POST {text, source}"""
     try:
-        data = request.get_json() or {}
+        data = (await request.json() if request.headers.get('content-type','').startswith('application/json') else {})
         text = data.get("text", "").strip()
         source = data.get("source", "manual")
         if not text:
@@ -60,10 +60,10 @@ def ingest_text():
 
 
 @ingest_bp.post("/ingest/search")
-def ingest_search():
+def ingest_search(request: Request):
     """Search the RAG index. POST {query, top_k}"""
     try:
-        data = request.get_json() or {}
+        data = (await request.json() if request.headers.get('content-type','').startswith('application/json') else {})
         query = data.get("query", "").strip()
         top_k = int(data.get("top_k", 5))
         if not query:

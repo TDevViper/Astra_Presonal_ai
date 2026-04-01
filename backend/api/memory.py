@@ -7,7 +7,7 @@ memory_bp = APIRouter()
 
 
 @memory_bp.get("/memory")
-def get_memory():
+def get_memory(request: Request):
     """Get current memory."""
     try:
         from memory.memory_engine import load_memory
@@ -19,12 +19,12 @@ def get_memory():
 
 
 @memory_bp.post("/memory")
-def update_memory():
+def update_memory(request: Request):
     """Manually update memory."""
     try:
         from memory.memory_engine import load_memory, save_memory
 
-        data = request.get_json()
+        data = await request.json()
         memory = load_memory()
         if "user_facts" in data:
             memory["user_facts"] = data["user_facts"]
@@ -38,7 +38,7 @@ def update_memory():
 
 
 @memory_bp.delete("/memory")
-def clear_memory():
+def clear_memory(request: Request):
     """Clear all memory."""
     try:
         from memory.memory_engine import load_memory, save_memory
@@ -61,7 +61,7 @@ def clear_memory():
 
 
 @memory_bp.get("/memory/facts")
-def get_facts():
+def get_facts(request: Request):
     """Get only user facts."""
     try:
         from memory.memory_engine import load_memory
@@ -74,7 +74,7 @@ def get_facts():
 
 
 @memory_bp.get("/memory/summary")
-def get_summary():
+def get_summary(request: Request):
     """Get conversation summary."""
     try:
         from memory.memory_engine import load_memory
@@ -93,7 +93,7 @@ _style_bp = APIRouter() if False else None
 
 
 @memory_bp.get("/api/style")
-def get_style():
+def get_style(request: Request):
     try:
         from core.adaptive_personality import _load_style, get_style_addon
 
@@ -104,7 +104,7 @@ def get_style():
 
 
 @memory_bp.post("/api/style")
-def set_style():
+def set_style(request: Request):
     try:
         data = _req.get_json()
         from core.adaptive_personality import update_style_manually
@@ -118,7 +118,7 @@ def set_style():
 
 
 @memory_bp.post("/api/style/refine")
-def force_refine():
+def force_refine(request: Request):
     try:
         from core.adaptive_personality import maybe_refine
 

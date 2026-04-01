@@ -57,8 +57,8 @@ def _wants_vision(text: str) -> bool:
 
 
 @realtime_bp.post("/realtime/talk")
-def realtime_talk():
-    data = request.get_json() or {}
+def realtime_talk(request: Request):
+    data = (await request.json() if request.headers.get('content-type','').startswith('application/json') else {})
     duration = int(data.get("duration", 5))
     image = data.get("image")
 
@@ -105,7 +105,7 @@ def realtime_talk():
 
 
 @realtime_bp.get("/realtime/status")
-def realtime_status():
+def realtime_status(request: Request):
     import ollama
 
     GPU_HOST = os.getenv("REMOTE_GPU_HOST", "")
