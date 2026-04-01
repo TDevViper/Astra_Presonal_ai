@@ -1,7 +1,4 @@
 import asyncio
-from core.llm_engine import LLMEngine as _LLMEngine
-
-_llm = _LLMEngine()
 import os
 # ==========================================
 # core/agent_loop.py — Autonomous Agent Loop
@@ -17,7 +14,17 @@ from enum import Enum
 
 from utils.logger import agent_logger, log_event
 
+from core.llm_engine import LLMEngine as _LLMEngine
+
 logger = logging.getLogger(__name__)
+
+_llm = None
+
+def _get_llm():
+    global _llm
+    if _llm is None:
+        _llm = _LLMEngine()
+    return _llm
 
 MAX_ITERATIONS = 5
 CONFIDENCE_THRESHOLD = 0.75
