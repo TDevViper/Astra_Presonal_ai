@@ -62,7 +62,7 @@ def vision_analyze_b64(request: Request):
     try:
         from vision.analyzer import analyze
 
-        data = request.get_json(silent=True)
+        data = (await request.json() if request.headers.get('content-type','').startswith('application/json') else None)
         if not data or "image" not in data:
             return JSONResponse(content={"error": "No image provided"}, status_code=400)
 

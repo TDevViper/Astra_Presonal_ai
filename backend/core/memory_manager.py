@@ -46,7 +46,7 @@ class MemoryManager:
             ensure_emotion_memory(memory)
             return update_emotion(memory, label, score)
         except Exception as e:
-            logger.debug("update_emotion failed: %s", e)
+            logger.warning("update_emotion failed: %s", e)
         return memory
 
     def extract_and_store_fact(
@@ -83,7 +83,7 @@ class MemoryManager:
 
                     index_user_fact(fact, user_name)
                 except Exception as e:
-                    logger.debug("index_user_fact failed: %s", e)
+                    logger.warning("index_user_fact failed: %s", e)
             return fact, memory
         except Exception as e:
             logger.warning("extract_and_store_fact failed: %s", e)
@@ -102,7 +102,7 @@ class MemoryManager:
 
             return memory_recall(user_input, memory, user_name)
         except Exception as e:
-            logger.debug("MemoryManager.recall failed: %s", e)
+            logger.warning("MemoryManager.recall failed: %s", e)
         return None
 
     def post_turn(
