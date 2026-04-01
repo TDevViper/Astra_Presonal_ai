@@ -1,92 +1,21 @@
-# -------------------------
-# Python
+venv*/
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-
-# Virtual environments
-venv/
-venv311/
 .env
-
-# Databases
-*.db
-*.sqlite
-
-# Vector DB
-backend/data/vector_db/
-
-# AI memory runtime
-backend/memory/data/
-backend/memory.json
-
-# Backup files
-*.bak*
-*.orig
-
-# AI / ML models
-*.pth
-*.pt
-*.bin
-*.gguf
-*.onnx
-*.safetensors
-*.ppn
-models/
-
-# Node
-node_modules/
-
-# Build outputs
-dist/
-build/
-
-# Logs
-*.log
-logs/
-
-# Coverage
-.coverage
-htmlcov/
-coverage.xml
-
-# OS
-.DS_Store
-
-# IDE
-.vscode/
-.idea/
-
-# Docker
-.dockerignore
-
-# Project backups
-backend_original_backup/
-backend/memory/data/
-backend/data/snapshots/
-backend/data/vector_db/
-*.npy
-memory.json
-backend/.coverage
-backend/logs/
-backend/.coverage
-backend/logs/
-backend/memory/vector_store/ 
-
-# LanceDB vector store data
-backend/data/lancedb/
-*.lance
-
-# Frontend build
+frontend/node_modules/
 frontend/dist/
-
-# Voice models
-voices/
+logs/*.log
+.DS_Store
+voices/*.pt
+# Backend runtime
+backend/__pycache__/
+backend/**/__pycache__/
+backend/data/
+backend/logs/
+backend/models/
+backend/memory/data/
+backend/memory/vector_store/
+backend/astra_memory.db
+backend/*.onnx
+backend/*.bin
 backend/voices/
-backend/voices.bin
-backend/kokoro-v0_19.onnx
-
-# Runtime data
-backend/ai_news.txt
-backend/data/traces.json
