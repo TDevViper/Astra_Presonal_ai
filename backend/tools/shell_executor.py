@@ -11,6 +11,14 @@ from typing import Dict
 logger = logging.getLogger(__name__)
 
 # Tier 1 — always allowed, no confirmation needed
+import os as _os
+if _os.getenv("ENABLE_SHELL_EXEC", "false").lower() != "true":
+    def execute_shell(*a, **kw):
+        return {"success": False, "output": "Shell execution is disabled. Set ENABLE_SHELL_EXEC=true to enable.", "tier": "disabled"}
+    def propose_shell(command):
+        return {"approved": False, "blocked": True, "command": command, "tier": "disabled", "message": "Shell execution disabled."}
+else:
+
 SAFE_COMMANDS = {
     "ls", "pwd", "echo", "cat", "head", "tail", "grep", "find",
     "git", "python3", "pip", "which", "whoami", "date", "uptime",

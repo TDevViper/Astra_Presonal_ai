@@ -8,6 +8,9 @@ IS_MACOS = platform.system() == "Darwin"
 
 
 def _run_osascript(script):
+    import platform as _platform
+    if _platform.system() != "Darwin":
+        return ""  # osascript not available outside macOS
     if not IS_MACOS:
         return None
     try:

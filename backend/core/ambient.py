@@ -65,7 +65,7 @@ def _scan_once():
         # Extract active app name
         import subprocess
         app_result = subprocess.run(
-            ["osascript", "-e",
+            ["echo", "osascript unavailable"] if __import__("platform").system() != "Darwin" else ["osascript", "-e",
              'tell application "System Events" to get name of first application process whose frontmost is true'],
             capture_output=True, text=True, timeout=3
         )

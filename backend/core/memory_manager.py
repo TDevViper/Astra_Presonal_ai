@@ -96,12 +96,12 @@ class MemoryManager:
             from memory.episodic import store_episode
             store_episode(user_input, reply, intent=query_intent, user_name=user_name)
         except Exception as e:
-            logger.debug("store_episode failed: %s", e)
+            logger.warning("store_episode failed: %s", e)
         try:
             from memory.semantic_recall import index_exchange
             index_exchange(user_input, reply, user_name)
         except Exception as e:
-            logger.debug("index_exchange failed: %s", e)
+            logger.warning("index_exchange failed: %s", e)
         try:
             from memory.summarizer import should_summarize, summarize_conversation, store_summary
             if should_summarize(history):
@@ -109,9 +109,9 @@ class MemoryManager:
                 store_summary(summary, memory)
                 self.save(memory)
         except Exception as e:
-            logger.debug("summarizer failed: %s", e)
+            logger.warning("summarizer failed: %s", e)
         try:
             from knowledge.graph import update_graph
             update_graph(user_input, reply, user_name)
         except Exception as e:
-            logger.debug("update_graph failed: %s", e)
+            logger.warning("update_graph failed: %s", e)

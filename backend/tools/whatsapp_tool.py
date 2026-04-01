@@ -97,7 +97,7 @@ tell application "System Events"
 end tell
 '''
         result = subprocess.run(
-            ["osascript", "-e", script],
+            ["osascript", "-e", script] if __import__("platform").system() == "Darwin" else ["echo", "osascript unavailable"],
             capture_output=True, text=True, timeout=20
         )
 

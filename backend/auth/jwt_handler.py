@@ -10,7 +10,9 @@ from jose import JWTError, jwt
 
 logger = logging.getLogger(__name__)
 
-SECRET_KEY      = os.getenv("JWT_SECRET_KEY", "change-me-in-production-use-32-char-minimum")
+SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("JWT_SECRET_KEY env var is not set — refusing to start.")
 ALGORITHM       = "HS256"
 ACCESS_EXPIRE   = int(os.getenv("JWT_ACCESS_EXPIRE_MINUTES", "60"))
 REFRESH_EXPIRE  = int(os.getenv("JWT_REFRESH_EXPIRE_DAYS", "7"))

@@ -35,12 +35,12 @@ services:
     container_name: astra_backend
     ports:
       - "5050:5050"
+    env_file:
+      - ./backend/.env
     environment:
       - OLLAMA_HOST=http://ollama:11434
       - REDIS_URL=redis://redis:6379
       - FLASK_ENV=production
-      - SERPER_API_KEY=${SERPER_API_KEY}
-      - PICOVOICE_API_KEY=${PICOVOICE_API_KEY}
     volumes:
       - ./backend/memory:/app/memory
       - ./backend/astra_memory.db:/app/astra_memory.db
@@ -50,6 +50,12 @@ services:
       ollama:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5050/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
 
   frontend:
     build:
@@ -59,39 +65,39 @@ services:
     ports:
       - "3000:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
-
-volumes:
-  ollama_data:
 
   jaeger:
     image: jaegertracing/all-in-one:1.55
+    container_name: astra_jaeger
     ports:
       - "16686:16686"
       - "4317:4317"
     environment:
       - COLLECTOR_OTLP_ENABLED=true
+    restart: unless-stopped
 
   prometheus:
     image: prom/prometheus:v2.50.0
+    container_name: astra_prometheus
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
+    restart: unless-stopped
 
   grafana:
     image: grafana/grafana:10.3.0
+    container_name: astra_grafana
     ports:
       - "3001:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-changeme}
     depends_on:
       - prometheus
-  sandbox-builder:
-    build:
-      context: ./backend/sandbox
-      dockerfile: Dockerfile
-    image: astra-sandbox:latest
-    command: echo "Sandbox image built"
-    profiles: ["build"]
+    restart: unless-stopped
+
+volumes:
+  ollama_data:

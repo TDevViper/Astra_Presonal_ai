@@ -545,6 +545,9 @@ def handle_system_command(text: str) -> Optional[str]:
 # ── Helpers ───────────────────────────────────────────────────
 
 def _osascript(script: str) -> str:
+    import platform as _platform
+    if _platform.system() != "Darwin":
+        raise OSError("osascript is only available on macOS")
     result = subprocess.run(
         ["osascript", "-e", script],
         capture_output=True, text=True, timeout=5

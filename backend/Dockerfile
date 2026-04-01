@@ -2,23 +2,19 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
     curl \
-    ffmpeg \
-    libsndfile1 \
     git \
-    portaudio19-dev \
+    libsndfile1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.docker.txt .
 RUN pip install --no-cache-dir -r requirements.docker.txt
 
-RUN python -m spacy download en_core_web_sm
-
 COPY . .
 
 EXPOSE 5050
 
-CMD ["gunicorn", "--worker-class", "geventwebsocket.gunicorn.workers.GeventWebSocketWorker", "--workers", "4", "--bind", "0.0.0.0:5050", "--timeout", "120", "app:app"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5050", "--workers", "1", "--timeout-keep-alive", "120"]
