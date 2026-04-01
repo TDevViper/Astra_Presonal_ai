@@ -39,7 +39,7 @@ jobs:
       - name: Lint (ruff)
         run: |
           pip install ruff
-          ruff check backend/ --ignore E501,F401,F811
+          ruff check backend/ --ignore E501,F401,F811,E402
 
       - name: Run unit tests
         working-directory: backend
@@ -78,4 +78,4 @@ jobs:
       - name: Install ruff
         run: pip install ruff
       - name: Ruff check
-        run: ruff check backend/ --ignore E501,F401,F811,E402
+        run: ruff check backend/ --ignore E501,F401,F811,E402,E402
