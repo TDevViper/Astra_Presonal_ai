@@ -106,7 +106,7 @@ def get_style(request: Request):
 @memory_bp.post("/api/style")
 def set_style(request: Request):
     try:
-        data = _req.get_json()
+        data = await request.json()
         from core.adaptive_personality import update_style_manually
 
         key, value = data.get("key"), data.get("value")
