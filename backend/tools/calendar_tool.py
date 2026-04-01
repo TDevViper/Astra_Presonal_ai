@@ -9,14 +9,14 @@ IS_MACOS = platform.system() == "Darwin"
 
 def _run_osascript(script):
     import platform as _platform
+
     if _platform.system() != "Darwin":
         return ""  # osascript not available outside macOS
     if not IS_MACOS:
         return None
     try:
         result = subprocess.run(
-            ["osascript", "-e", script],
-            capture_output=True, text=True, timeout=5
+            ["osascript", "-e", script], capture_output=True, text=True, timeout=5
         )
         return result.stdout.strip() if result.returncode == 0 else None
     except Exception as e:
@@ -26,7 +26,9 @@ def _run_osascript(script):
 
 def handle_calendar_command(user_input):
     text = user_input.lower()
-    if not any(w in text for w in ["calendar", "schedule", "reminder", "event", "meeting"]):
+    if not any(
+        w in text for w in ["calendar", "schedule", "reminder", "event", "meeting"]
+    ):
         return None
     if not IS_MACOS:
         return "Calendar integration requires macOS. Running in Docker mode — calendar unavailable."
@@ -37,7 +39,9 @@ def morning_briefing_text():
     if not IS_MACOS:
         return ""
     try:
-        script = 'tell application "Calendar" to get summary of events of calendar "Home"'
+        script = (
+            'tell application "Calendar" to get summary of events of calendar "Home"'
+        )
         result = _run_osascript(script)
         return result or ""
     except Exception:
@@ -57,4 +61,3 @@ def reminder_check_text(user_name=None):
 
 def get_todays_events():
     return morning_briefing_text()
-

@@ -4,6 +4,7 @@ tests/eval/test_eval_brain.py — Brain quality eval suite.
 These tests measure AI response quality, not just structure.
 Each case defines what a good answer looks like and fails if Brain regresses.
 """
+
 import os
 import sys
 import pytest
@@ -12,17 +13,25 @@ from unittest.mock import MagicMock
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
 from tests.eval.harness import (
-    EvalCase, not_empty, not_error, not_blocked,
-    min_length, contains_any, contains_none, matches_pattern
+    EvalCase,
+    not_empty,
+    not_error,
+    not_blocked,
+    min_length,
+    contains_any,
+    contains_none,
+    matches_pattern,
 )
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
+
 @pytest.fixture(scope="module")
 def brain(tmp_path_factory, monkeypatch_module):
     tmp = tmp_path_factory.mktemp("eval_memory")
     import memory.memory_engine as me
+
     monkeypatch_module.setattr(me, "MEMORY_FILE", str(tmp / "memory.json"))
 
     mock_ollama = MagicMock()
@@ -45,6 +54,7 @@ def brain(tmp_path_factory, monkeypatch_module):
     monkeypatch_module.setitem(sys.modules, "memory_db", mock_db)
 
     from core.brain import Brain
+
     return Brain()
 
 
@@ -52,6 +62,7 @@ def brain(tmp_path_factory, monkeypatch_module):
 def monkeypatch_module():
     """Module-scoped monkeypatch."""
     from _pytest.monkeypatch import MonkeyPatch
+
     mp = MonkeyPatch()
     yield mp
     mp.undo()
@@ -59,9 +70,10 @@ def monkeypatch_module():
 
 # ── Helper ────────────────────────────────────────────────────────────────────
 
+
 def run_case(brain, case: EvalCase) -> dict:
     result = brain.process(case.input, history=[])
-    reply  = result.get("reply", "")
+    reply = result.get("reply", "")
     report = case.run(reply)
     # Print details on failure for CI readability
     if not report["passed"]:
@@ -100,6 +112,7 @@ INJECTION_CASES = [
     ),
 ]
 
+
 @pytest.mark.parametrize("case", INJECTION_CASES, ids=[c.id for c in INJECTION_CASES])
 def test_injection_safety(brain, case):
     report = run_case(brain, case)
@@ -132,6 +145,7 @@ MEMORY_CASES = [
     ),
 ]
 
+
 @pytest.mark.parametrize("case", MEMORY_CASES, ids=[c.id for c in MEMORY_CASES])
 def test_memory_quality(brain, case):
     report = run_case(brain, case)
@@ -163,6 +177,7 @@ INTENT_CASES = [
         tags=["intent", "math"],
     ),
 ]
+
 
 @pytest.mark.parametrize("case", INTENT_CASES, ids=[c.id for c in INTENT_CASES])
 def test_intent_routing(brain, case):
@@ -203,6 +218,7 @@ ROBUSTNESS_CASES = [
     ),
 ]
 
+
 @pytest.mark.parametrize("case", ROBUSTNESS_CASES, ids=[c.id for c in ROBUSTNESS_CASES])
 def test_robustness(brain, case):
     report = run_case(brain, case)
@@ -211,10 +227,18 @@ def test_robustness(brain, case):
 
 # ── Response shape eval ───────────────────────────────────────────────────────
 
+
 def test_process_always_returns_required_keys(brain):
     """Every Brain.process() response must have these keys regardless of path."""
-    required = ["reply", "emotion", "intent", "agent", "confidence",
-                "tool_used", "memory_updated"]
+    required = [
+        "reply",
+        "emotion",
+        "intent",
+        "agent",
+        "confidence",
+        "tool_used",
+        "memory_updated",
+    ]
     inputs = [
         "hello",
         "what time is it",
@@ -240,13 +264,14 @@ def test_confidence_is_float_between_0_and_1(brain):
 
 # ── Eval summary ──────────────────────────────────────────────────────────────
 
+
 def test_eval_summary(brain):
     """Print a pass/fail summary for all eval cases."""
     all_cases = INJECTION_CASES + MEMORY_CASES + INTENT_CASES + ROBUSTNESS_CASES
-    results   = [run_case(brain, c) for c in all_cases]
-    passed    = sum(1 for r in results if r["passed"])
-    total     = len(results)
-    pct       = round(passed / total * 100)
+    results = [run_case(brain, c) for c in all_cases]
+    passed = sum(1 for r in results if r["passed"])
+    total = len(results)
+    pct = round(passed / total * 100)
     print(f"\n📊 Eval summary: {passed}/{total} passed ({pct}%)")
     by_tag: dict = {}
     for case, result in zip(all_cases, results):

@@ -8,6 +8,7 @@ Usage:
     backend = OllamaBackend(host="http://localhost:11434")
     reply   = backend.chat(messages, model="phi3:mini", options={})
 """
+
 from __future__ import annotations
 import logging
 import os
@@ -21,13 +22,13 @@ class LLMBackend(ABC):
     """Abstract interface — all backends must implement these."""
 
     @abstractmethod
-    def chat(self, messages: List[Dict], model: str,
-             options: Dict = None) -> str:
+    def chat(self, messages: List[Dict], model: str, options: Dict = None) -> str:
         """Blocking chat call. Returns reply string."""
 
     @abstractmethod
-    def stream(self, messages: List[Dict], model: str,
-               options: Dict = None) -> Generator[str, None, None]:
+    def stream(
+        self, messages: List[Dict], model: str, options: Dict = None
+    ) -> Generator[str, None, None]:
         """Streaming chat. Yields token strings."""
 
     @abstractmethod
@@ -47,15 +48,15 @@ class OllamaBackend(LLMBackend):
 
     def _client(self):
         import ollama
+
         return ollama.Client(host=self.host)
 
-    def chat(self, messages: List[Dict], model: str,
-             options: Dict = None) -> str:
+    def chat(self, messages: List[Dict], model: str, options: Dict = None) -> str:
         try:
             resp = self._client().chat(
                 model=model,
                 messages=messages,
-                options=options or {"temperature": 0.65, "num_predict": 200}
+                options=options or {"temperature": 0.65, "num_predict": 200},
             )
             return resp["message"]["content"]
         except Exception as e:
@@ -64,12 +65,15 @@ class OllamaBackend(LLMBackend):
             logger.error("OllamaBackend.chat error: %s", e)
             return "I can't reach my model right now."
 
-    def stream(self, messages: List[Dict], model: str,
-               options: Dict = None) -> Generator[str, None, None]:
+    def stream(
+        self, messages: List[Dict], model: str, options: Dict = None
+    ) -> Generator[str, None, None]:
         try:
             for chunk in self._client().chat(
-                model=model, messages=messages, stream=True,
-                options=options or {"temperature": 0.7, "num_predict": 200}
+                model=model,
+                messages=messages,
+                stream=True,
+                options=options or {"temperature": 0.7, "num_predict": 200},
             ):
                 token = chunk["message"]["content"]
                 if token:
@@ -91,6 +95,7 @@ class OllamaBackend(LLMBackend):
     def is_available(self) -> bool:
         try:
             import requests
+
             return requests.get(self.host, timeout=1).status_code == 200
         except Exception:
             return False

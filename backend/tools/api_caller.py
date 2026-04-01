@@ -1,5 +1,6 @@
 import requests
 
+
 def call_api(url: str):
     try:
         r = requests.get(url, timeout=5)

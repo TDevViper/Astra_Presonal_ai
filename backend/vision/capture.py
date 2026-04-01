@@ -21,7 +21,9 @@ def capture_screen(monitor: int = 1) -> Optional[str]:
         with mss.mss() as sct:
             mon = sct.monitors[monitor]
             screenshot = sct.grab(mon)
-            img = Image.frombytes("RGB", screenshot.size, screenshot.bgra, "raw", "BGRX")
+            img = Image.frombytes(
+                "RGB", screenshot.size, screenshot.bgra, "raw", "BGRX"
+            )
 
             # Resize to reasonable size for LLaVA (max 1280px wide)
             max_w = 800
@@ -40,7 +42,9 @@ def capture_screen(monitor: int = 1) -> Optional[str]:
         return None
 
 
-def capture_camera(camera_index: int = 1, save_path: Optional[str] = None) -> Optional[str]:
+def capture_camera(
+    camera_index: int = 1, save_path: Optional[str] = None
+) -> Optional[str]:
     """Capture single frame from camera and return base64 encoded image."""
     try:
         import cv2
@@ -66,6 +70,7 @@ def capture_camera(camera_index: int = 1, save_path: Optional[str] = None) -> Op
 
         # Warm up camera properly
         import time
+
         for _ in range(30):
             cap.read()
         time.sleep(1.5)

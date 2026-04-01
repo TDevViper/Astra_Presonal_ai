@@ -12,6 +12,7 @@ Export targets (via env vars):
   OTEL_EXPORTER_OTLP_ENDPOINT  e.g. http://localhost:4317 (Jaeger/Grafana)
   OTEL_SERVICE_NAME          default: astra
 """
+
 import os
 import logging
 from contextlib import contextmanager
@@ -37,7 +38,10 @@ def init_telemetry(service_name: str = None):
     try:
         from opentelemetry import trace
         from opentelemetry.sdk.trace import TracerProvider
-        from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+        from opentelemetry.sdk.trace.export import (
+            BatchSpanProcessor,
+            ConsoleSpanExporter,
+        )
         from opentelemetry.sdk.resources import Resource
 
         resource = Resource.create({"service.name": service_name})
@@ -47,17 +51,24 @@ def init_telemetry(service_name: str = None):
         endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "")
         if endpoint:
             try:
-                from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+                from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+                    OTLPSpanExporter,
+                )
+
                 otlp = OTLPSpanExporter(endpoint=endpoint, insecure=True)
                 provider.add_span_processor(BatchSpanProcessor(otlp))
                 logger.info("OTel OTLP exporter → %s", endpoint)
             except Exception as e:
-                logger.warning("OTel OTLP exporter failed: %s — falling back to console", e)
+                logger.warning(
+                    "OTel OTLP exporter failed: %s — falling back to console", e
+                )
                 provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
         else:
             # No endpoint — log spans to console (useful for local dev)
             provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
-            logger.info("OTel console exporter active (set OTEL_EXPORTER_OTLP_ENDPOINT for remote)")
+            logger.info(
+                "OTel console exporter active (set OTEL_EXPORTER_OTLP_ENDPOINT for remote)"
+            )
 
         trace.set_tracer_provider(provider)
         _tracer = trace.get_tracer(service_name)
@@ -91,6 +102,7 @@ def start_span(name: str, attributes: dict = None):
 
     try:
         from opentelemetry import trace
+
         with _tracer.start_as_current_span(name) as span:
             if attributes and span:
                 for k, v in attributes.items():
@@ -106,6 +118,7 @@ def get_current_trace_id() -> str:
         return "-"
     try:
         from opentelemetry import trace
+
         ctx = trace.get_current_span().get_span_context()
         if ctx and ctx.is_valid:
             return format(ctx.trace_id, "032x")
@@ -123,6 +136,7 @@ def instrument_fastapi(app):
         return
     try:
         from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
         FastAPIInstrumentor.instrument_app(app)
         logger.info("OTel FastAPI instrumentation active")
     except Exception as e:
@@ -138,27 +152,42 @@ def trace_step(span_name: str = None, attributes: dict = None):
         def _resolve(self, user_input, ...):
             ...
     """
+
     def decorator(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
             name = span_name or fn.__qualname__
             with start_span(name, attributes):
                 return fn(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
 # ── No-op stub (used when OTel is disabled) ───────────────────────────────────
 
+
 class _NoOpSpan:
-    def set_attribute(self, *a, **kw): pass
-    def set_status(self, *a, **kw): pass
-    def record_exception(self, *a, **kw): pass
-    def __enter__(self): return self
-    def __exit__(self, *a): pass
+    def set_attribute(self, *a, **kw):
+        pass
+
+    def set_status(self, *a, **kw):
+        pass
+
+    def record_exception(self, *a, **kw):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        pass
+
 
 class _NoOpTracer:
     def start_as_current_span(self, *a, **kw):
         return _NoOpSpan()
+
     def start_span(self, *a, **kw):
         return _NoOpSpan()

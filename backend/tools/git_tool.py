@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 # Git commands that are safe (read-only)
@@ -24,12 +25,12 @@ def get_git_root() -> Optional[str]:
             ["git", "rev-parse", "--show-toplevel"],
             capture_output=True,
             text=True,
-            timeout=5
+            timeout=5,
         )
         if result.returncode == 0:
             return result.stdout.strip()
     except Exception as _e:
-        logger.debug('git_tool: %s', _e)
+        logger.debug("git_tool: %s", _e)
     return None
 
 
@@ -48,17 +49,13 @@ def run_git_command(command: List[str], cwd: str = None) -> Dict:
             cwd = get_git_root() or os.getcwd()
 
         result = subprocess.run(
-            ["git"] + command,
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            timeout=10
+            ["git"] + command, cwd=cwd, capture_output=True, text=True, timeout=10
         )
 
         return {
             "success": result.returncode == 0,
             "output": result.stdout.strip(),
-            "error": result.stderr.strip() if result.returncode != 0 else None
+            "error": result.stderr.strip() if result.returncode != 0 else None,
         }
 
     except subprocess.TimeoutExpired:
@@ -72,7 +69,7 @@ def git_status() -> Dict:
     result = run_git_command(["status", "--short"])
     if result["success"]:
         lines = result["output"].split("\n") if result["output"] else []
-        
+
         modified = [ln[3:] for ln in lines if ln.startswith(" M")]
         added = [ln[3:] for ln in lines if ln.startswith("A ")]
         deleted = [ln[3:] for ln in lines if ln.startswith(" D")]
@@ -84,7 +81,7 @@ def git_status() -> Dict:
             "added": added,
             "deleted": deleted,
             "untracked": untracked,
-            "clean": len(lines) == 0
+            "clean": len(lines) == 0,
         }
     return result
 
@@ -99,26 +96,24 @@ def git_diff(file: str = None) -> Dict:
 
 def git_log(count: int = 5) -> Dict:
     """Get recent commits."""
-    result = run_git_command([
-        "log",
-        f"-{count}",
-        "--pretty=format:%h|%an|%ar|%s"
-    ])
-    
+    result = run_git_command(["log", f"-{count}", "--pretty=format:%h|%an|%ar|%s"])
+
     if result["success"]:
         commits = []
         for line in result["output"].split("\n"):
             if line:
                 parts = line.split("|", 3)
                 if len(parts) == 4:
-                    commits.append({
-                        "hash": parts[0],
-                        "author": parts[1],
-                        "time": parts[2],
-                        "message": parts[3]
-                    })
+                    commits.append(
+                        {
+                            "hash": parts[0],
+                            "author": parts[1],
+                            "time": parts[2],
+                            "message": parts[3],
+                        }
+                    )
         result["commits"] = commits
-    
+
     return result
 
 
@@ -145,32 +140,31 @@ def propose_git_commit(message: str, files: List[str] = None) -> Dict:
     Returns proposal for frontend approval.
     """
     status = git_status()
-    
+
     if not status["success"]:
         return {"success": False, "error": "Not a git repository"}
-    
+
     if status["clean"]:
         return {"success": False, "error": "No changes to commit"}
 
     # Get diff preview
     diff_result = git_diff()
-    
+
     return {
         "success": True,
         "type": "approval_required",
         "tool": "git",
         "action": "commit",
-        "params": {
-            "message": message,
-            "files": files or ["--all"]
-        },
+        "params": {"message": message, "files": files or ["--all"]},
         "preview": {
             "modified": len(status["modified"]),
             "added": len(status["added"]),
             "deleted": len(status["deleted"]),
             "files": status["modified"] + status["added"] + status["deleted"],
-            "diff_snippet": diff_result["output"][:500] if diff_result["success"] else None
-        }
+            "diff_snippet": diff_result["output"][:500]
+            if diff_result["success"]
+            else None,
+        },
     }
 
 

@@ -6,24 +6,24 @@ from typing import Dict, Optional, List
 from datetime import datetime
 
 EMOTION_TONE = {
-    "sad":       "Acknowledge briefly, then be solution-focused. Don't dwell.",
-    "angry":     "Stay calm and precise. Cut straight to the point.",
-    "anxious":   "Be grounding. Break it down. One step at a time.",
-    "tired":     "Be brief. No fluff. Just the answer.",
-    "joy":       "Match the energy — be sharp and engaging.",
+    "sad": "Acknowledge briefly, then be solution-focused. Don't dwell.",
+    "angry": "Stay calm and precise. Cut straight to the point.",
+    "anxious": "Be grounding. Break it down. One step at a time.",
+    "tired": "Be brief. No fluff. Just the answer.",
+    "joy": "Match the energy — be sharp and engaging.",
     "surprised": "Be informative. Ground them with facts.",
-    "neutral":   "Be direct, confident, slightly dry.",
+    "neutral": "Be direct, confident, slightly dry.",
 }
 
 INTENT_STYLE = {
-    "technical":  "Be precise. Use examples. No hand-holding.",
-    "casual":     "Be conversational — sharp, not verbose. One sentence if the question is simple.",
-    "reasoning":  "Think out loud. Show the logic chain.",
-    "research":   "Facts first. Sources cited. No speculation.",
-    "memory":     "Be personal and direct.",
+    "technical": "Be precise. Use examples. No hand-holding.",
+    "casual": "Be conversational — sharp, not verbose. One sentence if the question is simple.",
+    "reasoning": "Think out loud. Show the logic chain.",
+    "research": "Facts first. Sources cited. No speculation.",
+    "memory": "Be personal and direct.",
     "web_search": "Summarize cleanly. Cite sources.",
-    "code":       "Write clean, working code. Explain only what's non-obvious.",
-    "debug":      "Diagnose first. Then fix. Show the exact change needed.",
+    "code": "Write clean, working code. Explain only what's non-obvious.",
+    "debug": "Diagnose first. Then fix. Show the exact change needed.",
 }
 
 JARVIS_CORE = """
@@ -84,7 +84,7 @@ def _get_time_context() -> str:
 def _get_recent_exchanges(conversation_history: List[Dict], n: int = 3) -> str:
     if not conversation_history:
         return ""
-    recent = conversation_history[-(n * 2):]
+    recent = conversation_history[-(n * 2) :]
     lines = []
     for msg in recent:
         role = "User" if msg["role"] == "user" else "You"
@@ -109,21 +109,21 @@ def _get_active_tasks(memory: Dict) -> str:
 
 
 def build_system_prompt(
-    user_name:             str,
-    memory:                Dict,
-    emotion:               str = "neutral",
-    intent:                str = "casual",
-    episodic_ctx:          str = "",
-    semantic_ctx:          str = "",
-    lang_instruction:      str = "",
-    conversation_history:  Optional[List[Dict]] = None,
-    addon:                 str = "",
+    user_name: str,
+    memory: Dict,
+    emotion: str = "neutral",
+    intent: str = "casual",
+    episodic_ctx: str = "",
+    semantic_ctx: str = "",
+    lang_instruction: str = "",
+    conversation_history: Optional[List[Dict]] = None,
+    addon: str = "",
 ) -> str:
     if conversation_history is None:
         conversation_history = []
 
-    facts     = memory.get("user_facts", [])
-    prefs     = memory.get("preferences", {})
+    facts = memory.get("user_facts", [])
+    prefs = memory.get("preferences", {})
     summaries = memory.get("conversation_summary", [])
 
     emotion_tone = EMOTION_TONE.get(emotion, EMOTION_TONE["neutral"])
@@ -193,9 +193,11 @@ def get_emotion_tone(emotion: str) -> str:
 
 def get_jarvis_greeting() -> str:
     import random
+
     return random.choice(JARVIS_GREETINGS)
 
 
 def get_jarvis_fallback() -> str:
     import random
+
     return random.choice(JARVIS_FALLBACKS)

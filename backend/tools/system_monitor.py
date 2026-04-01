@@ -7,18 +7,22 @@ def get_system_info() -> Dict:
     try:
         cpu_percent = psutil.cpu_percent(interval=1)
         memory = psutil.virtual_memory()
-        disk = psutil.disk_usage('/')
+        disk = psutil.disk_usage("/")
 
         processes = []
-        for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
+        for proc in psutil.process_iter(
+            ["pid", "name", "cpu_percent", "memory_percent"]
+        ):
             try:
-                cpu = proc.info['cpu_percent'] or 0.0
-                mem = proc.info['memory_percent'] or 0.0
-                processes.append({
-                    "name": proc.info['name'],
-                    "cpu": round(cpu, 1),
-                    "memory": round(mem, 1)
-                })
+                cpu = proc.info["cpu_percent"] or 0.0
+                mem = proc.info["memory_percent"] or 0.0
+                processes.append(
+                    {
+                        "name": proc.info["name"],
+                        "cpu": round(cpu, 1),
+                        "memory": round(mem, 1),
+                    }
+                )
             except Exception:
                 pass  # TODO: handle
 
@@ -26,22 +30,19 @@ def get_system_info() -> Dict:
 
         return {
             "success": True,
-            "cpu": {
-                "percent": round(cpu_percent, 1),
-                "count": psutil.cpu_count()
-            },
+            "cpu": {"percent": round(cpu_percent, 1), "count": psutil.cpu_count()},
             "memory": {
                 "percent": round(memory.percent, 1),
                 "used_gb": round(memory.used / (1024**3), 1),
-                "total_gb": round(memory.total / (1024**3), 1)
+                "total_gb": round(memory.total / (1024**3), 1),
             },
             "disk": {
                 "percent": round(disk.percent, 1),
                 "free_gb": round(disk.free / (1024**3), 1),
-                "total_gb": round(disk.total / (1024**3), 1)
+                "total_gb": round(disk.total / (1024**3), 1),
             },
             "platform": platform.system(),
-            "top_processes": processes
+            "top_processes": processes,
         }
 
     except Exception as e:

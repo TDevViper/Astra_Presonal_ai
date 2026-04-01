@@ -2,14 +2,18 @@ import os
 import logging
 import ollama
 from typing import Dict
-from websearch.search import serper_search, duckduckgo_search, format_results_for_llm, extract_citations
+from websearch.search import (
+    serper_search,
+    duckduckgo_search,
+    format_results_for_llm,
+    extract_citations,
+)
 
-logger      = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
 
 class WebSearchAgent:
-
     def __init__(self, model: str = "phi3:mini"):
         self.model = model
 
@@ -27,10 +31,12 @@ class WebSearchAgent:
         if not results:
             return {
                 "reply": "Search unavailable. Add SERPER_API_KEY to .env or install: pip install duckduckgo-search",
-                "citations": [], "search_used": False, "results_count": 0
+                "citations": [],
+                "search_used": False,
+                "results_count": 0,
             }
 
-        context   = format_results_for_llm(results)
+        context = format_results_for_llm(results)
         citations = extract_citations(results)
 
         prompt = f"""You are ASTRA, {user_name}'s AI assistant.
@@ -47,7 +53,7 @@ Answer (2-4 sentences, cite sources):"""
             response = self._client().chat(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
-                options={"temperature": 0.3, "num_predict": 300}
+                options={"temperature": 0.3, "num_predict": 300},
             )
             summary = response["message"]["content"].strip()
         except Exception as e:
@@ -61,8 +67,8 @@ Answer (2-4 sentences, cite sources):"""
                 citation_text += f"[{c['index']}] {c['title']} — {c['url']}\n"
 
         return {
-            "reply":         summary + citation_text,
-            "citations":     citations,
-            "search_used":   True,
-            "results_count": len(results)
+            "reply": summary + citation_text,
+            "citations": citations,
+            "search_used": True,
+            "results_count": len(results),
         }

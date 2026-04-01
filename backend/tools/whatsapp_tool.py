@@ -8,17 +8,18 @@ logger = logging.getLogger(__name__)
 
 CONTACTS = {
     "mummy": "Mummy",
-    "dad":   "Dad",
-    "mom":   "Mom",
-    "papa":  "Papa",
+    "dad": "Dad",
+    "mom": "Mom",
+    "papa": "Papa",
     "arnav": "Arnav",
-    "bro":   "Bro",
+    "bro": "Bro",
     "friend": "Friend",
 }
 
 # STRICT triggers — must have both "send/message" AND a contact name
 # Prevents "tell me about this" from triggering WhatsApp
 WHATSAPP_TRIGGERS = ["whatsapp", "send whatsapp", "send message to", "message to"]
+
 
 def handle_whatsapp_command(text: str) -> Optional[str]:
     t = text.lower().strip()
@@ -29,7 +30,7 @@ def handle_whatsapp_command(text: str) -> Optional[str]:
 
     # Must have a known contact or "to <name>" pattern
     has_contact = any(alias in t for alias in CONTACTS)
-    has_to      = " to " in t
+    has_to = " to " in t
 
     if not has_contact and not has_to:
         return None
@@ -42,15 +43,21 @@ def handle_whatsapp_command(text: str) -> Optional[str]:
         if alias in t:
             contact = name
             # Get message after contact name
-            idx     = t.index(alias) + len(alias)
+            idx = t.index(alias) + len(alias)
             message = text[idx:].strip().lstrip(",:- ")
             import re as _re
-            message = _re.sub(r"^(say|saying|says|tell them|tell him|tell her)\s+", "", message, flags=_re.IGNORECASE)
+
+            message = _re.sub(
+                r"^(say|saying|says|tell them|tell him|tell her)\s+",
+                "",
+                message,
+                flags=_re.IGNORECASE,
+            )
             break
 
     if not contact:
         # Try "to <name> <message>"
-        match = re.search(r'to ([a-zA-Z]+)\s+(.*)', t)
+        match = re.search(r"to ([a-zA-Z]+)\s+(.*)", t)
         if match:
             contact = match.group(1).title()
             message = match.group(2).strip()
@@ -97,8 +104,12 @@ tell application "System Events"
 end tell
 '''
         result = subprocess.run(
-            ["osascript", "-e", script] if __import__("platform").system() == "Darwin" else ["echo", "osascript unavailable"],
-            capture_output=True, text=True, timeout=20
+            ["osascript", "-e", script]
+            if __import__("platform").system() == "Darwin"
+            else ["echo", "osascript unavailable"],
+            capture_output=True,
+            text=True,
+            timeout=20,
         )
 
         if result.returncode == 0:

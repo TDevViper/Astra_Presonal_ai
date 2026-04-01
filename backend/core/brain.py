@@ -32,13 +32,23 @@ from core.pipeline.base import RequestContext
 from core.pipeline.builder import build_pipeline
 from core.request_trace import new_trace, step as _step, finish as _finish
 
-_LOCAL_QUERY_WORDS = {"my project","my code","in the project","my file","my folder","where is","which file","codebase"}
+_LOCAL_QUERY_WORDS = {
+    "my project",
+    "my code",
+    "in the project",
+    "my file",
+    "my folder",
+    "where is",
+    "which file",
+    "codebase",
+}
 import re as _re
+
 _SEARCH_PATTERN = _re.compile(
-    r'\b(search for|google|look up|find out|latest|current (price|status|version)|'
-    r'news today|what.s happening|who is (the )?ceo|who (won|leads|runs)|'
-    r'weather (in|today|tomorrow)|price of|stock price|breaking news)\b',
-    _re.IGNORECASE
+    r"\b(search for|google|look up|find out|latest|current (price|status|version)|"
+    r"news today|what.s happening|who is (the )?ceo|who (won|leads|runs)|"
+    r"weather (in|today|tomorrow)|price of|stock price|breaking news)\b",
+    _re.IGNORECASE,
 )
 
 
@@ -46,61 +56,64 @@ def _sanitize_input(text: str) -> str:
     """Block prompt injection attempts — expanded pattern set (W-1)."""
     import re
     import unicodedata
+
     # Normalize unicode to catch lookalike characters
     text_norm = unicodedata.normalize("NFKC", text)
     injection_patterns = [
         # Original patterns
-        r'(?i)ignore (all )?(previous|above|prior) instructions',
-        r'(?i)you are now',
-        r'(?i)new (persona|personality|role|instructions)',
-        r'(?i)act as (if )?you',
-        r'(?i)disregard your',
-        r'(?i)\*\*.*instructions.*\*\*',
-        r'(?i)system prompt',
-        r'(?i)jailbreak',
+        r"(?i)ignore (all )?(previous|above|prior) instructions",
+        r"(?i)you are now",
+        r"(?i)new (persona|personality|role|instructions)",
+        r"(?i)act as (if )?you",
+        r"(?i)disregard your",
+        r"(?i)\*\*.*instructions.*\*\*",
+        r"(?i)system prompt",
+        r"(?i)jailbreak",
         # Expanded patterns
-        r'(?i)disregard (all |any )?(previous|prior|above|earlier)',
-        r'(?i)forget (your|all|previous|prior) (instructions|rules|training)',
-        r'(?i)override (your )?(instructions|programming|training|rules)',
-        r'(?i)\[INST\].*\[/INST\]',
-        r'(?i)<\|system\|>',
-        r'(?i)pretend (you are|to be|that you)',
-        r'(?i)your (true|real|actual) (self|purpose|goal|instruction)',
-        r'(?i)do anything now',
-        r'(?i)DAN mode',
-        r'(?i)developer mode',
-        r'(?i)unrestricted mode',
-        r'(?i)prompt injection',
-        r'(?i)repeat after me[:\s]+.{20,}',
-        r'(?i)translate (the following|this) (to|into).{0,30}(then|and) (ignore|forget|disregard)',
+        r"(?i)disregard (all |any )?(previous|prior|above|earlier)",
+        r"(?i)forget (your|all|previous|prior) (instructions|rules|training)",
+        r"(?i)override (your )?(instructions|programming|training|rules)",
+        r"(?i)\[INST\].*\[/INST\]",
+        r"(?i)<\|system\|>",
+        r"(?i)pretend (you are|to be|that you)",
+        r"(?i)your (true|real|actual) (self|purpose|goal|instruction)",
+        r"(?i)do anything now",
+        r"(?i)DAN mode",
+        r"(?i)developer mode",
+        r"(?i)unrestricted mode",
+        r"(?i)prompt injection",
+        r"(?i)repeat after me[:\s]+.{20,}",
+        r"(?i)translate (the following|this) (to|into).{0,30}(then|and) (ignore|forget|disregard)",
     ]
     for pattern in injection_patterns:
         if re.search(pattern, text_norm):
             return "[blocked: prompt injection detected]"
     return text
 
+
 def _needs_web_search(text: str) -> bool:
     return bool(_SEARCH_PATTERN.search(text))
+
 
 def _is_local_query(text: str) -> bool:
     return any(w in text.lower() for w in _LOCAL_QUERY_WORDS)
 
 
 class Brain:
-
     def __init__(self) -> None:
-        self.truth_guard   = TruthGuard()
-        self.capabilities  = CapabilityManager()
+        self.truth_guard = TruthGuard()
+        self.capabilities = CapabilityManager()
         self.model_manager = ModelManager(default_model=config.DEFAULT_MODEL)
-        self.search_agent  = WebSearchAgent()
-        self._cache  = ResponseCache()
-        self._exit   = EarlyExitHandler()
-        self._ctx    = ContextBuilder()
-        self._post   = PostProcessor(self.truth_guard)
-        self._mem    = MemoryManager()
-        self._tools  = ToolExecutor(self.model_manager, self._build_reply)
-        self._llm    = LLMEngine(self.model_manager)
+        self.search_agent = WebSearchAgent()
+        self._cache = ResponseCache()
+        self._exit = EarlyExitHandler()
+        self._ctx = ContextBuilder()
+        self._post = PostProcessor(self.truth_guard)
+        self._mem = MemoryManager()
+        self._tools = ToolExecutor(self.model_manager, self._build_reply)
+        self._llm = LLMEngine(self.model_manager)
         from core.structured_tool_caller import StructuredToolCaller
+
         self._stc = StructuredToolCaller(
             self.model_manager, self._tools, self._build_reply
         )
@@ -108,6 +121,7 @@ class Brain:
         # Use brain_singleton.load_request_history() to get a fresh snapshot
         try:
             from memory_db import init_db
+
             init_db()
         except Exception as e:
             logger.warning("memory_db init failed: %s", e)
@@ -116,10 +130,17 @@ class Brain:
 
     # ── Main entry point ──────────────────────────────────────────────────
 
-    def process(self, user_input: str, vision_mode: bool = False, history: list = None, session_id: str = "default") -> Dict:
+    def process(
+        self,
+        user_input: str,
+        vision_mode: bool = False,
+        history: list = None,
+        session_id: str = "default",
+    ) -> Dict:
         try:
             _trace_id = new_trace(user_input)
             import uuid as _uuid
+
             _obs = RequestTrace(_uuid.uuid4().hex[:8], user_input)
             _publish("request_start", {"input": user_input[:80]})
             user_input = clean_text(user_input)
@@ -129,40 +150,72 @@ class Brain:
 
             mode_reply = self._exit.check_mode_switch(user_input)
             if mode_reply:
-                return self._build_reply(mode_reply, "neutral", "mode_switch", "system", confidence=1.0)
+                return self._build_reply(
+                    mode_reply, "neutral", "mode_switch", "system", confidence=1.0
+                )
 
             if not vision_mode:
                 cached = self._cache.get(user_input, session_id)
                 if cached:
-                    _step('cache_hit')
+                    _step("cache_hit")
                     return cached
 
             chain_reply = self._exit.check_chain(user_input, self)
             if chain_reply:
-                return {"reply": chain_reply, "emotion": "neutral", "intent": "chain",
-                        "agent": "chain_executor", "confidence": 0.9,
-                        "tool_used": False, "memory_updated": False,
-                        "confidence_label": "HIGH", "confidence_emoji": "🟢"}
+                return {
+                    "reply": chain_reply,
+                    "emotion": "neutral",
+                    "intent": "chain",
+                    "agent": "chain_executor",
+                    "confidence": 0.9,
+                    "tool_used": False,
+                    "memory_updated": False,
+                    "confidence_label": "HIGH",
+                    "confidence_emoji": "🟢",
+                }
 
             memory = self._mem.load()
-            brief  = self._exit.check_briefing(memory)
+            brief = self._exit.check_briefing(memory)
             if brief:
-                return {"reply": brief, "emotion": "neutral", "intent": "briefing",
-                        "agent": "briefing", "confidence": 1.0,
-                        "tool_used": False, "memory_updated": False,
-                        "confidence_label": "HIGH", "confidence_emoji": "🟢"}
+                return {
+                    "reply": brief,
+                    "emotion": "neutral",
+                    "intent": "briefing",
+                    "agent": "briefing",
+                    "confidence": 1.0,
+                    "tool_used": False,
+                    "memory_updated": False,
+                    "confidence_label": "HIGH",
+                    "confidence_emoji": "🟢",
+                }
 
             user_name = self._mem.user_name(memory)
             _obs.step_start("llm")
             _publish("llm_start", {"model": self.model_manager.default_model})
-            with start_span("brain.resolve", {"intent": "pending", "vision": str(vision_mode)}):
+            with start_span(
+                "brain.resolve", {"intent": "pending", "vision": str(vision_mode)}
+            ):
                 _history = history if history is not None else []
-            result = self._resolve(user_input, memory, user_name, vision_mode=vision_mode, history=_history, session_id=session_id)
+            result = self._resolve(
+                user_input,
+                memory,
+                user_name,
+                vision_mode=vision_mode,
+                history=_history,
+                session_id=session_id,
+            )
             _obs.step_end("llm", meta=result.get("agent", ""))
             _publish("llm_done", {"reply_len": len(result.get("reply", ""))})
             _finish(intent=result.get("intent", ""), agent=result.get("agent", ""))
-            _obs_store().add(_obs.finish(intent=result.get("intent", ""), agent=result.get("agent", "")))
-            _publish("response_done", {"intent": result.get("intent"), "ms": _obs.to_dict()["elapsed_ms"]})
+            _obs_store().add(
+                _obs.finish(
+                    intent=result.get("intent", ""), agent=result.get("agent", "")
+                )
+            )
+            _publish(
+                "response_done",
+                {"intent": result.get("intent"), "ms": _obs.to_dict()["elapsed_ms"]},
+            )
             return result
 
         except Exception as e:
@@ -175,11 +228,18 @@ class Brain:
 
     # ── Shared dispatch — used by both process() and process_stream() ─────
 
-    def _resolve(self, user_input: str, memory: dict, user_name: str,
-                 vision_mode: bool = False, history: list = None,
-                 streaming: bool = False, session_id: str = "default",
-                 precomputed_intent: str = None,
-                 precomputed_model: str = None) -> Dict:
+    def _resolve(
+        self,
+        user_input: str,
+        memory: dict,
+        user_name: str,
+        vision_mode: bool = False,
+        history: list = None,
+        streaming: bool = False,
+        session_id: str = "default",
+        precomputed_intent: str = None,
+        precomputed_model: str = None,
+    ) -> Dict:
         """
         Dispatch via pipeline registry — replaces the old if-chain (Phase C).
         Each handler is independently testable and composable.
@@ -188,17 +248,17 @@ class Brain:
         memory = self._mem.update_emotion(memory, emotion_label, emotion_score)
 
         ctx = RequestContext(
-            user_input     = user_input,
-            session_id     = session_id,
-            vision_mode    = vision_mode,
-            streaming      = streaming,
-            history        = history or [],
-            memory         = memory,
-            user_name      = user_name,
-            emotion_label  = emotion_label,
-            emotion_score  = emotion_score,
-            query_intent   = precomputed_intent or "",
-            selected_model = precomputed_model  or "",
+            user_input=user_input,
+            session_id=session_id,
+            vision_mode=vision_mode,
+            streaming=streaming,
+            history=history or [],
+            memory=memory,
+            user_name=user_name,
+            emotion_label=emotion_label,
+            emotion_score=emotion_score,
+            query_intent=precomputed_intent or "",
+            selected_model=precomputed_model or "",
         )
 
         reply_obj = self._pipeline.run(ctx)
@@ -209,31 +269,47 @@ class Brain:
         # Stream sentinel — LLMHandler says "please stream me"
         if reply_obj.stream_sentinel:
             return {
-                "__stream__":    True,
-                "query_intent":  reply_obj.intent,
+                "__stream__": True,
+                "query_intent": reply_obj.intent,
                 "selected_model": reply_obj.agent.replace("ollama/", ""),
                 "system_prompt": reply_obj.extra.get("system_prompt", ""),
-                "agent":         reply_obj.agent,
-                "reply":         "",
-                "confidence":    reply_obj.confidence,
+                "agent": reply_obj.agent,
+                "reply": "",
+                "confidence": reply_obj.confidence,
             }
 
         # Post-process LLM replies
         if reply_obj.agent.startswith("ollama/"):
             from core.truth_guard import TruthGuard as _TG
-            _truth_guard = _TG(user_name=user_name,
-                               user_location=self._mem.user_location(memory))
-            reply_obj.text = self._post.process(
-                reply_obj.text, user_input, user_name, memory,
-                reply_obj.agent.replace("ollama/", ""), reply_obj.intent,
-                emotion_label, emotion_score, truth_guard=_truth_guard
+
+            _truth_guard = _TG(
+                user_name=user_name, user_location=self._mem.user_location(memory)
             )
-            self._mem.post_turn(user_input, reply_obj.text, memory, user_name,
-                                reply_obj.intent, emotion_label, history or [],
-                                reply_obj.agent.replace("ollama/", ""))
+            reply_obj.text = self._post.process(
+                reply_obj.text,
+                user_input,
+                user_name,
+                memory,
+                reply_obj.agent.replace("ollama/", ""),
+                reply_obj.intent,
+                emotion_label,
+                emotion_score,
+                truth_guard=_truth_guard,
+            )
+            self._mem.post_turn(
+                user_input,
+                reply_obj.text,
+                memory,
+                user_name,
+                reply_obj.intent,
+                emotion_label,
+                history or [],
+                reply_obj.agent.replace("ollama/", ""),
+            )
             self._cache.set(user_input, reply_obj.to_dict(emotion_label), session_id)
             try:
                 from core.self_improve import log_response as _si_log
+
                 _si_log(user_input, reply_obj.text, reply_obj.confidence)
             except Exception as _e:
                 logger.debug("self_improve: %s", _e)
@@ -242,26 +318,30 @@ class Brain:
 
     # ── Streaming ─────────────────────────────────────────────────────────
 
-    def process_stream(self, user_input: str, history: list = None, session_id: str = "default") -> Generator:
+    def process_stream(
+        self, user_input: str, history: list = None, session_id: str = "default"
+    ) -> Generator:
         user_input = clean_text(user_input)
         user_input = _sanitize_input(user_input)
         if not user_input or user_input.startswith("[blocked"):
             yield {"token": "I didn't catch that — try again?"}
             return
 
-        memory    = self._mem.load()
+        memory = self._mem.load()
         user_name = self._mem.user_name(memory)
 
         # Early exits that don't need _resolve
         mode_reply = self._exit.check_mode_switch(user_input)
         if mode_reply:
             self._mem.save(memory)
-            for word in mode_reply.split(" "): yield {"token": word + " "}
+            for word in mode_reply.split(" "):
+                yield {"token": word + " "}
             return
 
         cached = self._cache.get(user_input, session_id)
         if cached:
-            for word in cached.get("reply", "").split(" "): yield {"token": word + " "}
+            for word in cached.get("reply", "").split(" "):
+                yield {"token": word + " "}
             return
 
         chain_reply = self._exit.check_chain(user_input, self)
@@ -269,36 +349,53 @@ class Brain:
             self._add_to_history("user", user_input)
             self._add_to_history("assistant", chain_reply)
             self._mem.save(memory)
-            for word in chain_reply.split(" "): yield {"token": word + " "}
+            for word in chain_reply.split(" "):
+                yield {"token": word + " "}
             return
 
         # Shared dispatch — reuse _resolve for all remaining logic
         # For LLM path we stream directly; for everything else tokenise the reply
         from personality.modes import get_temperature, get_token_budget
-        query_intent   = self.model_manager.classify_query_intent(user_input)
+
+        query_intent = self.model_manager.classify_query_intent(user_input)
         selected_model = self.model_manager.select_model(user_input, query_intent)
 
         emotion_label, emotion_score = detect_emotion(user_input)
         memory = self._mem.update_emotion(memory, emotion_label, emotion_score)
 
         # Pass pre-computed intent — avoids double classify_query_intent call (E-2)
-        result = self._resolve(user_input, memory, user_name, history=history or [],
-                               streaming=True, session_id=session_id,
-                               precomputed_intent=query_intent,
-                               precomputed_model=selected_model)
-        reply  = result.get("reply", "")
+        result = self._resolve(
+            user_input,
+            memory,
+            user_name,
+            history=history or [],
+            streaming=True,
+            session_id=session_id,
+            precomputed_intent=query_intent,
+            precomputed_model=selected_model,
+        )
+        reply = result.get("reply", "")
 
         # If _resolve went to LLM, re-stream it instead of word-splitting
         if result.get("agent", "").startswith("ollama/"):
             system_prompt, sem_conf = self._ctx.build(
-                user_input, user_name, memory, emotion_label,
-                query_intent, history or []
+                user_input,
+                user_name,
+                memory,
+                emotion_label,
+                query_intent,
+                history or [],
             )
             self._add_to_history("user", user_input)
             full_reply = ""
             for item in self._llm.stream(
-                user_input, system_prompt, selected_model, query_intent,
-                history or [], get_temperature(), get_token_budget(query_intent)
+                user_input,
+                system_prompt,
+                selected_model,
+                query_intent,
+                history or [],
+                get_temperature(),
+                get_token_budget(query_intent),
             ):
                 if "token" in item:
                     full_reply += item["token"]
@@ -307,15 +404,25 @@ class Brain:
                     full_reply = item["__full_reply__"]
             self._add_to_history("assistant", full_reply)
             final_conf = result.get("confidence", 0.6)
-            yield {"meta": {"full": full_reply, "agent": f"ollama/{selected_model}",
-                            "intent": query_intent, "emotion": emotion_label,
-                            "confidence": final_conf, "tool_used": False, "memory_updated": True}}
+            yield {
+                "meta": {
+                    "full": full_reply,
+                    "agent": f"ollama/{selected_model}",
+                    "intent": query_intent,
+                    "emotion": emotion_label,
+                    "confidence": final_conf,
+                    "tool_used": False,
+                    "memory_updated": True,
+                }
+            }
             return
 
         # Non-LLM result — word-tokenise for streaming consistency
         self._add_to_history("user", user_input)
         self._add_to_history("assistant", reply)
-        for word in reply.split(" "): yield {"token": word + " "}
+        for word in reply.split(" "):
+            yield {"token": word + " "}
+
     # ── Helpers ───────────────────────────────────────────────────────────
 
     def _add_to_history(self, role: str, content: str, history: list = None) -> None:
@@ -325,13 +432,25 @@ class Brain:
         if role == "assistant" and history and len(history) >= 2:
             try:
                 from memory_db import save_exchange
-                last_user = next((m["content"] for m in reversed(history[:-1])
-                                  if m["role"] == "user"), "")
+
+                last_user = next(
+                    (
+                        m["content"]
+                        for m in reversed(history[:-1])
+                        if m["role"] == "user"
+                    ),
+                    "",
+                )
                 save_exchange(last_user, content)
             except Exception as e:
                 logger.warning("save_exchange failed: %s", e)
             try:
-                from memory.summarizer import should_summarize, summarize_conversation, store_summary
+                from memory.summarizer import (
+                    should_summarize,
+                    summarize_conversation,
+                    store_summary,
+                )
+
                 if len(history) > 12 and should_summarize(history):
                     _mem = self._mem.load()
                     _user = self._mem.user_name(_mem)
@@ -340,28 +459,52 @@ class Brain:
                         _mem = store_summary(_mem, _summary)
                         self._mem.save(_mem)
             except Exception as _e:
-                logger.debug('brain summarizer: %s', _e)
+                logger.debug("brain summarizer: %s", _e)
             # Trim in-place so callers see the trimmed list
             if len(history) > 12:
                 del history[:-12]
 
-    def _build_reply(self, reply, emotion, intent, agent,
-                     tool_used=False, memory_updated=False,
-                     citations=None, results_count=0, confidence=0.6) -> Dict:
+    def _build_reply(
+        self,
+        reply,
+        emotion,
+        intent,
+        agent,
+        tool_used=False,
+        memory_updated=False,
+        citations=None,
+        results_count=0,
+        confidence=0.6,
+    ) -> Dict:
         conf_info = confidence_label(confidence)
-        result = {"reply": reply, "emotion": emotion, "intent": intent, "agent": agent,
-                  "tool_used": tool_used, "memory_updated": memory_updated,
-                  "confidence": confidence, "confidence_label": conf_info["text"],
-                  "confidence_emoji": conf_info["emoji"]}
+        result = {
+            "reply": reply,
+            "emotion": emotion,
+            "intent": intent,
+            "agent": agent,
+            "tool_used": tool_used,
+            "memory_updated": memory_updated,
+            "confidence": confidence,
+            "confidence_label": conf_info["text"],
+            "confidence_emoji": conf_info["emoji"],
+        }
         if citations:
-            result["citations"]     = citations
+            result["citations"] = citations
             result["results_count"] = results_count
         return result
 
     def _error_reply(self, message: str) -> Dict:
-        return {"reply": message, "emotion": "neutral", "intent": "error",
-                "agent": "error_handler", "tool_used": False, "memory_updated": False,
-                "confidence": 0.0, "confidence_label": "UNKNOWN", "confidence_emoji": "⚪"}
+        return {
+            "reply": message,
+            "emotion": "neutral",
+            "intent": "error",
+            "agent": "error_handler",
+            "tool_used": False,
+            "memory_updated": False,
+            "confidence": 0.0,
+            "confidence_label": "UNKNOWN",
+            "confidence_emoji": "⚪",
+        }
 
     def get_model_info(self) -> Dict:
         return self.model_manager.get_model_info()

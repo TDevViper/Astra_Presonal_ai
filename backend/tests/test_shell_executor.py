@@ -1,4 +1,5 @@
 """Tests for shell_executor — tier classification and execution safety."""
+
 import os
 import sys
 import pytest
@@ -9,6 +10,7 @@ from tools.shell_executor import classify_command, propose_shell, execute_shell
 
 
 # ── Classification tests ──────────────────────────────────────
+
 
 def test_safe_commands_classified_correctly():
     assert classify_command("ls") == "safe"
@@ -50,6 +52,7 @@ def test_classification_is_case_insensitive():
 
 # ── Proposal tests ────────────────────────────────────────────
 
+
 def test_propose_blocks_dangerous_command():
     result = propose_shell("rm -rf /")
     assert result["blocked"] is True
@@ -75,6 +78,7 @@ def test_propose_root_requires_approval():
 
 
 # ── Execution tests ───────────────────────────────────────────
+
 
 def test_blocked_command_never_executes():
     result = execute_shell("rm -rf /", confirmed=True, sudo_confirmed=True)
@@ -108,7 +112,12 @@ def test_safe_command_output_truncated_at_3000():
 
 def test_timeout_handled_gracefully(monkeypatch):
     import subprocess
-    monkeypatch.setattr(subprocess, "run", lambda *a, **kw: (_ for _ in ()).throw(subprocess.TimeoutExpired("cmd", 30)))
+
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *a, **kw: (_ for _ in ()).throw(subprocess.TimeoutExpired("cmd", 30)),
+    )
     result = execute_shell("echo hi")
     assert result["success"] is False
     assert "timed out" in result["output"].lower()

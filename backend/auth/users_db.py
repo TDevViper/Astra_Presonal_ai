@@ -2,6 +2,7 @@
 SQLite-backed user store.
 Handles registration, login, password hashing.
 """
+
 import sqlite3
 import os
 import logging
@@ -38,12 +39,14 @@ def init_db():
     logger.info("✅ users DB initialised")
 
 
-def create_user(user_id: str, username: str, email: str, password: str, role: str = "user") -> Dict:
+def create_user(
+    user_id: str, username: str, email: str, password: str, role: str = "user"
+) -> Dict:
     hashed = pwd_context.hash(password)
     with _conn() as c:
         c.execute(
             "INSERT INTO users (id, username, email, hashed_pw, role) VALUES (?,?,?,?,?)",
-            (user_id, username, email, hashed, role)
+            (user_id, username, email, hashed, role),
         )
         c.commit()
     return {"id": user_id, "username": username, "email": email, "role": role}
@@ -51,13 +54,17 @@ def create_user(user_id: str, username: str, email: str, password: str, role: st
 
 def get_user_by_username(username: str) -> Optional[Dict]:
     with _conn() as c:
-        row = c.execute("SELECT * FROM users WHERE username=? AND is_active=1", (username,)).fetchone()
+        row = c.execute(
+            "SELECT * FROM users WHERE username=? AND is_active=1", (username,)
+        ).fetchone()
     return dict(row) if row else None
 
 
 def get_user_by_id(user_id: str) -> Optional[Dict]:
     with _conn() as c:
-        row = c.execute("SELECT * FROM users WHERE id=? AND is_active=1", (user_id,)).fetchone()
+        row = c.execute(
+            "SELECT * FROM users WHERE id=? AND is_active=1", (user_id,)
+        ).fetchone()
     return dict(row) if row else None
 
 

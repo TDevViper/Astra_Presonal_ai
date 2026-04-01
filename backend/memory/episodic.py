@@ -11,7 +11,7 @@ from typing import List, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
-_BACKEND_DIR  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EPISODES_FILE = os.path.join(_BACKEND_DIR, "memory", "data", "episodes.json")
 
 MAX_EPISODES = 100  # Keep last 100 conversation episodes
@@ -33,31 +33,38 @@ def _save_episodes(episodes: List[Dict]) -> None:
         json.dump(episodes[-MAX_EPISODES:], f, indent=2)
 
 
-def store_episode(user_msg: str, astra_reply: str,
-                  intent: str = "", emotion: str = "",
-                  user_name: str = "Arnav") -> None:
+def store_episode(
+    user_msg: str,
+    astra_reply: str,
+    intent: str = "",
+    emotion: str = "",
+    user_name: str = "Arnav",
+) -> None:
     """
     Store one conversation turn as an episode.
     Called after every successful response.
     """
     episodes = _load_episodes()
-    episodes.append({
-        "timestamp":  datetime.now(timezone.utc).isoformat(),
-        "date":       datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-        "user":       user_msg[:300],
-        "astra":      astra_reply[:300],
-        "intent":     intent,
-        "emotion":    emotion,
-        "user_name":  user_name
-    })
-    _auto_extract_after_store(user_msg, astra_reply) 
+    episodes.append(
+        {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            "user": user_msg[:300],
+            "astra": astra_reply[:300],
+            "intent": intent,
+            "emotion": emotion,
+            "user_name": user_name,
+        }
+    )
+    _auto_extract_after_store(user_msg, astra_reply)
     _save_episodes(episodes)
     logger.debug(f"📼 Episode stored: {user_msg[:40]}")
     try:
         from knowledge.entity_extractor import extract_and_store
+
         extract_and_store(user_msg + " " + astra_reply, user_name=user_name)
     except Exception as _e:
-        logger.debug('episodic: %s', _e)
+        logger.debug("episodic: %s", _e)
 
 
 def recall_episodes(query: str, top_k: int = 3) -> List[Dict]:
@@ -71,8 +78,24 @@ def recall_episodes(query: str, top_k: int = 3) -> List[Dict]:
 
     query_words = set(query.lower().split())
     # Remove stop words
-    stop = {"i", "a", "the", "is", "are", "was", "what", "how",
-            "why", "do", "did", "can", "you", "me", "my", "about"}
+    stop = {
+        "i",
+        "a",
+        "the",
+        "is",
+        "are",
+        "was",
+        "what",
+        "how",
+        "why",
+        "do",
+        "did",
+        "can",
+        "you",
+        "me",
+        "my",
+        "about",
+    }
     query_words -= stop
 
     if not query_words:
@@ -80,9 +103,9 @@ def recall_episodes(query: str, top_k: int = 3) -> List[Dict]:
 
     scored = []
     for ep in episodes:
-        ep_text  = (ep["user"] + " " + ep["astra"]).lower()
+        ep_text = (ep["user"] + " " + ep["astra"]).lower()
         ep_words = set(ep_text.split())
-        overlap  = len(query_words & ep_words)
+        overlap = len(query_words & ep_words)
         if overlap > 0:
             scored.append((overlap, ep))
 
@@ -101,10 +124,10 @@ def build_episodic_context(query: str, user_name: str = "Arnav") -> str:
 
     lines = [f"\nWhat {user_name} and I discussed before (relevant to now):"]
     for ep in episodes:
-        date  = ep.get("date", "recently")
-        user  = ep["user"][:80]
+        date = ep.get("date", "recently")
+        user = ep["user"][:80]
         astra = ep["astra"][:80]
-        lines.append(f"• [{date}] {user_name} asked: \"{user}\" → I said: \"{astra}\"")
+        lines.append(f'• [{date}] {user_name} asked: "{user}" → I said: "{astra}"')
 
     context = "\n".join(lines)
     logger.info(f"📼 Episodic context built — {len(episodes)} past episodes recalled")
@@ -116,17 +139,21 @@ def get_episode_stats() -> Dict:
     if not episodes:
         return {"total": 0, "oldest": None, "newest": None}
     return {
-        "total":   len(episodes),
-        "oldest":  episodes[0]["date"] if episodes else None,
-        "newest":  episodes[-1]["date"] if episodes else None,
+        "total": len(episodes),
+        "oldest": episodes[0]["date"] if episodes else None,
+        "newest": episodes[-1]["date"] if episodes else None,
     }
+
 
 # ── Auto knowledge graph population (appended by upgrade) ──────────────
 def _auto_extract_after_store(user_msg: str, reply: str):
     try:
         from knowledge.auto_extractor import extract_and_store
         from memory.memory_engine import load_memory as _lm
+
         _m = _lm()
-        extract_and_store(user_msg + " " + reply, user_name=_m.get("preferred_name", "user"))
+        extract_and_store(
+            user_msg + " " + reply, user_name=_m.get("preferred_name", "user")
+        )
     except Exception as _e:
-        logger.debug('episodic: %s', _e)
+        logger.debug("episodic: %s", _e)

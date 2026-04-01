@@ -7,7 +7,7 @@ from collections import Counter
 
 logger = logging.getLogger(__name__)
 
-_BACKEND_DIR  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EPISODES_FILE = os.path.join(_BACKEND_DIR, "memory", "data", "episodes.json")
 PATTERNS_FILE = os.path.join(_BACKEND_DIR, "memory", "data", "patterns.json")
 
@@ -44,15 +44,57 @@ def analyze_patterns() -> Dict:
         return {}
 
     stop_words = {
-        "i", "a", "the", "is", "are", "was", "what", "how", "why",
-        "do", "did", "can", "you", "me", "my", "about", "to", "in",
-        "of", "and", "or", "for", "with", "it", "this", "that", "be",
-        "explain", "tell", "show", "give", "make", "help", "please",
-        "would", "could", "should", "does", "have", "has", "will",
-        "want", "need", "think", "know", "understand", "using", "use"
+        "i",
+        "a",
+        "the",
+        "is",
+        "are",
+        "was",
+        "what",
+        "how",
+        "why",
+        "do",
+        "did",
+        "can",
+        "you",
+        "me",
+        "my",
+        "about",
+        "to",
+        "in",
+        "of",
+        "and",
+        "or",
+        "for",
+        "with",
+        "it",
+        "this",
+        "that",
+        "be",
+        "explain",
+        "tell",
+        "show",
+        "give",
+        "make",
+        "help",
+        "please",
+        "would",
+        "could",
+        "should",
+        "does",
+        "have",
+        "has",
+        "will",
+        "want",
+        "need",
+        "think",
+        "know",
+        "understand",
+        "using",
+        "use",
     }
 
-    word_counts: Counter   = Counter()
+    word_counts: Counter = Counter()
     intent_counts: Counter = Counter()
 
     for ep in episodes[-50:]:
@@ -64,14 +106,14 @@ def analyze_patterns() -> Dict:
         if ep.get("intent"):
             intent_counts[ep["intent"]] += 1
 
-    top_topics  = [w for w, _ in word_counts.most_common(5)]
+    top_topics = [w for w, _ in word_counts.most_common(5)]
     top_intents = [i for i, _ in intent_counts.most_common(3)]
 
     patterns = _load_patterns()
-    patterns["topics"]        = dict(word_counts.most_common(10))
-    patterns["top_topics"]    = top_topics
-    patterns["top_intents"]   = top_intents
-    patterns["last_session"]  = datetime.utcnow().isoformat()
+    patterns["topics"] = dict(word_counts.most_common(10))
+    patterns["top_topics"] = top_topics
+    patterns["top_intents"] = top_intents
+    patterns["last_session"] = datetime.utcnow().isoformat()
     patterns["episode_count"] = len(episodes)
     _save_patterns(patterns)
 
@@ -83,7 +125,7 @@ def get_welcome_back(user_name: str = "User") -> Optional[str]:
     if not episodes:
         return None
 
-    last  = episodes[-3:]
+    last = episodes[-3:]
     today = date.today().isoformat()
 
     if last[-1].get("date", "") == today:
@@ -110,11 +152,12 @@ def get_welcome_back(user_name: str = "User") -> Optional[str]:
     return f"Welcome back, {user_name}! What are we working on today?"
 
 
-def get_proactive_suggestion(user_input: str, memory: Dict,
-                              user_name: str = "User") -> Optional[str]:
-    patterns     = analyze_patterns()
+def get_proactive_suggestion(
+    user_input: str, memory: Dict, user_name: str = "User"
+) -> Optional[str]:
+    patterns = analyze_patterns()
     topic_counts = patterns.get("topics", {})
-    t            = user_input.lower()
+    t = user_input.lower()
 
     for word in t.split():
         if len(word) > 5 and topic_counts.get(word, 0) >= 3:
@@ -124,21 +167,20 @@ def get_proactive_suggestion(user_input: str, memory: Dict,
             )
 
     if any(w in t for w in ["code", "function", "class", "bug", "error"]):
-        episodes       = _load_episodes()
+        episodes = _load_episodes()
         recent_intents = [e.get("intent") for e in episodes[-10:]]
         if "git_operation" not in recent_intents:
             return "💡 Working on code? I can check your git status if you want."
 
     tasks = memory.get("tasks", [])
     if tasks:
-        pending = [task_item for task_item in tasks if task_item.get("status") == "todo"]
+        pending = [
+            task_item for task_item in tasks if task_item.get("status") == "todo"
+        ]
         if pending and len(pending) >= 2:
-            return (
-                f"💡 You have {len(pending)} pending tasks. "
-                f"Want to review them?"
-            )
+            return f"💡 You have {len(pending)} pending tasks. Want to review them?"
 
-    episodes  = _load_episodes()
+    episodes = _load_episodes()
     today_eps = [e for e in episodes if e.get("date") == date.today().isoformat()]
     if len(today_eps) >= 20:
         return "💡 You've been at this for a while. Take a break?"
@@ -147,15 +189,15 @@ def get_proactive_suggestion(user_input: str, memory: Dict,
 
 
 def get_session_summary(user_name: str = "User") -> Optional[str]:
-    episodes  = _load_episodes()
-    today     = date.today().isoformat()
+    episodes = _load_episodes()
+    today = date.today().isoformat()
     today_eps = [e for e in episodes if e.get("date") == today]
 
     if not today_eps:
         return None
 
     intents = Counter(e.get("intent", "") for e in today_eps)
-    top     = [i for i, _ in intents.most_common(3) if i]
+    top = [i for i, _ in intents.most_common(3) if i]
 
     return (
         f"Today's session: {len(today_eps)} exchanges. "
@@ -171,9 +213,11 @@ import psutil
 
 _broadcast_fn = None
 
+
 def set_broadcast(fn):
     global _broadcast_fn
     _broadcast_fn = fn
+
 
 def _broadcast(msg: str):
     if _broadcast_fn:
@@ -182,9 +226,11 @@ def _broadcast(msg: str):
         except Exception as _e:
             logger.warning("error: %s", _e)
 
+
 def start_proactive_monitor():
     threading.Thread(target=_monitor_loop, daemon=True).start()
     print("[Proactive] ✅ System monitor running (120s interval)")
+
 
 def _monitor_loop():
     last_alerts = {}
@@ -195,6 +241,7 @@ def _monitor_loop():
         except Exception as _e:
             logger.warning("error: %s", _e)
         time.sleep(120)
+
 
 def _check_system(last_alerts: dict):
     now = time.time()
@@ -210,7 +257,7 @@ def _check_system(last_alerts: dict):
         _broadcast(f"⚠️ RAM at {ram:.0f}% — memory pressure is high.")
         last_alerts["ram"] = now
 
-    disk = psutil.disk_usage('/').percent
+    disk = psutil.disk_usage("/").percent
     if disk > 90 and now - last_alerts.get("disk", 0) > 600:
         _broadcast(f"💾 Disk at {disk:.0f}% — running low on space.")
         last_alerts["disk"] = now
@@ -220,6 +267,7 @@ def _check_system(last_alerts: dict):
         if now - last_alerts.get("battery", 0) > 300:
             _broadcast(f"🔋 Battery at {battery.percent:.0f}% — plug in soon.")
             last_alerts["battery"] = now
+
 
 def _check_tasks(last_alerts: dict):
     now = time.time()
@@ -231,10 +279,12 @@ def _check_tasks(last_alerts: dict):
             return
         with open(mem_file) as f:
             mem = json.load(f)
-        tasks   = mem.get("tasks", [])
+        tasks = mem.get("tasks", [])
         pending = [t for t in tasks if t.get("status") == "todo"]
         if len(pending) >= 2:
-            _broadcast(f"📌 You have {len(pending)} pending tasks. Want to review them?")
+            _broadcast(
+                f"📌 You have {len(pending)} pending tasks. Want to review them?"
+            )
             last_alerts["tasks"] = now
     except Exception as e:
         logger.warning("proactive _check_tasks parse error: %s", e)

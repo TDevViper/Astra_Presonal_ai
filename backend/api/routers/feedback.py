@@ -1,6 +1,7 @@
 """
 api/routers/feedback.py — Thumbs up/down feedback endpoint.
 """
+
 import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -14,7 +15,7 @@ class FeedbackRequest(BaseModel):
     message_id: str
     user_input: str
     reply: str
-    rating: str              # "up" or "down"
+    rating: str  # "up" or "down"
     intent: str = "general"
     comment: Optional[str] = ""
     confidence: float = 0.0
@@ -26,6 +27,7 @@ async def submit_feedback(body: FeedbackRequest):
         raise HTTPException(status_code=400, detail="rating must be 'up' or 'down'")
     try:
         from core.feedback import record_feedback
+
         entry = record_feedback(
             message_id=body.message_id,
             user_input=body.user_input,
@@ -45,6 +47,7 @@ async def submit_feedback(body: FeedbackRequest):
 async def feedback_stats():
     try:
         from core.feedback import get_stats
+
         return get_stats()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -54,6 +57,7 @@ async def feedback_stats():
 async def recent_feedback():
     try:
         from core.feedback import get_recent
+
         return {"feedback": get_recent(20)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

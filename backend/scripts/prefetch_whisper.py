@@ -25,7 +25,9 @@ def main() -> int:
     http_proxy = os.environ.get("HTTP_PROXY") or os.environ.get("http_proxy")
     https_proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
     if http_proxy or https_proxy:
-        print("[prefetch_whisper] proxy detected (will be used by underlying download libs)")
+        print(
+            "[prefetch_whisper] proxy detected (will be used by underlying download libs)"
+        )
         print(f"[prefetch_whisper] HTTP_PROXY set:  {bool(http_proxy)}")
         print(f"[prefetch_whisper] HTTPS_PROXY set: {bool(https_proxy)}")
     else:
@@ -44,9 +46,15 @@ def main() -> int:
         msg = str(e)
         print(f"[prefetch_whisper] download/cache failed: {msg}")
         if "403" in msg or "Forbidden" in msg:
-            print("[prefetch_whisper] hint: this usually means your proxy/firewall blocks HuggingFace downloads.")
-            print("[prefetch_whisper] hint: allowlist domains: huggingface.co, cdn-lfs.huggingface.co")
-            print("[prefetch_whisper] hint: once downloaded, /realtime/status can run fully offline.")
+            print(
+                "[prefetch_whisper] hint: this usually means your proxy/firewall blocks HuggingFace downloads."
+            )
+            print(
+                "[prefetch_whisper] hint: allowlist domains: huggingface.co, cdn-lfs.huggingface.co"
+            )
+            print(
+                "[prefetch_whisper] hint: once downloaded, /realtime/status can run fully offline."
+            )
         return 2
 
     print("[prefetch_whisper] done")
@@ -55,4 +63,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

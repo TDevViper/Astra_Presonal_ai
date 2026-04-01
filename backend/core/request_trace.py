@@ -14,11 +14,11 @@ _local = threading.local()
 
 def new_trace(user_input: str = "") -> str:
     """Start a new trace. Returns request_id."""
-    rid = str(uuid.uuid4())[:8]   # short 8-char ID
-    _local.request_id   = rid
-    _local.start_time   = time.time()
-    _local.user_input   = user_input[:60]
-    _local.steps        = []
+    rid = str(uuid.uuid4())[:8]  # short 8-char ID
+    _local.request_id = rid
+    _local.start_time = time.time()
+    _local.user_input = user_input[:60]
+    _local.steps = []
     logger.info("▶ [%s] START: %s", rid, user_input[:60])
     return rid
 
@@ -33,7 +33,7 @@ def step(name: str, detail: str = ""):
     if not rid:
         return
     elapsed = round((time.time() - _local.start_time) * 1000)
-    msg     = f"  [{rid}] +{elapsed}ms {name}"
+    msg = f"  [{rid}] +{elapsed}ms {name}"
     if detail:
         msg += f" — {detail[:80]}"
     logger.info(msg)
@@ -46,14 +46,13 @@ def finish(intent: str = "", agent: str = "") -> dict:
     if not rid:
         return {}
     total = round((time.time() - _local.start_time) * 1000)
-    logger.info("◀ [%s] DONE %dms intent=%s agent=%s",
-                rid, total, intent, agent)
+    logger.info("◀ [%s] DONE %dms intent=%s agent=%s", rid, total, intent, agent)
     summary = {
         "request_id": rid,
-        "total_ms":   total,
-        "intent":     intent,
-        "agent":      agent,
-        "steps":      list(getattr(_local, "steps", [])),
+        "total_ms": total,
+        "intent": intent,
+        "agent": agent,
+        "steps": list(getattr(_local, "steps", [])),
     }
     _local.request_id = None
     return summary

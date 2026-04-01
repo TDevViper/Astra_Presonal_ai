@@ -2,6 +2,7 @@
 Per-user usage tracking.
 Logs every request: endpoint, tokens, response time, status.
 """
+
 import sqlite3
 import os
 import time
@@ -43,25 +44,51 @@ def init_db():
     logger.info("✅ usage DB initialised")
 
 
-def log_event(user_id: str, username: str, role: str, endpoint: str,
-              method: str, status_code: int, duration_ms: float,
-              tokens_in: int = 0, tokens_out: int = 0, model: str = ""):
+def log_event(
+    user_id: str,
+    username: str,
+    role: str,
+    endpoint: str,
+    method: str,
+    status_code: int,
+    duration_ms: float,
+    tokens_in: int = 0,
+    tokens_out: int = 0,
+    model: str = "",
+):
     import uuid
+
     now = datetime.now(timezone.utc).isoformat()
     with _conn() as c:
-        c.execute("""
+        c.execute(
+            """
             INSERT INTO usage_events
             (id, user_id, username, role, endpoint, method, status_code,
              duration_ms, tokens_in, tokens_out, model, created_at)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-        """, (str(uuid.uuid4()), user_id, username, role, endpoint,
-              method, status_code, duration_ms, tokens_in, tokens_out, model, now))
+        """,
+            (
+                str(uuid.uuid4()),
+                user_id,
+                username,
+                role,
+                endpoint,
+                method,
+                status_code,
+                duration_ms,
+                tokens_in,
+                tokens_out,
+                model,
+                now,
+            ),
+        )
         c.commit()
 
 
 def get_user_stats(user_id: str, days: int = 30) -> Dict:
     with _conn() as c:
-        row = c.execute("""
+        row = c.execute(
+            """
             SELECT
                 COUNT(*)                          as total_requests,
                 SUM(tokens_in + tokens_out)       as total_tokens,
@@ -71,13 +98,16 @@ def get_user_stats(user_id: str, days: int = 30) -> Dict:
             FROM usage_events
             WHERE user_id=?
             AND created_at >= datetime('now', ?)
-        """, (user_id, f"-{days} days")).fetchone()
+        """,
+            (user_id, f"-{days} days"),
+        ).fetchone()
     return dict(row) if row else {}
 
 
 def get_all_users_stats(days: int = 30) -> List[Dict]:
     with _conn() as c:
-        rows = c.execute("""
+        rows = c.execute(
+            """
             SELECT
                 user_id,
                 username,
@@ -92,13 +122,16 @@ def get_all_users_stats(days: int = 30) -> List[Dict]:
             WHERE created_at >= datetime('now', ?)
             GROUP BY user_id
             ORDER BY total_requests DESC
-        """, (f"-{days} days",)).fetchall()
+        """,
+            (f"-{days} days",),
+        ).fetchall()
     return [dict(r) for r in rows]
 
 
 def get_endpoint_stats(days: int = 7) -> List[Dict]:
     with _conn() as c:
-        rows = c.execute("""
+        rows = c.execute(
+            """
             SELECT
                 endpoint,
                 method,
@@ -110,14 +143,17 @@ def get_endpoint_stats(days: int = 7) -> List[Dict]:
             WHERE created_at >= datetime('now', ?)
             GROUP BY endpoint, method
             ORDER BY total_calls DESC
-        """, (f"-{days} days",)).fetchall()
+        """,
+            (f"-{days} days",),
+        ).fetchall()
     return [dict(r) for r in rows]
 
 
 def get_hourly_breakdown(user_id: Optional[str] = None, days: int = 7) -> List[Dict]:
     with _conn() as c:
         if user_id:
-            rows = c.execute("""
+            rows = c.execute(
+                """
                 SELECT
                     strftime('%Y-%m-%d %H:00', created_at) as hour,
                     COUNT(*) as requests,
@@ -125,9 +161,12 @@ def get_hourly_breakdown(user_id: Optional[str] = None, days: int = 7) -> List[D
                 FROM usage_events
                 WHERE user_id=? AND created_at >= datetime('now', ?)
                 GROUP BY hour ORDER BY hour ASC
-            """, (user_id, f"-{days} days")).fetchall()
+            """,
+                (user_id, f"-{days} days"),
+            ).fetchall()
         else:
-            rows = c.execute("""
+            rows = c.execute(
+                """
                 SELECT
                     strftime('%Y-%m-%d %H:00', created_at) as hour,
                     COUNT(*) as requests,
@@ -135,5 +174,7 @@ def get_hourly_breakdown(user_id: Optional[str] = None, days: int = 7) -> List[D
                 FROM usage_events
                 WHERE created_at >= datetime('now', ?)
                 GROUP BY hour ORDER BY hour ASC
-            """, (f"-{days} days",)).fetchall()
+            """,
+                (f"-{days} days",),
+            ).fetchall()
     return [dict(r) for r in rows]

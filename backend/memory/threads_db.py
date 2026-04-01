@@ -2,6 +2,7 @@
 Conversation thread store — SQLite backed.
 Each thread belongs to one user, has a title, and stores messages as JSON.
 """
+
 import sqlite3
 import os
 import json
@@ -50,7 +51,7 @@ def create_thread(thread_id: str, user_id: str, title: str = "New Chat") -> Dict
     with _conn() as c:
         c.execute(
             "INSERT INTO threads (id, user_id, title, created_at, updated_at) VALUES (?,?,?,?,?)",
-            (thread_id, user_id, title, now, now)
+            (thread_id, user_id, title, now, now),
         )
         c.commit()
     return {"id": thread_id, "user_id": user_id, "title": title, "created_at": now}
@@ -60,7 +61,7 @@ def get_threads(user_id: str) -> List[Dict]:
     with _conn() as c:
         rows = c.execute(
             "SELECT * FROM threads WHERE user_id=? AND is_archived=0 ORDER BY updated_at DESC",
-            (user_id,)
+            (user_id,),
         ).fetchall()
     return [dict(r) for r in rows]
 
@@ -68,8 +69,7 @@ def get_threads(user_id: str) -> List[Dict]:
 def get_thread(thread_id: str, user_id: str) -> Optional[Dict]:
     with _conn() as c:
         row = c.execute(
-            "SELECT * FROM threads WHERE id=? AND user_id=?",
-            (thread_id, user_id)
+            "SELECT * FROM threads WHERE id=? AND user_id=?", (thread_id, user_id)
         ).fetchone()
     return dict(row) if row else None
 
@@ -79,7 +79,7 @@ def rename_thread(thread_id: str, user_id: str, title: str) -> bool:
     with _conn() as c:
         cur = c.execute(
             "UPDATE threads SET title=?, updated_at=? WHERE id=? AND user_id=?",
-            (title, now, thread_id, user_id)
+            (title, now, thread_id, user_id),
         )
         c.commit()
     return cur.rowcount > 0
@@ -89,7 +89,7 @@ def archive_thread(thread_id: str, user_id: str) -> bool:
     with _conn() as c:
         cur = c.execute(
             "UPDATE threads SET is_archived=1 WHERE id=? AND user_id=?",
-            (thread_id, user_id)
+            (thread_id, user_id),
         )
         c.commit()
     return cur.rowcount > 0
@@ -100,12 +100,9 @@ def add_message(msg_id: str, thread_id: str, role: str, content: str):
     with _conn() as c:
         c.execute(
             "INSERT INTO messages (id, thread_id, role, content, created_at) VALUES (?,?,?,?,?)",
-            (msg_id, thread_id, role, content, now)
+            (msg_id, thread_id, role, content, now),
         )
-        c.execute(
-            "UPDATE threads SET updated_at=? WHERE id=?",
-            (now, thread_id)
-        )
+        c.execute("UPDATE threads SET updated_at=? WHERE id=?", (now, thread_id))
         c.commit()
 
 
@@ -113,26 +110,30 @@ def get_messages(thread_id: str, limit: int = 50) -> List[Dict]:
     with _conn() as c:
         rows = c.execute(
             "SELECT * FROM messages WHERE thread_id=? ORDER BY created_at ASC LIMIT ?",
-            (thread_id, limit)
+            (thread_id, limit),
         ).fetchall()
     return [dict(r) for r in rows]
 
 
-def fork_thread(new_id: str, source_thread_id: str, user_id: str,
-                from_message_id: str, title: str) -> Dict:
+def fork_thread(
+    new_id: str, source_thread_id: str, user_id: str, from_message_id: str, title: str
+) -> Dict:
     """Branch a conversation from any message point."""
     import uuid
+
     msgs = get_messages(source_thread_id)
     # Find cutoff index
-    cutoff = next((i for i, m in enumerate(msgs) if m["id"] == from_message_id), len(msgs))
-    forked_msgs = msgs[:cutoff + 1]
+    cutoff = next(
+        (i for i, m in enumerate(msgs) if m["id"] == from_message_id), len(msgs)
+    )
+    forked_msgs = msgs[: cutoff + 1]
 
     thread = create_thread(new_id, user_id, title)
     with _conn() as c:
         for m in forked_msgs:
             c.execute(
                 "INSERT INTO messages (id, thread_id, role, content, created_at) VALUES (?,?,?,?,?)",
-                (str(uuid.uuid4()), new_id, m["role"], m["content"], m["created_at"])
+                (str(uuid.uuid4()), new_id, m["role"], m["content"], m["created_at"]),
             )
         c.commit()
     return thread

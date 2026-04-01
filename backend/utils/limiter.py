@@ -1,29 +1,61 @@
 import re
 
 INTENT_WORD_LIMITS = {
-    "code":      450,
-    "debug":     450,
+    "code": 450,
+    "debug": 450,
     "technical": 200,
-    "explain":   180,
-    "research":  280,
-    "search":    250,
-    "list":      200,
-    "casual":    40,
-    "greeting":  20,
-    "default":   60,
+    "explain": 180,
+    "research": 280,
+    "search": 250,
+    "list": 200,
+    "casual": 40,
+    "greeting": 20,
+    "default": 60,
 }
 
 TECHNICAL_KEYWORDS = [
-    "code", "function", "class", "error", "bug", "fix", "implement",
-    "script", "debug", "install", "configure", "api", "database",
-    "python", "javascript", "bash", "terminal", "command", "git",
-    "deploy", "server", "build", "compile", "stack", "library"
+    "code",
+    "function",
+    "class",
+    "error",
+    "bug",
+    "fix",
+    "implement",
+    "script",
+    "debug",
+    "install",
+    "configure",
+    "api",
+    "database",
+    "python",
+    "javascript",
+    "bash",
+    "terminal",
+    "command",
+    "git",
+    "deploy",
+    "server",
+    "build",
+    "compile",
+    "stack",
+    "library",
 ]
 
 CASUAL_KEYWORDS = [
-    "hi", "hello", "hey", "thanks", "ok", "okay", "sure", "cool",
-    "how are you", "whats up", "good morning", "good night"
+    "hi",
+    "hello",
+    "hey",
+    "thanks",
+    "ok",
+    "okay",
+    "sure",
+    "cool",
+    "how are you",
+    "whats up",
+    "good morning",
+    "good night",
 ]
+
 
 def detect_intent_for_limit(text: str) -> str:
     text_lower = text.lower()
@@ -39,6 +71,7 @@ def detect_intent_for_limit(text: str) -> str:
         return "list"
     return "default"
 
+
 def limit_words(text: str, max_words: int = None, intent: str = None) -> str:
     if intent is None:
         intent = "default"
@@ -51,5 +84,5 @@ def limit_words(text: str, max_words: int = None, intent: str = None) -> str:
     last_newline = truncated.rfind("\n")
     cut_at = max(last_period, last_newline)
     if cut_at > int(limit * 0.75 * 5):
-        return truncated[:cut_at + 1]
+        return truncated[: cut_at + 1]
     return truncated + "..."

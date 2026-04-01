@@ -8,12 +8,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-_GPU_HOST    = os.getenv("REMOTE_GPU_HOST", "")
-_CHECK_EVERY = 15   # seconds
-_TIMEOUT     = 1.5
+_GPU_HOST = os.getenv("REMOTE_GPU_HOST", "")
+_CHECK_EVERY = 15  # seconds
+_TIMEOUT = 1.5
 
 _status = {"alive": False, "last_check": 0.0}
-_lock   = threading.Lock()
+_lock = threading.Lock()
 
 
 def _check_once() -> bool:
@@ -21,6 +21,7 @@ def _check_once() -> bool:
         return False
     try:
         import requests
+
         r = requests.get(_GPU_HOST, timeout=_TIMEOUT)
         return r.status_code == 200
     except Exception:
@@ -31,7 +32,7 @@ def _background_loop():
     while True:
         alive = _check_once()
         with _lock:
-            _status["alive"]      = alive
+            _status["alive"] = alive
             _status["last_check"] = time.time()
         logger.debug("GPU health: %s", "UP" if alive else "DOWN")
         time.sleep(_CHECK_EVERY)

@@ -4,6 +4,7 @@ core/pipeline/registry.py — Ordered handler chain.
 Handlers are tried in registration order.
 First non-None reply wins and terminates the chain.
 """
+
 from __future__ import annotations
 import logging
 from typing import List, Optional
@@ -29,7 +30,9 @@ class PipelineRegistry:
                     logger.debug("Pipeline: %s handled request", handler)
                     return result
             except Exception as e:
-                logger.error("Pipeline handler %s failed: %s", handler, e, exc_info=True)
+                logger.error(
+                    "Pipeline handler %s failed: %s", handler, e, exc_info=True
+                )
                 # Continue to next handler on error — never crash the pipeline
         return None
 

@@ -1,9 +1,11 @@
 from datetime import datetime
 
+
 def should_give_briefing(memory: dict) -> bool:
     last_briefing = memory.get("last_briefing_date", "")
     today = datetime.now().strftime("%Y-%m-%d")
     return last_briefing != today
+
 
 def generate_morning_brief(memory: dict, tasks: list = None) -> str:
     now = datetime.now()
@@ -27,7 +29,9 @@ def generate_morning_brief(memory: dict, tasks: list = None) -> str:
             titles = ", ".join(t["title"] for t in pending[:3])
             count = len(pending)
             label = "tasks" if count != 1 else "task"
-            brief_lines.append("You have " + str(count) + " pending " + label + ": " + titles + ".")
+            brief_lines.append(
+                "You have " + str(count) + " pending " + label + ": " + titles + "."
+            )
 
     last_topic = memory.get("last_topic")
     if last_topic:
@@ -35,6 +39,7 @@ def generate_morning_brief(memory: dict, tasks: list = None) -> str:
 
     brief_lines.append("What are we tackling today?")
     return " ".join(brief_lines)
+
 
 def mark_briefing_done(memory: dict) -> dict:
     memory["last_briefing_date"] = datetime.now().strftime("%Y-%m-%d")

@@ -3,6 +3,7 @@ core/background.py — Managed async background tasks for ASTRA.
 Each task runs in its own asyncio loop with isolated error handling.
 A crash in one task never affects the others.
 """
+
 import asyncio
 import logging
 
@@ -45,6 +46,7 @@ async def start_all(broadcast_fn) -> list:
     try:
         from core.proactive import set_broadcast as _pb
         from core.smart_guardian import set_broadcast as _gb
+
         _pb(broadcast_fn)
         _gb(broadcast_fn)
     except Exception as e:
@@ -53,6 +55,7 @@ async def start_all(broadcast_fn) -> list:
     # ── TTS worker — moved here from module-level ───────────────────────────────
     try:
         from core.llm_engine import start_tts_worker
+
         start_tts_worker()
     except Exception as e:
         logger.warning("TTS worker failed to start: %s", e)
@@ -60,6 +63,7 @@ async def start_all(broadcast_fn) -> list:
     # ── Ollama auto-unload — moved here from module-level ───────────────────────
     try:
         from core.model_manager import start_auto_unload
+
         start_auto_unload()
     except Exception as e:
         logger.warning("Ollama auto-unload failed to start: %s", e)
@@ -67,53 +71,64 @@ async def start_all(broadcast_fn) -> list:
     # ── SmartGuardian — runs its own thread internally ────────────────────────
     try:
         from core.smart_guardian import _monitor_loop
-        tasks.append(asyncio.create_task(
-            _poll("SmartGuardian", _monitor_loop_once, 120),
-            name="smart_guardian"
-        ))
+
+        tasks.append(
+            asyncio.create_task(
+                _poll("SmartGuardian", _monitor_loop_once, 120), name="smart_guardian"
+            )
+        )
     except Exception as e:
         logger.warning("SmartGuardian task failed: %s", e)
 
     # ── Proactive monitor ─────────────────────────────────────────────────────
     try:
         from core.proactive import _check_system, _check_tasks
+
         last_alerts: dict = {}
-        tasks.append(asyncio.create_task(
-            _poll("ProactiveMonitor",
-                  lambda: (_check_system(last_alerts), _check_tasks(last_alerts)),
-                  120),
-            name="proactive_monitor"
-        ))
+        tasks.append(
+            asyncio.create_task(
+                _poll(
+                    "ProactiveMonitor",
+                    lambda: (_check_system(last_alerts), _check_tasks(last_alerts)),
+                    120,
+                ),
+                name="proactive_monitor",
+            )
+        )
     except Exception as e:
         logger.warning("ProactiveMonitor task failed: %s", e)
 
     # ── Plugin watcher ────────────────────────────────────────────────────────
     try:
         from tools.plugin_watcher import start as _start_plugins
-        tasks.append(asyncio.create_task(
-            _run_threaded("PluginWatcher", _start_plugins),
-            name="plugin_watcher"
-        ))
+
+        tasks.append(
+            asyncio.create_task(
+                _run_threaded("PluginWatcher", _start_plugins), name="plugin_watcher"
+            )
+        )
     except Exception as e:
         logger.warning("PluginWatcher task failed: %s", e)
 
     # ── GPU health ────────────────────────────────────────────────────────────
     try:
         from core.gpu_health import _check_once
-        tasks.append(asyncio.create_task(
-            _poll("GpuHealth", _check_once, 15),
-            name="gpu_health"
-        ))
+
+        tasks.append(
+            asyncio.create_task(_poll("GpuHealth", _check_once, 15), name="gpu_health")
+        )
     except Exception as e:
         logger.warning("GpuHealth task failed: %s", e)
 
     # ── RAG doc watcher ───────────────────────────────────────────────────────
     try:
         from rag.watcher import _scan_and_ingest
-        tasks.append(asyncio.create_task(
-            _poll("DocWatcher", _scan_and_ingest, 30),
-            name="doc_watcher"
-        ))
+
+        tasks.append(
+            asyncio.create_task(
+                _poll("DocWatcher", _scan_and_ingest, 30), name="doc_watcher"
+            )
+        )
     except Exception as e:
         logger.warning("DocWatcher task failed: %s", e)
 
@@ -136,13 +151,17 @@ def _monitor_loop_once():
     """Run one tick of SmartGuardian logic (used by _poll above)."""
     import time
     from core.smart_guardian import (
-        get_full_stats, _trend, smart_message,
-        auto_heal, _last_alerts, _broadcast
+        get_full_stats,
+        _trend,
+        smart_message,
+        auto_heal,
+        _last_alerts,
+        _broadcast,
     )
     import psutil
 
-    stats         = get_full_stats()
-    score         = stats["score"]
+    stats = get_full_stats()
+    score = stats["score"]
     _trend.add(score)
     trend_summary = _trend.summary()
 

@@ -12,18 +12,20 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-SAMPLE_RATE    = 16000
-CHANNELS       = 1
+SAMPLE_RATE = 16000
+CHANNELS = 1
 RECORD_SECONDS = 5
-WAKE_WORD      = "hey astra"
+WAKE_WORD = "hey astra"
 
 
 # ── STT — Speech to Text ──────────────────
+
 
 def transcribe_audio(audio_data: np.ndarray) -> str:
     try:
         from faster_whisper import WhisperModel
         import scipy.io.wavfile as wav
+
         model = WhisperModel("tiny", device="cpu", compute_type="int8")
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
             tmp_path = f.name
@@ -40,12 +42,13 @@ def transcribe_audio(audio_data: np.ndarray) -> str:
 
 def record_audio(duration: int = RECORD_SECONDS) -> np.ndarray:
     import sounddevice as sd
+
     logger.info(f"Recording {duration}s...")
     audio = sd.rec(
         int(duration * SAMPLE_RATE),
         samplerate=SAMPLE_RATE,
         channels=CHANNELS,
-        dtype="int16"
+        dtype="int16",
     )
     sd.wait()
     return audio.flatten()
@@ -62,10 +65,10 @@ _tts_lock = threading.Lock()
 
 
 def _clean_text(text: str) -> str:
-    clean = re.sub(r'[*_`#]', '', text)
-    clean = re.sub(r'https?://\S+', 'link', clean)
-    clean = re.sub(r'[^\x00-\x7F]+', '', clean)
-    clean = re.sub(r'\s+', ' ', clean).strip()
+    clean = re.sub(r"[*_`#]", "", text)
+    clean = re.sub(r"https?://\S+", "link", clean)
+    clean = re.sub(r"[^\x00-\x7F]+", "", clean)
+    clean = re.sub(r"\s+", " ", clean).strip()
     return clean
 
 
@@ -80,6 +83,7 @@ def speak(text: str, rate: int = 185, volume: float = 1.0) -> None:
         with _tts_lock:
             try:
                 from tts_kokoro import speak as kokoro_speak
+
                 logger.info(f"Speaking: {clean[:60]}...")
                 kokoro_speak(clean)
             except Exception as e:
@@ -99,6 +103,7 @@ def speak_blocking(text: str, rate: int = 185) -> None:
     clean = _clean_text(text)
     try:
         from tts_kokoro import speak as kokoro_speak
+
         kokoro_speak(clean)
     except Exception as e:
         logger.error(f"TTS blocking error: {e}")
@@ -107,16 +112,17 @@ def speak_blocking(text: str, rate: int = 185) -> None:
 
 # ── Wake Word Detection ────────────────────
 
+
 class WakeWordListener:
     def __init__(self, callback, wake_word: str = WAKE_WORD):
-        self.callback  = callback
+        self.callback = callback
         self.wake_word = wake_word.lower()
-        self._running  = False
-        self._thread   = None
+        self._running = False
+        self._thread = None
 
     def start(self):
         self._running = True
-        self._thread  = threading.Thread(target=self._loop, daemon=True)
+        self._thread = threading.Thread(target=self._loop, daemon=True)
         self._thread.start()
         logger.info(f"Wake word listener started — say '{self.wake_word}'")
 
@@ -126,13 +132,14 @@ class WakeWordListener:
 
     def _loop(self):
         import sounddevice as sd
+
         while self._running:
             try:
                 audio = sd.rec(
                     int(2 * SAMPLE_RATE),
                     samplerate=SAMPLE_RATE,
                     channels=CHANNELS,
-                    dtype="int16"
+                    dtype="int16",
                 )
                 sd.wait()
                 text = transcribe_audio(audio.flatten()).lower()

@@ -4,11 +4,17 @@ from typing import Dict, List, Tuple
 
 logger = logging.getLogger(__name__)
 
-class ContextBuilder:
 
-    def build(self, user_input: str, user_name: str, memory: Dict,
-              emotion_label: str, query_intent: str,
-              conversation_history: List[Dict]) -> Tuple[str, float]:
+class ContextBuilder:
+    def build(
+        self,
+        user_input: str,
+        user_name: str,
+        memory: Dict,
+        emotion_label: str,
+        query_intent: str,
+        conversation_history: List[Dict],
+    ) -> Tuple[str, float]:
         """Returns (system_prompt, semantic_confidence)."""
         sem_conf = 0.0
         try:
@@ -19,7 +25,11 @@ class ContextBuilder:
 
             # v2: ranked context selection
             try:
-                from core.context_engine_v2 import build_ranked_context, context_quality_report
+                from core.context_engine_v2 import (
+                    build_ranked_context,
+                    context_quality_report,
+                )
+
                 semantic_ctx, sem_conf = build_ranked_context(
                     user_input, user_name, query_intent
                 )
@@ -29,16 +39,17 @@ class ContextBuilder:
             except Exception as _v2e:
                 logger.warning("context_v2 failed, using v1: %s", _v2e)
                 semantic_ctx, sem_conf = build_semantic_context(user_input, user_name)
-                episodic_ctx           = build_episodic_context(user_input, user_name)
-            addon                  = get_system_addon()
+                episodic_ctx = build_episodic_context(user_input, user_name)
+            addon = get_system_addon()
 
             # Inject long-term conversation summaries
             summary_ctx = ""
             try:
                 from memory.summarizer import get_recent_context
+
                 summary_ctx = get_recent_context(memory, max_summaries=3)
             except Exception as _e:
-                logger.debug('context_builder: %s', _e)
+                logger.debug("context_builder: %s", _e)
 
             system_prompt = build_system_prompt(
                 user_name=user_name,
@@ -58,29 +69,32 @@ class ContextBuilder:
             if any(w in user_input.lower() for w in vision_keywords):
                 try:
                     from core.visual_memory import build_visual_context
+
                     visual_ctx = build_visual_context(user_input)
                     if visual_ctx:
                         system_prompt += visual_ctx
                 except Exception as _e:
-                    logger.debug('context_builder: %s', _e)
+                    logger.debug("context_builder: %s", _e)
 
             # Inject adaptive personality style
             try:
                 from core.adaptive_personality import get_style_addon
+
                 style_addon = get_style_addon()
                 if style_addon:
                     system_prompt += f"\n\nSTYLE: {style_addon}"
             except Exception as _e:
-                logger.debug('context_builder: %s', _e)
+                logger.debug("context_builder: %s", _e)
 
             # Inject live ambient context
             try:
                 from core.ambient import get_context_string
+
                 ambient_ctx = get_context_string()
                 if ambient_ctx:
                     system_prompt += f"\n\nCURRENT ENVIRONMENT: {ambient_ctx}"
             except Exception as _e:
-                logger.debug('context_builder: %s', _e)
+                logger.debug("context_builder: %s", _e)
 
             return system_prompt, sem_conf
 

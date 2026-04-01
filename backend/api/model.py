@@ -2,13 +2,14 @@ import logging
 import os
 from flask import Blueprint, request, jsonify
 
-logger   = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 model_bp = Blueprint("model", __name__)
 
 
 def _ollama_models():
     try:
         import requests as _req
+
         base = os.getenv("OLLAMA_HOST", "http://localhost:11434")
         resp = _req.get(f"{base}/api/tags", timeout=5)
         return [m["name"] for m in resp.json().get("models", [])]
@@ -19,6 +20,7 @@ def _ollama_models():
 def _current_model():
     try:
         from core.brain_singleton import get_brain
+
         return get_brain().model_manager.current_model
     except Exception:
         return "phi3:mini"
@@ -37,6 +39,7 @@ def model_status():
 def model_info():
     try:
         from core.brain_singleton import get_brain
+
         return jsonify(get_brain().get_model_info())
     except Exception as e:
         logger.error("model info error: %s", e)
@@ -47,11 +50,12 @@ def model_info():
 def force_switch_model():
     try:
         from core.brain_singleton import get_brain
-        data  = request.get_json() or {}
+
+        data = request.get_json() or {}
         model = data.get("model")
         if not model:
             return jsonify({"error": "No model specified"}), 400
-        brain   = get_brain()
+        brain = get_brain()
         success = brain.model_manager.force_set(model)
         if success:
             logger.info("Model switched to: %s", model)

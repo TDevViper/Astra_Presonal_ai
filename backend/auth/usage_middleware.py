@@ -2,6 +2,7 @@
 FastAPI middleware — automatically logs every authenticated request.
 Attaches to the app in main.py.
 """
+
 import time
 import logging
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -11,17 +12,24 @@ from auth.usage_tracker import init_db, log_event
 logger = logging.getLogger(__name__)
 init_db()
 
+
 def _get_user_from_request(request):
     try:
         auth = request.headers.get("Authorization", "")
         if auth.startswith("Bearer "):
             from auth.jwt_handler import verify_access_token
+
             payload = verify_access_token(auth[7:])
             if payload:
-                return {"id": payload.get("sub"), "username": payload.get("username"), "role": payload.get("role")}
+                return {
+                    "id": payload.get("sub"),
+                    "username": payload.get("username"),
+                    "role": payload.get("role"),
+                }
     except Exception:
         pass
     return None
+
 
 SKIP_PATHS = {"/health", "/docs", "/openapi.json", "/redoc", "/favicon.ico"}
 
@@ -37,16 +45,18 @@ class UsageMiddleware(BaseHTTPMiddleware):
 
         # Only log authenticated requests
         try:
-            user = getattr(request.state, "current_user", None) or _get_user_from_request(request)
+            user = getattr(
+                request.state, "current_user", None
+            ) or _get_user_from_request(request)
             if user:
                 log_event(
-                    user_id     = user.get("id", "unknown"),
-                    username    = user.get("username", "unknown"),
-                    role        = user.get("role", "unknown"),
-                    endpoint    = request.url.path,
-                    method      = request.method,
-                    status_code = response.status_code,
-                    duration_ms = round(duration_ms, 2),
+                    user_id=user.get("id", "unknown"),
+                    username=user.get("username", "unknown"),
+                    role=user.get("role", "unknown"),
+                    endpoint=request.url.path,
+                    method=request.method,
+                    status_code=response.status_code,
+                    duration_ms=round(duration_ms, 2),
                 )
         except Exception as e:
             logger.debug("Usage log error: %s", e)

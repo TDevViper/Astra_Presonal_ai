@@ -6,9 +6,12 @@ import sys
 # ==========================================
 
 import subprocess
+
+
 def _macos_only(fn_name: str):
     if sys.platform != "darwin":
         raise RuntimeError(f"{fn_name} is only supported on macOS")
+
 
 import logging
 import os
@@ -23,17 +26,14 @@ APP_ALIASES = {
     "chrome": "Google Chrome",
     "firefox": "Firefox",
     "safari": "Safari",
-
     # Music
     "spotify": "Spotify",
     "apple music": "Music",
     "music": "Music",
-
     # Dev
     "android studio": "Android Studio",
     "iterm": "iTerm2",
     "terminal": "iTerm2",
-
     # Productivity
     "whatsapp": "WhatsApp",
     "notion": "Notion",
@@ -42,10 +42,8 @@ APP_ALIASES = {
     "pages": "Pages",
     "numbers": "Numbers",
     "libreoffice": "LibreOffice",
-
     # Media
     "vlc": "VLC",
-
     # System
     "settings": "System Settings",
     "system settings": "System Settings",
@@ -71,6 +69,7 @@ MUSIC_APPS = ["Spotify", "Music", "VLC"]
 # ══════════════════════════════════════════
 # APP CONTROL
 # ══════════════════════════════════════════
+
 
 def open_app(app_name: str) -> str:
     """Open any app by name."""
@@ -114,9 +113,13 @@ def list_running_apps() -> str:
     """List all running apps."""
     try:
         result = subprocess.run(
-            ["osascript", "-e",
-             'tell application "System Events" to get name of every process whose background only is false'],
-            capture_output=True, text=True
+            [
+                "osascript",
+                "-e",
+                'tell application "System Events" to get name of every process whose background only is false',
+            ],
+            capture_output=True,
+            text=True,
         )
         apps = [a.strip() for a in result.stdout.strip().split(",")]
         return f"Running apps: {', '.join(apps)}"
@@ -140,13 +143,16 @@ def open_url(url: str, browser: str = "Brave Browser") -> str:
 # MUSIC CONTROL
 # ══════════════════════════════════════════
 
+
 def _get_active_music_app() -> Optional[str]:
     """Find which music app is currently playing."""
     for app in MUSIC_APPS:
         try:
             result = subprocess.run(
                 ["osascript", "-e", f'tell application "{app}" to get player state'],
-                capture_output=True, text=True, timeout=2
+                capture_output=True,
+                text=True,
+                timeout=2,
             )
             state = result.stdout.strip()
             if state == "playing":
@@ -157,8 +163,14 @@ def _get_active_music_app() -> Optional[str]:
     for app in MUSIC_APPS:
         try:
             result = subprocess.run(
-                ["osascript", "-e", f'tell application "System Events" to (name of processes) contains "{app}"'],
-                capture_output=True, text=True, timeout=2
+                [
+                    "osascript",
+                    "-e",
+                    f'tell application "System Events" to (name of processes) contains "{app}"',
+                ],
+                capture_output=True,
+                text=True,
+                timeout=2,
             )
             if "true" in result.stdout.lower():
                 return app
@@ -209,11 +221,15 @@ def get_now_playing(app: Optional[str] = None) -> str:
     app = app or _get_active_music_app()
     try:
         if app == "Spotify":
-            name   = _osascript('tell application "Spotify" to get name of current track')
-            artist = _osascript('tell application "Spotify" to get artist of current track')
+            name = _osascript('tell application "Spotify" to get name of current track')
+            artist = _osascript(
+                'tell application "Spotify" to get artist of current track'
+            )
         elif app == "Music":
-            name   = _osascript('tell application "Music" to get name of current track')
-            artist = _osascript('tell application "Music" to get artist of current track')
+            name = _osascript('tell application "Music" to get name of current track')
+            artist = _osascript(
+                'tell application "Music" to get artist of current track'
+            )
         else:
             return f"Can't get track info from {app}."
         return f"Playing '{name.strip()}' by {artist.strip()} on {app}."
@@ -245,7 +261,9 @@ def play_search(query: str, app: str = "Spotify") -> str:
             return f"Searching for '{query}' on Apple Music."
         else:
             # Fallback: open YouTube Music in browser
-            return open_url(f"https://music.youtube.com/search?q={query.replace(' ', '+')}")
+            return open_url(
+                f"https://music.youtube.com/search?q={query.replace(' ', '+')}"
+            )
     except Exception:
         return f"Couldn't play '{query}'."
 
@@ -253,6 +271,7 @@ def play_search(query: str, app: str = "Spotify") -> str:
 # ══════════════════════════════════════════
 # VOLUME & BRIGHTNESS
 # ══════════════════════════════════════════
+
 
 def set_volume(level: int) -> str:
     """Set system volume 0-100."""
@@ -300,7 +319,8 @@ def _get_volume() -> int:
     try:
         result = subprocess.run(
             ["osascript", "-e", "output volume of (get volume settings)"],
-            capture_output=True, text=True
+            capture_output=True,
+            text=True,
         )
         return int(result.stdout.strip())
     except Exception:
@@ -310,21 +330,35 @@ def _get_volume() -> int:
 def _set_brightness_keys(level: int) -> str:
     steps = round(level / 100 * 16)
     for _ in range(16):
-        subprocess.run(["osascript", "-e", 'tell application "System Events" to key code 107'], capture_output=True)
+        subprocess.run(
+            ["osascript", "-e", 'tell application "System Events" to key code 107'],
+            capture_output=True,
+        )
     for _ in range(steps):
-        subprocess.run(["osascript", "-e", 'tell application "System Events" to key code 113'], capture_output=True)
+        subprocess.run(
+            ["osascript", "-e", 'tell application "System Events" to key code 113'],
+            capture_output=True,
+        )
     return f"Brightness set to {level}%."
+
 
 def set_brightness(level: int) -> str:
     """Set screen brightness 0-100."""
     level = max(0, min(100, level))
     try:
         val = level / 100.0
-        subprocess.run(["osascript", "-e", 'tell application "System Events"\n  tell process "SystemUIServer"\n    key code 144\n  end tell\nend tell'], capture_output=True)
-        _osascript(f'set brightness of display 1 to {val}')
+        subprocess.run(
+            [
+                "osascript",
+                "-e",
+                'tell application "System Events"\n  tell process "SystemUIServer"\n    key code 144\n  end tell\nend tell',
+            ],
+            capture_output=True,
+        )
+        _osascript(f"set brightness of display 1 to {val}")
         return f"Brightness set to {level}%."
     except Exception as _e:
-        logger.debug('system_controller: %s', _e)
+        logger.debug("system_controller: %s", _e)
     """Set screen brightness 0-100."""
     level = max(0, min(100, level))
     try:
@@ -344,12 +378,16 @@ def set_brightness(level: int) -> str:
 # SYSTEM ACTIONS
 # ══════════════════════════════════════════
 
+
 def lock_screen() -> str:
     try:
-        subprocess.run([
-            "osascript", "-e",
-            'tell application "System Events" to keystroke "q" using {command down, control down}'
-        ])
+        subprocess.run(
+            [
+                "osascript",
+                "-e",
+                'tell application "System Events" to keystroke "q" using {command down, control down}',
+            ]
+        )
         return "Screen locked."
     except Exception:
         return "Couldn't lock screen."
@@ -374,10 +412,7 @@ def take_screenshot(path: str = "~/Desktop/astra_screenshot.png") -> str:
 
 def get_battery() -> str:
     try:
-        result = subprocess.run(
-            ["pmset", "-g", "batt"],
-            capture_output=True, text=True
-        )
+        result = subprocess.run(["pmset", "-g", "batt"], capture_output=True, text=True)
         lines = result.stdout.strip().split("\n")
         for line in lines:
             if "%" in line:
@@ -391,16 +426,19 @@ def get_wifi_status() -> str:
     try:
         # Get connected SSID
         ssid_result = subprocess.run(
-            ["/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport", "-I"],
-            capture_output=True, text=True
+            [
+                "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport",
+                "-I",
+            ],
+            capture_output=True,
+            text=True,
         )
         for line in ssid_result.stdout.split("\n"):
             if " SSID:" in line:
                 ssid = line.split("SSID:")[-1].strip()
                 return f"Connected to Wi-Fi: {ssid}"
         result = subprocess.run(
-            ["networksetup", "-getairportpower", "en0"],
-            capture_output=True, text=True
+            ["networksetup", "-getairportpower", "en0"], capture_output=True, text=True
         )
         return result.stdout.strip()
     except Exception:
@@ -426,7 +464,9 @@ def empty_trash() -> str:
 
 def show_desktop() -> str:
     try:
-        _osascript('tell application "System Events" to key code 103 using {command down}')
+        _osascript(
+            'tell application "System Events" to key code 103 using {command down}'
+        )
         return "Showing desktop."
     except Exception:
         return "Couldn't show desktop."
@@ -435,6 +475,7 @@ def show_desktop() -> str:
 # ══════════════════════════════════════════
 # VOICE COMMAND ROUTER
 # ══════════════════════════════════════════
+
 
 def handle_system_command(text: str) -> Optional[str]:
     """
@@ -446,6 +487,7 @@ def handle_system_command(text: str) -> Optional[str]:
     # ── Brightness (must be before music checks) ────────
     if "brightness" in t:
         import re
+
         match = re.search(r"(\d+)", t)
         if match:
             return set_brightness(int(match.group(1)))
@@ -464,13 +506,22 @@ def handle_system_command(text: str) -> Optional[str]:
         return next_track()
     if any(w in t for w in ["previous song", "prev track", "go back"]):
         return previous_track()
-    if any(w in t for w in ["what's playing", "what is playing", "current song", "now playing"]):
+    if any(
+        w in t
+        for w in ["what's playing", "what is playing", "current song", "now playing"]
+    ):
         return get_now_playing()
 
     # Play search query
     if "play " in t:
         query = t.split("play ", 1)[-1].strip()
-        query = query.replace(" on spotify", "").replace(" on apple music", "").replace(" on music", "").replace(" on youtube", "").strip()
+        query = (
+            query.replace(" on spotify", "")
+            .replace(" on apple music", "")
+            .replace(" on music", "")
+            .replace(" on youtube", "")
+            .strip()
+        )
         # Detect target app
         if "spotify" in query:
             query = query.replace("spotify", "").strip()
@@ -480,7 +531,9 @@ def handle_system_command(text: str) -> Optional[str]:
             return play_search(query, app="Music")
         elif "youtube" in query:
             query = query.replace("youtube", "").replace("on", "").strip()
-            return open_url(f"https://music.youtube.com/search?q={query.replace(' ', '+')}")
+            return open_url(
+                f"https://music.youtube.com/search?q={query.replace(' ', '+')}"
+            )
         else:
             return play_search(query)  # default Spotify
 
@@ -495,13 +548,16 @@ def handle_system_command(text: str) -> Optional[str]:
         return unmute()
     if "volume" in t:
         import re
-        match = re.search(r'volume\s+(\d+)', t)
+
+        match = re.search(r"volume\s+(\d+)", t)
         if match:
             return set_volume(int(match.group(1)))
 
     # ── Apps ──────────────────────────────
     if ("open " in t or "launch " in t or "start " in t) and len(t.split()) <= 6:
-        app = t.replace("open ", "").replace("launch ", "").replace("start ", "").strip()
+        app = (
+            t.replace("open ", "").replace("launch ", "").replace("start ", "").strip()
+        )
         # Check if it's a URL
         if "." in app and " " not in app:
             return open_url(app)
@@ -538,19 +594,19 @@ def handle_system_command(text: str) -> Optional[str]:
     if "show desktop" in t:
         return show_desktop()
 
-
     return None  # Not a system command
 
 
 # ── Helpers ───────────────────────────────────────────────────
 
+
 def _osascript(script: str) -> str:
     import platform as _platform
+
     if _platform.system() != "Darwin":
         raise OSError("osascript is only available on macOS")
     result = subprocess.run(
-        ["osascript", "-e", script],
-        capture_output=True, text=True, timeout=5
+        ["osascript", "-e", script], capture_output=True, text=True, timeout=5
     )
     return result.stdout.strip()
 
@@ -574,7 +630,8 @@ if __name__ == "__main__":
     tests = [
         "play lo-fi hip hop on spotify",
         "volume up",
-        "what's playing", "brightness",
+        "what's playing",
+        "brightness",
         "open brave",
         "battery",
         "take a screenshot",
@@ -587,11 +644,30 @@ if __name__ == "__main__":
 
 
 SYSTEM_TRIGGERS = [
-    "open ", "close ", "quit ", "launch ", "play ", "pause", "skip",
-    "next song", "previous song", "volume", "mute", "unmute",
-    "screenshot", "battery", "wifi", "lock screen", "sleep display",
-    "switch to", "running apps", "empty trash", "what's playing", "brightness"
+    "open ",
+    "close ",
+    "quit ",
+    "launch ",
+    "play ",
+    "pause",
+    "skip",
+    "next song",
+    "previous song",
+    "volume",
+    "mute",
+    "unmute",
+    "screenshot",
+    "battery",
+    "wifi",
+    "lock screen",
+    "sleep display",
+    "switch to",
+    "running apps",
+    "empty trash",
+    "what's playing",
+    "brightness",
 ]
+
 
 def is_system_command(text: str) -> bool:
     t = text.lower()

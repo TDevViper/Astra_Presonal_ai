@@ -7,40 +7,35 @@ from typing import Dict
 # Confidence scores per agent/intent
 CONFIDENCE_MAP = {
     # Hardcoded shortcuts - always correct
-    "shortcut":         1.00,
-    "intent_handler":   1.00,
-
+    "shortcut": 1.00,
+    "intent_handler": 1.00,
     # Memory - user told us directly, highly reliable
-    "memory_recall":    0.95,
-    "memory":           0.95,
-    "memory_storage":   0.95,
-
+    "memory_recall": 0.95,
+    "memory": 0.95,
+    "memory_storage": 0.95,
     # Web search - real data but LLM summarized it
-    "web_search":       0.75,
+    "web_search": 0.75,
     "web_search_agent": 0.75,
-
     # LLM knowledge by model quality
     "ollama/mistral:latest": 0.72,
-    "ollama/llama3.2:3b":    0.65,
-    "ollama/phi3:mini":      0.60,
-
+    "ollama/llama3.2:3b": 0.65,
+    "ollama/phi3:mini": 0.60,
     # Intent-based adjustments
-    "technical":        0.70,
-    "reasoning":        0.68,
-    "casual":           0.60,
-    "conversational":   0.60,
-
+    "technical": 0.70,
+    "reasoning": 0.68,
+    "casual": 0.60,
+    "conversational": 0.60,
     # Errors
-    "error":            0.00,
-    "error_handler":    0.00,
+    "error": 0.00,
+    "error_handler": 0.00,
 }
 
 CONFIDENCE_LABELS = {
-    (0.95, 1.01): ("CERTAIN",  "🟢"),
-    (0.75, 0.95): ("HIGH",     "🟡"),
-    (0.50, 0.75): ("MEDIUM",   "🟠"),
-    (0.25, 0.50): ("LOW",      "🔴"),
-    (0.00, 0.25): ("UNKNOWN",  "⚪"),
+    (0.95, 1.01): ("CERTAIN", "🟢"),
+    (0.75, 0.95): ("HIGH", "🟡"),
+    (0.50, 0.75): ("MEDIUM", "🟠"),
+    (0.25, 0.50): ("LOW", "🔴"),
+    (0.00, 0.25): ("UNKNOWN", "⚪"),
 }
 
 
@@ -81,5 +76,3 @@ def bar(confidence: float, width: int = 10) -> str:
     filled = round(confidence * width)
     empty = width - filled
     return f"{'█' * filled}{'░' * empty} {confidence:.2f}"
-
-

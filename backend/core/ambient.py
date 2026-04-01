@@ -9,19 +9,19 @@ from typing import Optional, Dict
 
 logger = logging.getLogger(__name__)
 
-_SCAN_INTERVAL = 60          # seconds between ambient scans
-_ERROR_SCAN_INTERVAL = 15    # faster scan when errors detected
+_SCAN_INTERVAL = 60  # seconds between ambient scans
+_ERROR_SCAN_INTERVAL = 15  # faster scan when errors detected
 
 _live_context: Dict = {
-    "active_app":     None,
+    "active_app": None,
     "screen_summary": None,
     "error_detected": False,
-    "error_text":     None,
-    "last_scan":      None,
-    "cpu_alert":      False,
+    "error_text": None,
+    "last_scan": None,
+    "cpu_alert": False,
 }
 _broadcast_fn = None
-_running       = False
+_running = False
 
 
 def set_broadcast(fn):
@@ -53,6 +53,7 @@ def _scan_once():
     try:
         # Screen capture + LLaVA analysis
         from vision.screen_watcher import ScreenWatcher
+
         sw = ScreenWatcher()
 
         # What app + what's happening
@@ -64,10 +65,18 @@ def _scan_once():
 
         # Extract active app name
         import subprocess
+
         app_result = subprocess.run(
-            ["echo", "osascript unavailable"] if __import__("platform").system() != "Darwin" else ["osascript", "-e",
-             'tell application "System Events" to get name of first application process whose frontmost is true'],
-            capture_output=True, text=True, timeout=3
+            ["echo", "osascript unavailable"]
+            if __import__("platform").system() != "Darwin"
+            else [
+                "osascript",
+                "-e",
+                'tell application "System Events" to get name of first application process whose frontmost is true',
+            ],
+            capture_output=True,
+            text=True,
+            timeout=3,
         )
         if app_result.returncode == 0:
             _live_context["active_app"] = app_result.stdout.strip()
@@ -89,21 +98,29 @@ def _scan_once():
                 )
             try:
                 from core.visual_memory import store_vision_episode
-                store_vision_episode(error_text, source="screen",
-                                     error_detected=True,
-                                     active_app=_live_context.get("active_app"))
+
+                store_vision_episode(
+                    error_text,
+                    source="screen",
+                    error_detected=True,
+                    active_app=_live_context.get("active_app"),
+                )
             except Exception as _e:
-                logger.debug('ambient: %s', _e)
+                logger.debug("ambient: %s", _e)
         else:
             _live_context["error_text"] = None
             # Store normal screen observation in visual memory
             if summary and len(summary) > 10:
                 try:
                     from core.visual_memory import store_vision_episode
-                    store_vision_episode(summary, source="screen",
-                                         active_app=_live_context.get("active_app"))
+
+                    store_vision_episode(
+                        summary,
+                        source="screen",
+                        active_app=_live_context.get("active_app"),
+                    )
                 except Exception as _e:
-                    logger.debug('ambient: %s', _e)
+                    logger.debug("ambient: %s", _e)
 
     except Exception as e:
         logger.debug("ambient scan skipped: %s", e)
@@ -113,7 +130,9 @@ def _ambient_loop():
     while _running:
         _scan_once()
         # Scan faster if error was detected
-        interval = _ERROR_SCAN_INTERVAL if _live_context["error_detected"] else _SCAN_INTERVAL
+        interval = (
+            _ERROR_SCAN_INTERVAL if _live_context["error_detected"] else _SCAN_INTERVAL
+        )
         time.sleep(interval)
 
 

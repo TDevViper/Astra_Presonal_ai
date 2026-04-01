@@ -7,14 +7,14 @@ from typing import List, Dict
 logger = logging.getLogger(__name__)
 
 CHAIN_KEYWORDS = {
-    "search":    ["search", "find", "look up", "google", "what is", "latest"],
+    "search": ["search", "find", "look up", "google", "what is", "latest"],
     "save_file": ["save", "write to file", "store", "export"],
     "summarize": ["summarize", "summary", "tldr", "brief"],
-    "remind":    ["remind", "reminder", "alert me"],
-    "add_task":  ["add task", "create task", "todo"],
-    "run_code":  ["run", "execute", "python"],
-    "git":       ["git status", "git log", "what changed", "commits"],
-    "system":    ["cpu", "ram", "memory usage", "disk space"],
+    "remind": ["remind", "reminder", "alert me"],
+    "add_task": ["add task", "create task", "todo"],
+    "run_code": ["run", "execute", "python"],
+    "git": ["git status", "git log", "what changed", "commits"],
+    "system": ["cpu", "ram", "memory usage", "disk space"],
 }
 
 CHAIN_CONNECTORS = ["and then", "and also", "then", "after that", "also", "next", "and"]
@@ -43,15 +43,24 @@ def build_chain_plan(user_input: str, detected_steps: list) -> list:
             query = user_input
             for connector in CHAIN_CONNECTORS:
                 if connector in text:
-                    query = user_input[:text.index(connector)].strip()
+                    query = user_input[: text.index(connector)].strip()
                     break
             plan.append({"tool": "search", "input": query, "parallel": True})
         elif step == "save_file":
-            path_match = re.search(r'(?:to|as|named?)\s+["\']?([^\s"\']+\.?\w+)["\']?', text)
+            path_match = re.search(
+                r'(?:to|as|named?)\s+["\']?([^\s"\']+\.?\w+)["\']?', text
+            )
             path = path_match.group(1) if path_match else "astra_output.txt"
             if "." not in path:
                 path += ".txt"
-            plan.append({"tool": "save_file", "path": path, "input": "__prev__", "parallel": False})
+            plan.append(
+                {
+                    "tool": "save_file",
+                    "path": path,
+                    "input": "__prev__",
+                    "parallel": False,
+                }
+            )
         elif step == "summarize":
             plan.append({"tool": "summarize", "input": "__prev__", "parallel": False})
         elif step == "remind":
@@ -67,11 +76,12 @@ def build_chain_plan(user_input: str, detected_steps: list) -> list:
 
 def _run_step(step: Dict, prev_result: str) -> str:
     """Execute a single chain step. Returns result string."""
-    inp  = prev_result if step.get("input") == "__prev__" else step.get("input", "")
+    inp = prev_result if step.get("input") == "__prev__" else step.get("input", "")
     tool = step["tool"]
     try:
         if tool == "search":
             from websearch.search_agent import WebSearchAgent
+
             result = WebSearchAgent().run(inp)
             return result.get("reply", "No results.")
 
@@ -93,13 +103,22 @@ def _run_step(step: Dict, prev_result: str) -> str:
 
         elif tool == "git":
             from tools.git_tool import is_git_repo, git_status, git_log
+
             if not is_git_repo():
                 return "Not in a git repo."
             if "log" in inp.lower() or "commits" in inp.lower():
                 r = git_log(3)
-                return ("Recent commits:\n" +
-                        "".join(f"• {c['hash']} {c['message']}\n"
-                                for c in r.get("commits", []))) if r["success"] else r["error"]
+                return (
+                    (
+                        "Recent commits:\n"
+                        + "".join(
+                            f"• {c['hash']} {c['message']}\n"
+                            for c in r.get("commits", [])
+                        )
+                    )
+                    if r["success"]
+                    else r["error"]
+                )
             r = git_status()
             if not r["success"]:
                 return r["error"]
@@ -110,11 +129,14 @@ def _run_step(step: Dict, prev_result: str) -> str:
 
         elif tool == "system":
             from tools.system_monitor import get_system_info
+
             info = get_system_info()
             if info["success"]:
-                return (f"CPU: {info['cpu']['percent']}% | "
-                        f"RAM: {info['memory']['used_gb']}/{info['memory']['total_gb']}GB | "
-                        f"Disk: {info['disk']['free_gb']}GB free")
+                return (
+                    f"CPU: {info['cpu']['percent']}% | "
+                    f"RAM: {info['memory']['used_gb']}/{info['memory']['total_gb']}GB | "
+                    f"Disk: {info['disk']['free_gb']}GB free"
+                )
             return f"System error: {info['error']}"
 
     except Exception as e:
@@ -137,15 +159,19 @@ def execute_chain(plan: list, brain=None) -> str:
     prev_result = ""
 
     # Split into parallel batch (first run) and sequential steps
-    parallel_steps = [s for s in plan if s.get("parallel") and s.get("input") != "__prev__"]
-    sequential_steps = [s for s in plan if not s.get("parallel") or s.get("input") == "__prev__"]
+    parallel_steps = [
+        s for s in plan if s.get("parallel") and s.get("input") != "__prev__"
+    ]
+    sequential_steps = [
+        s for s in plan if not s.get("parallel") or s.get("input") == "__prev__"
+    ]
 
     # Run parallel steps concurrently
     if parallel_steps:
         with ThreadPoolExecutor(max_workers=min(4, len(parallel_steps))) as ex:
             future_to_step = {ex.submit(_run_step, s, ""): s for s in parallel_steps}
             for future in as_completed(future_to_step):
-                step   = future_to_step[future]
+                step = future_to_step[future]
                 result = future.result()
                 results[step["tool"]] = result
                 ordered_output.append(f"[{step['tool'].upper()}] {result}")
