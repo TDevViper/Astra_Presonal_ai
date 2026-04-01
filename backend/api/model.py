@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 model_bp = APIRouter()
 
 
-def _ollama_models():
+def _ollama_models(request: Request):
     try:
         import requests as _req
 
@@ -18,7 +18,7 @@ def _ollama_models():
         return []
 
 
-def _current_model():
+def _current_model(request: Request):
     try:
         from core.brain_singleton import get_brain
 
@@ -28,7 +28,7 @@ def _current_model():
 
 
 @model_bp.get("/model")
-def model_status():
+def model_status(request: Request):
     try:
         return JSONResponse(content={"available": _ollama_models(), "current": _current_model()})
     except Exception as e:
@@ -37,7 +37,7 @@ def model_status():
 
 
 @model_bp.get("/model/info")
-def model_info():
+def model_info(request: Request):
     try:
         from core.brain_singleton import get_brain
 
@@ -48,11 +48,11 @@ def model_info():
 
 
 @model_bp.post("/model/switch")
-def force_switch_model():
+def force_switch_model(request: Request):
     try:
         from core.brain_singleton import get_brain
 
-        data = request.get_json() or {}
+        data = (await request.json() if request.headers.get('content-type','').startswith('application/json') else {})
         model = data.get("model")
         if not model:
             return JSONResponse(content={"error": "No model specified"}, status_code=400)
@@ -68,7 +68,7 @@ def force_switch_model():
 
 
 @model_bp.post("/model/set")
-def set_model():
+def set_model(request: Request):
     try:
         return force_switch_model()
     except Exception as e:
@@ -77,7 +77,7 @@ def set_model():
 
 
 @model_bp.get("/model/available")
-def available_models():
+def available_models(request: Request):
     try:
         return JSONResponse(content={"models": _ollama_models()})
     except Exception as e:
@@ -85,7 +85,7 @@ def available_models():
 
 
 @model_bp.get("/model/list")
-def list_models():
+def list_models(request: Request):
     try:
         return JSONResponse(content={"models": _ollama_models()})
     except Exception as e:

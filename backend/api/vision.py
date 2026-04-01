@@ -21,11 +21,11 @@ os.makedirs(SNAP_DIR, exist_ok=True)
 # POST /vision/screen
 # ───────────────────────────────────────────
 @vision_bp.post("/vision/screen")
-def vision_screen():
+def vision_screen(request: Request):
     try:
         from vision.vision_engine import vision_engine
 
-        data = request.get_json(silent=True) or {}
+        data = (await request.json() if request.headers.get('content-type','').startswith('application/json') else {})
         result = vision_engine.analyze_screen(user_context=data.get("context", ""))
         return JSONResponse(content=result)
     except Exception as e:
@@ -37,11 +37,11 @@ def vision_screen():
 # POST /vision/camera
 # ───────────────────────────────────────────
 @vision_bp.post("/vision/camera")
-def vision_camera():
+def vision_camera(request: Request):
     try:
         from vision.vision_engine import vision_engine
 
-        data = request.get_json(silent=True) or {}
+        data = (await request.json() if request.headers.get('content-type','').startswith('application/json') else {})
         result = vision_engine.analyze_camera(user_context=data.get("context", ""))
         return JSONResponse(content=result)
     except Exception as e:
@@ -53,7 +53,7 @@ def vision_camera():
 # POST /vision/analyze_b64
 # ───────────────────────────────────────────
 @vision_bp.post("/vision/analyze_b64")
-def vision_analyze_b64():
+def vision_analyze_b64(request: Request):
     """
     Accept base64 image directly from browser WebRTC frame.
     Browser sends:
@@ -91,11 +91,11 @@ def vision_analyze_b64():
 # POST /vision/analyze (by path)
 # ───────────────────────────────────────────
 @vision_bp.post("/vision/analyze")
-def vision_analyze():
+def vision_analyze(request: Request):
     try:
         from vision.vision_engine import vision_engine
 
-        data = request.get_json(silent=True) or {}
+        data = (await request.json() if request.headers.get('content-type','').startswith('application/json') else {})
         path = data.get("path", "")
 
         if not path:
@@ -141,11 +141,11 @@ def vision_last(source):
 # POST /vision/watch/start
 # ───────────────────────────────────────────
 @vision_bp.post("/vision/watch/start")
-def vision_watch_start():
+def vision_watch_start(request: Request):
     try:
         from vision.vision_engine import vision_engine
 
-        data = request.get_json(silent=True) or {}
+        data = (await request.json() if request.headers.get('content-type','').startswith('application/json') else {})
 
         interval = int(data.get("interval", 15))
         vision_engine.watch_screen(interval=interval)
@@ -161,7 +161,7 @@ def vision_watch_start():
 # POST /vision/watch/stop
 # ───────────────────────────────────────────
 @vision_bp.post("/vision/watch/stop")
-def vision_watch_stop():
+def vision_watch_stop(request: Request):
     try:
         from vision.vision_engine import vision_engine
 
@@ -176,7 +176,7 @@ def vision_watch_stop():
 # GET /vision/status
 # ───────────────────────────────────────────
 @vision_bp.get("/vision/status")
-def vision_status():
+def vision_status(request: Request):
     try:
         import ollama
 

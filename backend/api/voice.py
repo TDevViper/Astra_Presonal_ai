@@ -8,8 +8,8 @@ _wake_listener = None
 
 
 @voice_bp.post("/voice/say")
-def say():
-    data = request.get_json() or {}
+def say(request: Request):
+    data = (await request.json() if request.headers.get('content-type','').startswith('application/json') else {})
     text = data.get("text", "").strip()
     if not text:
         return JSONResponse(content={"error": "No text provided"}, status_code=400)
@@ -23,8 +23,8 @@ def say():
 
 
 @voice_bp.post("/voice/stream")
-def stream_and_speak():
-    data = request.get_json() or {}
+def stream_and_speak(request: Request):
+    data = (await request.json() if request.headers.get('content-type','').startswith('application/json') else {})
     user_input = data.get("text", "").strip()
     if not user_input:
         return JSONResponse(content={"error": "No text provided"}, status_code=400)
@@ -43,8 +43,8 @@ def stream_and_speak():
 
 
 @voice_bp.post("/voice/listen")
-def listen():
-    data = request.get_json() or {}
+def listen(request: Request):
+    data = (await request.json() if request.headers.get('content-type','').startswith('application/json') else {})
     duration = int(data.get("duration", 5))
     try:
         from voice.voice_engine import listen_once
@@ -56,7 +56,7 @@ def listen():
 
 
 @voice_bp.post("/voice/start")
-def start_wake():
+def start_wake(request: Request):
     global _wake_listener
     try:
         from voice.voice_engine import WakeWordListener
@@ -79,7 +79,7 @@ def start_wake():
 
 
 @voice_bp.post("/voice/stop")
-def stop_wake():
+def stop_wake(request: Request):
     global _wake_listener
     try:
         if _wake_listener:

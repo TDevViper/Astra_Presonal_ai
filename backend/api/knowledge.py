@@ -16,7 +16,7 @@ knowledge_bp = APIRouter()
 
 
 @knowledge_bp.get("/knowledge/stats")
-def stats():
+def stats(request: Request):
     try:
         return JSONResponse(content=get_stats())
     except Exception as e:
@@ -27,7 +27,7 @@ def stats():
 @knowledge_bp.get("/knowledge/entity/<n>")
 def entity(n):
     try:
-        depth = int(request.args.get("depth", 1))
+        depth = int(request.query_params.get("depth", 1))
         return JSONResponse(content=get_relations(n, depth=depth))
     except Exception as e:
         logger.error("knowledge entity error: %s", e)
@@ -35,11 +35,11 @@ def entity(n):
 
 
 @knowledge_bp.get("/knowledge/query")
-def query():
+def query(request: Request):
     try:
-        subject = request.args.get("subject")
-        relation = request.args.get("relation")
-        obj = request.args.get("object")
+        subject = request.query_params.get("subject")
+        relation = request.query_params.get("relation")
+        obj = request.query_params.get("object")
         return JSONResponse(content=query_graph(subject, relation, obj))
     except Exception as e:
         logger.error("knowledge query error: %s", e)
@@ -47,9 +47,9 @@ def query():
 
 
 @knowledge_bp.post("/knowledge/extract")
-def extract():
+def extract(request: Request):
     try:
-        data = request.get_json() or {}
+        data = (await request.json() if request.headers.get('content-type','').startswith('application/json') else {})
         text = data.get("text", "")
         from memory.memory_engine import load_memory
 
@@ -68,9 +68,9 @@ def extract():
 
 
 @knowledge_bp.post("/knowledge/add")
-def add():
+def add(request: Request):
     try:
-        data = request.get_json() or {}
+        data = (await request.json() if request.headers.get('content-type','').startswith('application/json') else {})
         subject = data.get("subject")
         relation = data.get("relation")
         obj = data.get("object")

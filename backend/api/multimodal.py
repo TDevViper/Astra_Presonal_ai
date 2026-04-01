@@ -11,9 +11,9 @@ multimodal_bp = APIRouter()
 
 
 @multimodal_bp.post("/talk")
-def talk():
+def talk(request: Request):
     try:
-        data = request.get_json() or {}
+        data = (await request.json() if request.headers.get('content-type','').startswith('application/json') else {})
         image = data.get("image")
         text = data.get("text", "").strip()
         speak = data.get("speak", True)
@@ -113,9 +113,9 @@ def talk():
 
 
 @multimodal_bp.post("/talk/listen")
-def talk_listen():
+def talk_listen(request: Request):
     try:
-        data = request.get_json() or {}
+        data = (await request.json() if request.headers.get('content-type','').startswith('application/json') else {})
         duration = data.get("duration", 5)
         from voice.listener import listen
 
