@@ -15,9 +15,9 @@ _MAX_REPLY_WORDS = int(os.getenv("CACHE_MAX_WORDS", 200))  # was 40 — too tigh
 _SKIP_INTENTS = {"web_search", "memory_storage", "memory_recall", "error", "briefing"}
 
 
-def _key(text: str, session_id: str = "default") -> str:
-    """Cache key scoped to session — prevents cross-user response leakage."""
-    scoped = f"{session_id}:{text.strip().lower()}"
+def _key(text: str, session_id: str = "default", model: str = "", mode: str = "") -> str:
+    """Cache key scoped to session+model+mode — prevents cross-user/cross-mode leakage."""
+    scoped = f"{session_id}:{model}:{mode}:{text.strip().lower()}"
     return "astra:reply:" + hashlib.sha256(scoped.encode()).hexdigest()[:32]
 
 
