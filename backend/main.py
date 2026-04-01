@@ -29,6 +29,8 @@ init_request_id_logging()
 init_telemetry()
 
 def _validate_startup():
+    if not os.getenv("JWT_SECRET_KEY"):
+        raise RuntimeError("JWT_SECRET_KEY is not set — refusing to start.")
     if not os.getenv("ASTRA_API_KEY"):
         logging.warning("STARTUP WARNING: ASTRA_API_KEY not set")
     if not os.getenv("OLLAMA_HOST") and not os.getenv("DEFAULT_MODEL"):
