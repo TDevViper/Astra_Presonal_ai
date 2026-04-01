@@ -1,13 +1,14 @@
 # api/ingest.py — Document ingestion endpoints
 import os
 import logging
-from flask import Blueprint, request, jsonify
+from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
-ingest_bp = Blueprint("ingest", __name__)
+ingest_bp = APIRouter()
 
 
-@ingest_bp.route("/ingest/status", methods=["GET"])
+@ingest_bp.get("/ingest/status")
 def ingest_status():
     """How many chunks are in the RAG index?"""
     try:
@@ -17,7 +18,7 @@ def ingest_status():
         files = [
             f for f in os.listdir(DOCS_DIR) if os.path.isfile(os.path.join(DOCS_DIR, f))
         ]
-        return jsonify(
+        return JSONResponse(content=
             {
                 "chunks_indexed": count(),
                 "docs_folder": DOCS_DIR,
@@ -25,10 +26,10 @@ def ingest_status():
             }
         )
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@ingest_bp.route("/ingest/scan", methods=["POST"])
+@ingest_bp.post("/ingest/scan")
 def ingest_scan():
     """Manually trigger a scan of the docs folder."""
     try:
@@ -36,12 +37,12 @@ def ingest_scan():
 
         results = ingest_now()
         total = sum(v for v in results.values() if isinstance(v, int))
-        return jsonify({"status": "ok", "files": results, "total_chunks": total})
+        return JSONResponse(content={"status": "ok", "files": results, "total_chunks": total})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@ingest_bp.route("/ingest/text", methods=["POST"])
+@ingest_bp.post("/ingest/text")
 def ingest_text():
     """Ingest raw text directly. POST {text, source}"""
     try:
@@ -49,16 +50,16 @@ def ingest_text():
         text = data.get("text", "").strip()
         source = data.get("source", "manual")
         if not text:
-            return jsonify({"error": "No text provided"}), 400
+            return JSONResponse(content={"error": "No text provided"}, status_code=400)
         from rag.ingest import ingest_text as _ingest
 
         n = _ingest(text, source=source)
-        return jsonify({"status": "ok", "chunks": n, "source": source})
+        return JSONResponse(content={"status": "ok", "chunks": n, "source": source})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@ingest_bp.route("/ingest/search", methods=["POST"])
+@ingest_bp.post("/ingest/search")
 def ingest_search():
     """Search the RAG index. POST {query, top_k}"""
     try:
@@ -66,13 +67,13 @@ def ingest_search():
         query = data.get("query", "").strip()
         top_k = int(data.get("top_k", 5))
         if not query:
-            return jsonify({"error": "No query provided"}), 400
+            return JSONResponse(content={"error": "No query provided"}, status_code=400)
         from rag.embeddings import embed
         from rag.vector_store import search
         from rag.reranker import rerank
 
         results = search(embed(query), top_k=top_k * 2)
         reranked = rerank(query, results, top_k=top_k)
-        return jsonify({"results": reranked, "count": len(reranked)})
+        return JSONResponse(content={"results": reranked, "count": len(reranked)})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500

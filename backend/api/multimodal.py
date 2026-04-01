@@ -2,14 +2,15 @@ import logging
 import subprocess
 import os
 import base64
-from flask import Blueprint, request, jsonify
+from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
 
-multimodal_bp = Blueprint("multimodal", __name__)
+multimodal_bp = APIRouter()
 
 
-@multimodal_bp.route("/talk", methods=["POST"])
+@multimodal_bp.post("/talk")
 def talk():
     try:
         data = request.get_json() or {}
@@ -43,7 +44,7 @@ def talk():
         elif text:
             prompt = f"{user_name} says: '{text}'. Reply conversationally in 1-2 sentences max."
         else:
-            return jsonify({"error": "No input provided"}), 400
+            return JSONResponse(content={"error": "No input provided"}, status_code=400)
 
         # ── Step 3: Get reply from brain ──────────────────────
         from core.brain_singleton import get_brain
@@ -96,7 +97,7 @@ def talk():
                         stderr=subprocess.DEVNULL,
                     )
 
-        return jsonify(
+        return JSONResponse(content=
             {
                 "reply": reply,
                 "visual_context": visual_context,
@@ -108,10 +109,10 @@ def talk():
 
     except Exception as e:
         logger.error(f"❌ Talk error: {e}")
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@multimodal_bp.route("/talk/listen", methods=["POST"])
+@multimodal_bp.post("/talk/listen")
 def talk_listen():
     try:
         data = request.get_json() or {}
@@ -119,6 +120,6 @@ def talk_listen():
         from voice.listener import listen
 
         text = listen(duration=duration)
-        return jsonify({"text": text, "heard": bool(text.strip())})
+        return JSONResponse(content={"text": text, "heard": bool(text.strip())})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500

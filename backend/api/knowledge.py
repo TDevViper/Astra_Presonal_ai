@@ -1,5 +1,6 @@
 import logging
-from flask import Blueprint, request, jsonify
+from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse
 from knowledge.graph import (
     get_relations,
     query_graph,
@@ -11,41 +12,41 @@ from knowledge.graph import (
 from knowledge.entity_extractor import extract_and_store
 
 logger = logging.getLogger(__name__)
-knowledge_bp = Blueprint("knowledge", __name__)
+knowledge_bp = APIRouter()
 
 
-@knowledge_bp.route("/knowledge/stats", methods=["GET"])
+@knowledge_bp.get("/knowledge/stats")
 def stats():
     try:
-        return jsonify(get_stats())
+        return JSONResponse(content=get_stats())
     except Exception as e:
         logger.error("knowledge stats error: %s", e)
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@knowledge_bp.route("/knowledge/entity/<n>", methods=["GET"])
+@knowledge_bp.get("/knowledge/entity/<n>")
 def entity(n):
     try:
         depth = int(request.args.get("depth", 1))
-        return jsonify(get_relations(n, depth=depth))
+        return JSONResponse(content=get_relations(n, depth=depth))
     except Exception as e:
         logger.error("knowledge entity error: %s", e)
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@knowledge_bp.route("/knowledge/query", methods=["GET"])
+@knowledge_bp.get("/knowledge/query")
 def query():
     try:
         subject = request.args.get("subject")
         relation = request.args.get("relation")
         obj = request.args.get("object")
-        return jsonify(query_graph(subject, relation, obj))
+        return JSONResponse(content=query_graph(subject, relation, obj))
     except Exception as e:
         logger.error("knowledge query error: %s", e)
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@knowledge_bp.route("/knowledge/extract", methods=["POST"])
+@knowledge_bp.post("/knowledge/extract")
 def extract():
     try:
         data = request.get_json() or {}
@@ -58,15 +59,15 @@ def extract():
         )
         use_llm = data.get("use_llm", False)
         if not text:
-            return jsonify({"error": "No text provided"}), 400
+            return JSONResponse(content={"error": "No text provided"}, status_code=400)
         count = extract_and_store(text, user_name, use_llm=use_llm)
-        return jsonify({"triples_stored": count})
+        return JSONResponse(content={"triples_stored": count})
     except Exception as e:
         logger.error("knowledge extract error: %s", e)
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@knowledge_bp.route("/knowledge/add", methods=["POST"])
+@knowledge_bp.post("/knowledge/add")
 def add():
     try:
         data = request.get_json() or {}
@@ -74,11 +75,11 @@ def add():
         relation = data.get("relation")
         obj = data.get("object")
         if not all([subject, relation, obj]):
-            return jsonify({"error": "subject, relation, object required"}), 400
+            return JSONResponse(content={"error": "subject, relation, object required"}, status_code=400)
         add_entity(subject)
         add_entity(obj)
         add_relation(subject, relation, obj)
-        return jsonify({"ok": True, "triple": f"{subject} → {relation} → {obj}"})
+        return JSONResponse(content={"ok": True, "triple": f"{subject} → {relation} → {obj}"})
     except Exception as e:
         logger.error("knowledge add error: %s", e)
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500

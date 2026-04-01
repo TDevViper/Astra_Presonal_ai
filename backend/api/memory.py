@@ -1,23 +1,24 @@
 import logging
-from flask import Blueprint, request, jsonify
+from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
-memory_bp = Blueprint("memory", __name__)
+memory_bp = APIRouter()
 
 
-@memory_bp.route("/memory", methods=["GET"])
+@memory_bp.get("/memory")
 def get_memory():
     """Get current memory."""
     try:
         from memory.memory_engine import load_memory
 
-        return jsonify(load_memory())
+        return JSONResponse(content=load_memory())
     except Exception as e:
         logger.error("get_memory error: %s", e)
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@memory_bp.route("/memory", methods=["POST"])
+@memory_bp.post("/memory")
 def update_memory():
     """Manually update memory."""
     try:
@@ -30,13 +31,13 @@ def update_memory():
         if "preferences" in data:
             memory["preferences"].update(data["preferences"])
         save_memory(memory)
-        return jsonify({"status": "success"})
+        return JSONResponse(content={"status": "success"})
     except Exception as e:
         logger.error("update_memory error: %s", e)
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@memory_bp.route("/memory", methods=["DELETE"])
+@memory_bp.delete("/memory")
 def clear_memory():
     """Clear all memory."""
     try:
@@ -53,58 +54,56 @@ def clear_memory():
             }
         )
         logger.info("Memory cleared")
-        return jsonify({"status": "cleared"})
+        return JSONResponse(content={"status": "cleared"})
     except Exception as e:
         logger.error("clear_memory error: %s", e)
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@memory_bp.route("/memory/facts", methods=["GET"])
+@memory_bp.get("/memory/facts")
 def get_facts():
     """Get only user facts."""
     try:
         from memory.memory_engine import load_memory
 
         memory = load_memory()
-        return jsonify({"facts": memory.get("user_facts", [])})
+        return JSONResponse(content={"facts": memory.get("user_facts", [])})
     except Exception as e:
         logger.error("get_facts error: %s", e)
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@memory_bp.route("/memory/summary", methods=["GET"])
+@memory_bp.get("/memory/summary")
 def get_summary():
     """Get conversation summary."""
     try:
         from memory.memory_engine import load_memory
 
         memory = load_memory()
-        return jsonify({"summary": memory.get("conversation_summary", [])})
+        return JSONResponse(content={"summary": memory.get("conversation_summary", [])})
     except Exception as e:
         logger.error("get_summary error: %s", e)
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-from flask import Blueprint as _B2
 
-_style_bp = Blueprint("style_api", __name__) if False else None
+_style_bp = APIRouter() if False else None
 
 # Attach to existing memory_bp
-from flask import request as _req
 
 
-@memory_bp.route("/api/style", methods=["GET"])
+@memory_bp.get("/api/style")
 def get_style():
     try:
         from core.adaptive_personality import _load_style, get_style_addon
 
         style = _load_style()
-        return jsonify({"style": style, "addon": get_style_addon()})
+        return JSONResponse(content={"style": style, "addon": get_style_addon()})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@memory_bp.route("/api/style", methods=["POST"])
+@memory_bp.post("/api/style")
 def set_style():
     try:
         data = _req.get_json()
@@ -112,26 +111,24 @@ def set_style():
 
         key, value = data.get("key"), data.get("value")
         if update_style_manually(key, value):
-            return jsonify({"ok": True, "key": key, "value": value})
-        return jsonify({"error": f"Invalid key/value: {key}={value}"}), 400
+            return JSONResponse(content={"ok": True, "key": key, "value": value})
+        return JSONResponse(content={"error": f"Invalid key/value: {key}={value}"}, status_code=400)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@memory_bp.route("/api/style/refine", methods=["POST"])
+@memory_bp.post("/api/style/refine")
 def force_refine():
     try:
         from core.adaptive_personality import maybe_refine
 
         result = maybe_refine(force=True)
-        return jsonify({"refined": result is not None, "addon": result or ""})
+        return JSONResponse(content={"refined": result is not None, "addon": result or ""})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-from flask import Blueprint as _B2
 
-_style_bp = Blueprint("style_api", __name__) if False else None
+_style_bp = APIRouter() if False else None
 
 # Attach to existing memory_bp
-from flask import request as _req

@@ -1,18 +1,19 @@
 import logging
 import psutil
-from flask import Blueprint, jsonify
+from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
-stats_bp = Blueprint("system_stats", __name__)
+stats_bp = APIRouter()
 
 
-@stats_bp.route("/system/stats", methods=["GET"])
+@stats_bp.get("/system/stats")
 def system_stats():
     try:
         cpu = psutil.cpu_percent(interval=0.2)
         ram = psutil.virtual_memory()
         disk = psutil.disk_usage("/")
-        return jsonify(
+        return JSONResponse(content=
             {
                 "cpu": {"percent": cpu},
                 "memory": {
@@ -29,4 +30,4 @@ def system_stats():
         )
     except Exception as e:
         logger.error("system_stats error: %s", e)
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
