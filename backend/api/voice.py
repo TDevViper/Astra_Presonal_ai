@@ -1,32 +1,33 @@
 import logging
-from flask import Blueprint, request, jsonify
+from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
-voice_bp = Blueprint("voice", __name__)
+voice_bp = APIRouter()
 _wake_listener = None
 
 
-@voice_bp.route("/voice/say", methods=["POST"])
+@voice_bp.post("/voice/say")
 def say():
     data = request.get_json() or {}
     text = data.get("text", "").strip()
     if not text:
-        return jsonify({"error": "No text provided"}), 400
+        return JSONResponse(content={"error": "No text provided"}, status_code=400)
     try:
         from tts_kokoro import speak_async
 
         speak_async(text)
-        return jsonify({"status": "speaking", "text": text[:100]})
+        return JSONResponse(content={"status": "speaking", "text": text[:100]})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@voice_bp.route("/voice/stream", methods=["POST"])
+@voice_bp.post("/voice/stream")
 def stream_and_speak():
     data = request.get_json() or {}
     user_input = data.get("text", "").strip()
     if not user_input:
-        return jsonify({"error": "No text provided"}), 400
+        return JSONResponse(content={"error": "No text provided"}, status_code=400)
     try:
         from core.brain_singleton import get_brain
         from tts_kokoro import speak_async
@@ -36,12 +37,12 @@ def stream_and_speak():
         reply = result.get("reply", "")
         if reply:
             speak_async(reply)
-        return jsonify({"status": "streaming", "reply": reply})
+        return JSONResponse(content={"status": "streaming", "reply": reply})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@voice_bp.route("/voice/listen", methods=["POST"])
+@voice_bp.post("/voice/listen")
 def listen():
     data = request.get_json() or {}
     duration = int(data.get("duration", 5))
@@ -49,12 +50,12 @@ def listen():
         from voice.voice_engine import listen_once
 
         text = listen_once(duration=duration)
-        return jsonify({"text": text, "duration": duration})
+        return JSONResponse(content={"text": text, "duration": duration})
     except Exception as e:
-        return jsonify({"error": str(e), "text": ""}), 500
+        return JSONResponse(content={"error": str(e), "text": ""}), 500
 
 
-@voice_bp.route("/voice/start", methods=["POST"])
+@voice_bp.post("/voice/start")
 def start_wake():
     global _wake_listener
     try:
@@ -72,12 +73,12 @@ def start_wake():
 
         _wake_listener = WakeWordListener(callback=on_wake)
         _wake_listener.start()
-        return jsonify({"status": "listening", "wake_word": "hey astra"})
+        return JSONResponse(content={"status": "listening", "wake_word": "hey astra"})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@voice_bp.route("/voice/stop", methods=["POST"])
+@voice_bp.post("/voice/stop")
 def stop_wake():
     global _wake_listener
     try:
@@ -86,4 +87,4 @@ def stop_wake():
             _wake_listener = None
     except Exception as _e:
         logger.debug("voice api: %s", _e)
-    return jsonify({"status": "stopped"})
+    return JSONResponse(content={"status": "stopped"})

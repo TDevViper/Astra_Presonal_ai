@@ -2,10 +2,11 @@ import os
 from core.brain_singleton import get_brain as _get_rt_brain
 
 import logging
-from flask import Blueprint, request, jsonify
+from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
-realtime_bp = Blueprint("realtime", __name__)
+realtime_bp = APIRouter()
 
 # Any question while camera is active = use vision
 # Don't restrict by keywords — if image is sent, always use llava
@@ -55,7 +56,7 @@ def _wants_vision(text: str) -> bool:
     return any(w in text.lower() for w in VISION_TRIGGERS)
 
 
-@realtime_bp.route("/realtime/talk", methods=["POST"])
+@realtime_bp.post("/realtime/talk")
 def realtime_talk():
     data = request.get_json() or {}
     duration = int(data.get("duration", 5))
@@ -67,11 +68,11 @@ def realtime_talk():
         audio = record_audio(duration=duration)
 
         if is_silent(audio):
-            return jsonify({"text": "", "reply": "", "silent": True})
+            return JSONResponse(content={"text": "", "reply": "", "silent": True})
 
         user_text = transcribe(audio)
         if not user_text.strip():
-            return jsonify({"text": "", "reply": "", "silent": True})
+            return JSONResponse(content={"text": "", "reply": "", "silent": True})
 
         logger.info(f"🎤 Heard: {user_text}")
 
@@ -87,7 +88,7 @@ def realtime_talk():
 
         speak_async(reply)
 
-        return jsonify(
+        return JSONResponse(content=
             {
                 "text": user_text,
                 "reply": reply,
@@ -100,10 +101,10 @@ def realtime_talk():
 
     except Exception as e:
         logger.error(f"Realtime talk error: {e}")
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@realtime_bp.route("/realtime/status", methods=["GET"])
+@realtime_bp.get("/realtime/status")
 def realtime_status():
     import ollama
 
@@ -133,4 +134,4 @@ def realtime_status():
         status["mic"] = "ready"
     except Exception as e:
         status["mic"] = f"error: {e}"
-    return jsonify(status)
+    return JSONResponse(content=status)

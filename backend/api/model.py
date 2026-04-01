@@ -1,9 +1,10 @@
 import logging
 import os
-from flask import Blueprint, request, jsonify
+from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
-model_bp = Blueprint("model", __name__)
+model_bp = APIRouter()
 
 
 def _ollama_models():
@@ -26,27 +27,27 @@ def _current_model():
         return "phi3:mini"
 
 
-@model_bp.route("/model", methods=["GET"])
+@model_bp.get("/model")
 def model_status():
     try:
-        return jsonify({"available": _ollama_models(), "current": _current_model()})
+        return JSONResponse(content={"available": _ollama_models(), "current": _current_model()})
     except Exception as e:
         logger.error("model status error: %s", e)
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@model_bp.route("/model/info", methods=["GET"])
+@model_bp.get("/model/info")
 def model_info():
     try:
         from core.brain_singleton import get_brain
 
-        return jsonify(get_brain().get_model_info())
+        return JSONResponse(content=get_brain().get_model_info())
     except Exception as e:
         logger.error("model info error: %s", e)
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@model_bp.route("/model/switch", methods=["POST"])
+@model_bp.post("/model/switch")
 def force_switch_model():
     try:
         from core.brain_singleton import get_brain
@@ -54,38 +55,38 @@ def force_switch_model():
         data = request.get_json() or {}
         model = data.get("model")
         if not model:
-            return jsonify({"error": "No model specified"}), 400
+            return JSONResponse(content={"error": "No model specified"}, status_code=400)
         brain = get_brain()
         success = brain.model_manager.force_set(model)
         if success:
             logger.info("Model switched to: %s", model)
-            return jsonify({"status": "switched", "model": model})
-        return jsonify({"error": f"Model '{model}' not available"}), 400
+            return JSONResponse(content={"status": "switched", "model": model})
+        return JSONResponse(content={"error": f"Model '{model}' not available"}, status_code=400)
     except Exception as e:
         logger.error("model switch error: %s", e)
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@model_bp.route("/model/set", methods=["POST"])
+@model_bp.post("/model/set")
 def set_model():
     try:
         return force_switch_model()
     except Exception as e:
         logger.error("model set error: %s", e)
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@model_bp.route("/model/available", methods=["GET"])
+@model_bp.get("/model/available")
 def available_models():
     try:
-        return jsonify({"models": _ollama_models()})
+        return JSONResponse(content={"models": _ollama_models()})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
 
 
-@model_bp.route("/model/list", methods=["GET"])
+@model_bp.get("/model/list")
 def list_models():
     try:
-        return jsonify({"models": _ollama_models()})
+        return JSONResponse(content={"models": _ollama_models()})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return JSONResponse(content={"error": str(e)}), 500
