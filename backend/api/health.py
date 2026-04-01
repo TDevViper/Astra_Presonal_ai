@@ -9,6 +9,7 @@ from core.smart_guardian import (
 )
 from core.proactive import get_welcome_back, analyze_patterns
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 
 health_bp = APIRouter()
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")

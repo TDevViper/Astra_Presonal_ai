@@ -18,6 +18,7 @@ if _os.getenv("ENABLE_SHELL_EXEC", "false").lower() != "true":
     def propose_shell(command):
         return {"approved": False, "blocked": True, "command": command, "tier": "disabled", "message": "Shell execution disabled."}
 else:
+    pass
 
 SAFE_COMMANDS = {
     "ls", "pwd", "echo", "cat", "head", "tail", "grep", "find",
