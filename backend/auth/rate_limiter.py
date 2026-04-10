@@ -49,7 +49,8 @@ def _get_redis():
 def _check_redis(user_id: str, limit: int) -> bool:
     try:
         r = _get_redis()
-        if r is None: return None
+        if r is None:
+            return None
         key = f"rl:{user_id}"
         pipe = r.pipeline()
         now = time.time()

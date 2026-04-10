@@ -50,7 +50,9 @@ def _transcribe(audio) -> str:
     if not _WHISPER_AVAILABLE:
         return ""
     try:
-        import tempfile, wave, os
+        import tempfile
+        import wave
+        import os
         model = _WhisperModel(_WHISPER_MODEL, device="cpu", compute_type="int8")
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
             tmp_path = tmp.name
