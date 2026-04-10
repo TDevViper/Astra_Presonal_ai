@@ -75,6 +75,11 @@ def _is_safe(code: str) -> tuple[bool, str]:
         if isinstance(node, ast.Attribute) and node.attr in {
             "__class__",
             "__bases__",
+            "__base__",
+            "__mro__",
+            "__dict__",
+            "__code__",
+            "__closure__",
             "__subclasses__",
             "__globals__",
             "__builtins__",

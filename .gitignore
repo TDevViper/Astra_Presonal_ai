@@ -22,3 +22,4 @@ backend/voices/
 backend/.env
 backend/.env.bak
 .env.bak
+.vscode/

@@ -38,8 +38,8 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production}
-      ENABLE_SHELL_EXEC: ${ENABLE_SHELL_EXEC:-false}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENABLE_SHELL_EXEC=${ENABLE_SHELL_EXEC:-false}
       - OLLAMA_HOST=http://ollama:11434
       - REDIS_URL=redis://redis:6379
       - FLASK_ENV=production

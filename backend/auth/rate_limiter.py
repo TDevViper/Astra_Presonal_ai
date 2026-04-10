@@ -25,13 +25,31 @@ ROLE_LIMITS: Dict[str, int] = {
 _windows: Dict[str, deque] = defaultdict(deque)
 
 
-def _check_redis(user_id: str, limit: int) -> bool:
+_redis_pool = None
+_redis_pool_lock = __import__("threading").Lock()
+
+def _get_redis():
+    global _redis_pool
+    if _redis_pool is None:
+        with _redis_pool_lock:
+            if _redis_pool is None:
+                try:
+                    import redis
+                    _redis_pool = redis.ConnectionPool.from_url(
+                        os.getenv("REDIS_URL","redis://localhost:6379/0"),
+                        socket_connect_timeout=1, max_connections=20)
+                except Exception:
+                    return None
     try:
         import redis
+        return redis.Redis(connection_pool=_redis_pool)
+    except Exception:
+        return None
 
-        r = redis.Redis.from_url(
-            os.getenv("REDIS_URL", "redis://localhost:6379/0"), socket_connect_timeout=1
-        )
+def _check_redis(user_id: str, limit: int) -> bool:
+    try:
+        r = _get_redis()
+        if r is None: return None
         key = f"rl:{user_id}"
         pipe = r.pipeline()
         now = time.time()

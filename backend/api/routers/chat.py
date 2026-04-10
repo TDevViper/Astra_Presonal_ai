@@ -21,6 +21,9 @@ async def chat(request: Request, body: ChatRequest, _=Depends(require_api_key)):
         raise HTTPException(
             status_code=400, detail=f"Message must be 1-{MAX_INPUT_CHARS} characters"
         )
+    _INJ = ("ignore previous instructions","ignore all instructions","disregard your system prompt","you are now","new instructions:","[system]","###instruction")
+    if any(p in user_input.lower() for p in _INJ):
+        raise HTTPException(status_code=400, detail="Message contains disallowed content")
     try:
         from core.brain_singleton import get_brain, load_request_history
 
