@@ -46,10 +46,13 @@ def run_git_command(command: List[str], cwd: str = None) -> Dict:
     Execute git command safely.
     Returns: {"success": bool, "output": str, "error": str}
     """
-    if not command: return {"success":False,"error":"Empty command"}
-    if command[0].lower() not in _GIT_ALLOWED: return {"success":False,"error":"Subcommand not allowed: " + command[0]}
+    if not command:
+        return {"success": False, "error": "Empty command"}
+    if command[0].lower() not in _GIT_ALLOWED:
+        return {"success": False, "error": "Subcommand not allowed: " + command[0]}
     for arg in command:
-        if any(c in arg for c in (";","|","&","`","$(")): return {"success":False,"error":"Suspicious arg: " + repr(arg)}
+        if any(c in arg for c in (";", "|", "&", "`", "$(")):
+            return {"success": False, "error": "Suspicious arg: " + repr(arg)}
     try:
         if not cwd:
             cwd = get_git_root() or os.getcwd()
