@@ -158,7 +158,7 @@ def _get_active_music_app() -> Optional[str]:
             if state == "playing":
                 return app
         except Exception:
-            pass  # TODO: handle
+            logger.warning("system_controller: detection failed", exc_info=True)
     # Return first running music app
     for app in MUSIC_APPS:
         try:
@@ -175,7 +175,7 @@ def _get_active_music_app() -> Optional[str]:
             if "true" in result.stdout.lower():
                 return app
         except Exception:
-            pass  # TODO: handle
+            logger.warning("system_controller: detection failed", exc_info=True)
     return "Spotify"  # default
 
 

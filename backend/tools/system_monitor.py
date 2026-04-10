@@ -24,7 +24,7 @@ def get_system_info() -> Dict:
                     }
                 )
             except Exception:
-                pass  # TODO: handle
+                logger.warning("system_monitor: metric collection failed", exc_info=True)
 
         processes = sorted(processes, key=lambda p: p["cpu"], reverse=True)[:5]
 

@@ -17,6 +17,9 @@ spec:
         image: astra-backend:latest
         ports:
         - containerPort: 5050
+        envFrom:
+        - secretRef:
+            name: astra-secrets
         livenessProbe:
           httpGet:
             path: /health

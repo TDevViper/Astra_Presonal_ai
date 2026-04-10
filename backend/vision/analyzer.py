@@ -167,7 +167,7 @@ def _parse_json(text: str) -> Dict:
         try:
             return json.loads(match.group())
         except Exception:
-            pass  # TODO: handle
+            logger.warning("analyzer: suppressed exception", exc_info=True)
 
     # Fallback — return raw as jarvis_response
     return {
@@ -194,6 +194,6 @@ def analyze_code_in_image(image_b64: str) -> Dict:
             )
             result["fix_suggestion"] = fix_response["message"]["content"]
         except Exception:
-            pass  # TODO: handle
+            logger.warning("analyzer: suppressed exception", exc_info=True)
 
     return result
