@@ -17,7 +17,9 @@ _RAG_SOURCE = "rag_chunk"
 
 def add_chunks(chunks: List[str], embeddings: np.ndarray, source: str = "manual", tags: List[str] = None) -> None:
     try:
-        import pyarrow as pa, time, uuid
+        import pyarrow as pa
+        import time
+        import uuid
         from memory.vector_store import _get_table
         tbl = _get_table()
         if tbl is None:
