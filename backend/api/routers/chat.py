@@ -30,7 +30,17 @@ async def chat(request: Request, body: ChatRequest, _=Depends(require_api_key)):
         brain = get_brain()
         history = load_request_history(n=15)
         # Session scoped to API key — prevents cross-user cache leakage
-        session_id = request.headers.get("X-API-Key", "default")[:32]
+        # Use JWT sub as session scope to prevent cross-user cache leaks
+        _auth = request.headers.get("Authorization", "")
+        _jwt_sub = ""
+        if _auth.startswith("Bearer "):
+            try:
+                from auth.jwt_handler import verify_access_token
+                _pl = verify_access_token(_auth[7:])
+                _jwt_sub = _pl.get("sub", "") if _pl else ""
+            except Exception:
+                pass
+        session_id = (_jwt_sub or request.headers.get("X-API-Key", "default"))[:32]
         logger.info("💬 User: %s", user_input[:50])
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
