@@ -3,7 +3,7 @@ Role-Based Access Control
 Roles (highest to lowest): owner > admin > user > guest
 """
 
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status, Depends, Request
 from fastapi.security import OAuth2PasswordBearer
 from auth.users_db import get_user_by_id
 from auth.jwt_handler import verify_access_token
@@ -31,7 +31,7 @@ PERMISSIONS = {
 }
 
 
-def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
+def get_current_user(token: str = Depends(oauth2_scheme), request: Request = None) -> dict:
     payload = verify_access_token(token)
     if not payload:
         raise HTTPException(
@@ -44,6 +44,8 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
         )
+    if request is not None:
+        request.state.current_user = user
     return user
 
 
