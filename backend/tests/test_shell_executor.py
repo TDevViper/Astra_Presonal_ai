@@ -105,7 +105,8 @@ def test_safe_command_executes_without_confirmation():
 
 
 def test_safe_command_output_truncated_at_3000(monkeypatch):
-    import os; os.environ["ENABLE_SHELL_EXEC"] = "true"
+    import os
+    os.environ["ENABLE_SHELL_EXEC"] = "true"
     result = execute_shell("echo hi", confirmed=False)
     assert result["success"] is True
     assert len(result["output"]) <= 3000
