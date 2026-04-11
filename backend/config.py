@@ -96,8 +96,8 @@ try:
         flask_host: str = "0.0.0.0"
         flask_port: int = 5050
         flask_env: str = "production"
-        jwt_secret_key: str = ""
-        astra_api_key: str = ""
+        jwt_secret_key: str  # required
+        astra_api_key: str  # required
         serper_api_key: str = ""
         picovoice_api_key: str = ""
         enable_memory: bool = True

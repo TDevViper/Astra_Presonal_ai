@@ -1,4 +1,4 @@
-from auth.rbac import require_permission
+from auth.rbac import require_permission, require_permission
 from fastapi import Depends
 import logging
 from fastapi import APIRouter, HTTPException
@@ -67,7 +67,7 @@ async def health_detailed(current_user=Depends(require_permission("system_stats"
 
 
 @router.get("/health/score")
-async def health_score():
+async def health_score(current_user=Depends(require_permission("system_stats"))):
     try:
         from core.smart_guardian import get_full_stats, get_trend_summary
 

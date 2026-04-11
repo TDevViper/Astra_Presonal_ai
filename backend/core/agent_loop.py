@@ -47,7 +47,11 @@ _llm = None
 def _get_llm():
     global _llm
     if _llm is None:
-        _llm = None  # lazy-init via _get_llm()
+        try:
+            from core.brain_singleton import get_brain
+            _llm = get_brain()._llm
+        except Exception as e:
+            logger.warning("_get_llm: could not get Brain LLM: %s", e)
     return _llm
 
 MAX_ITERATIONS = 5
@@ -224,19 +228,19 @@ async def _act(
 
     try:
         if action == "memory_recall":
-            return _act_memory(user_input, context)
+            return await _act_memory(user_input, context)
 
         elif action == "tool_execute":
-            return _act_tool(user_input, context)
+            return await _act_tool(user_input, context)
 
         elif action == "llm_reply":
             prior = "\n".join(previous_results[-2:]) if previous_results else ""
-            return _act_llm(user_input, context, prior)
+            return await _act_llm(user_input, context, prior)
 
         elif action == "reflect":
             if not previous_results:
                 return "", 0.5
-            return _act_reflect(user_input, previous_results[-1], context)
+            return await _act_reflect(user_input, previous_results[-1], context)
 
         else:
             return "", 0.0
@@ -299,7 +303,10 @@ async def _act_llm(
             alive = False
 
         # routed through LLMEngine — no direct ollama coupling
-        model = _llm.select_model("reasoning") if alive else _llm.select_model("fast")
+        llm = _get_llm()
+        if llm is None:
+            return "LLM unavailable", 0.0
+        model = llm.select_model("reasoning") if alive else llm.select_model("fast")
 
         system = (
             "You are ASTRA, a smart personal AI assistant. "
@@ -355,7 +362,10 @@ async def _act_reflect(
             alive = False
 
         # routed through LLMEngine — no direct ollama coupling
-        model = _llm.select_model("reasoning") if alive else _llm.select_model("fast")
+        llm = _get_llm()
+        if llm is None:
+            return draft_reply, 0.70
+        model = llm.select_model("reasoning") if alive else llm.select_model("fast")
 
         prompt = f"""You are reviewing an AI assistant's response.
 

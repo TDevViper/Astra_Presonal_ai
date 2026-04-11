@@ -120,9 +120,8 @@ def execute_shell(command: str, confirmed: bool = False,
 
     try:
         logger.info("shell_executor [%s]: %s", tier, command[:80])
-        _safe_cmd = " ".join(shlex.quote(p) for p in shlex.split(command))
         result = subprocess.run(
-            shlex.split(_safe_cmd), shell=False, capture_output=True, text=True,
+            shlex.split(command), shell=False, capture_output=True, text=True,
             timeout=30, cwd=os.path.expanduser("~")
         )
         output = result.stdout.strip() or result.stderr.strip() or "(no output)"

@@ -72,7 +72,7 @@ async def clear_memory(current_user=Depends(require_permission("memory_wipe"))):
 
 
 @router.get("/memory/facts")
-async def get_facts():
+async def get_facts(current_user=Depends(require_permission("memory_read"))):
     try:
         loop = asyncio.get_event_loop()
         memory = await loop.run_in_executor(None, _load)
@@ -82,7 +82,7 @@ async def get_facts():
 
 
 @router.get("/memory/summary")
-async def get_summary():
+async def get_summary(current_user=Depends(require_permission("memory_read"))):
     try:
         loop = asyncio.get_event_loop()
         memory = await loop.run_in_executor(None, _load)
