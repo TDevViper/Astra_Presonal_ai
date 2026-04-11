@@ -16,6 +16,29 @@ from utils.logger import agent_logger, log_event
 
 from core.llm_engine import LLMEngine as _LLMEngine
 
+_gpu_available_cache = None
+_gpu_cache_ts = 0.0
+
+
+def _check_gpu_cached() -> bool:
+    global _gpu_available_cache, _gpu_cache_ts
+    import time as _t
+    if _t.time() - _gpu_cache_ts < 30:
+        return _gpu_available_cache or False
+    try:
+        import requests, os
+        host = os.getenv("REMOTE_GPU_HOST", "")
+        if not host:
+            _gpu_available_cache = False
+        else:
+            r = requests.get(host, timeout=1)
+            _gpu_available_cache = r.status_code == 200
+    except Exception:
+        _gpu_available_cache = False
+    _gpu_cache_ts = _t.time()
+    return _gpu_available_cache
+
+
 logger = logging.getLogger(__name__)
 
 _llm = None
@@ -268,13 +291,10 @@ async def _act_llm(
     try:
         import ollama
         import requests
-_gpu_available_cache = None
-_gpu_cache_ts = 0.0
-
         GPU_HOST = os.getenv("REMOTE_GPU_HOST", "")
 
         try:
-            alive = _check_gpu_cached().status_code == 200
+            alive = _check_gpu_cached()
         except Exception:
             alive = False
 
@@ -331,7 +351,7 @@ async def _act_reflect(
         GPU_HOST = os.getenv("REMOTE_GPU_HOST", "")
 
         try:
-            alive = _check_gpu_cached().status_code == 200
+            alive = _check_gpu_cached()
         except Exception:
             alive = False
 
