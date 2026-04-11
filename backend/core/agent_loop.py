@@ -26,7 +26,8 @@ def _check_gpu_cached() -> bool:
     if _t.time() - _gpu_cache_ts < 30:
         return _gpu_available_cache or False
     try:
-        import requests, os
+        import requests
+        import os
         host = os.getenv("REMOTE_GPU_HOST", "")
         if not host:
             _gpu_available_cache = False
