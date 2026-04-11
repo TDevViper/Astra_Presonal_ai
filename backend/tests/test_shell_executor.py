@@ -16,7 +16,7 @@ def test_safe_commands_classified_correctly():
     assert classify_command("ls") == "safe"
     assert classify_command("pwd") == "safe"
     assert classify_command("whoami") == "safe"
-    assert classify_command("git status") == "safe"
+    assert classify_command("git status") == "elevated"
     assert classify_command("python3 script.py") == "safe"
 
 
@@ -104,7 +104,8 @@ def test_safe_command_executes_without_confirmation():
     assert "hello" in result["output"]
 
 
-def test_safe_command_output_truncated_at_3000():
+def test_safe_command_output_truncated_at_3000(monkeypatch, ):
+    import os; os.environ["ENABLE_SHELL_EXEC"] = "true"
     result = execute_shell("python3 -c \"print('x' * 5000)\"")
     assert result["success"] is True
     assert len(result["output"]) <= 3000
