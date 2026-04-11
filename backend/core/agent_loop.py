@@ -273,13 +273,15 @@ async def _act_tool(user_input: str, context: Dict) -> Tuple[str, float]:
         from tools.tool_router import detect_tool
         # from core.orchestrator import _run_tool  # removed: module does not exist
 
+        from core.brain_singleton import get_brain
         tool = detect_tool(user_input)
         if not tool:
             return "", 0.0
 
-        result = _run_tool(tool, user_input)
+        brain = get_brain()
+        result = brain._tools.execute(tool, user_input, {}, "User")
         if result:
-            return result["result"], result["confidence"]
+            return result.get("reply", ""), result.get("confidence", 0.5)
         return "", 0.0
     except Exception as e:
         logger.warning(f"Tool execution failed: {e}")
