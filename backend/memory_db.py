@@ -1,6 +1,7 @@
 """
 memory_db.py — SQLite-backed conversation history and facts store.
 Uses WAL mode and thread-local connections for concurrency safety.
+Scoped per user_id.
 """
 import sqlite3
 import threading
@@ -31,19 +32,24 @@ def init_db():
     c.execute("""
         CREATE TABLE IF NOT EXISTS conversations (
             id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id   TEXT    NOT NULL DEFAULT 'default',
             role      TEXT    NOT NULL,
             content   TEXT    NOT NULL,
             intent    TEXT,
             ts        REAL    NOT NULL DEFAULT (unixepoch('now', 'subsec'))
         )
     """)
+    c.execute("CREATE INDEX IF NOT EXISTS idx_conv_user_ts ON conversations(user_id, ts)")
     c.execute("""
         CREATE TABLE IF NOT EXISTS facts (
-            key       TEXT PRIMARY KEY,
-            value     TEXT NOT NULL,
-            updated   REAL NOT NULL DEFAULT (unixepoch('now', 'subsec'))
+            user_id   TEXT    NOT NULL DEFAULT 'default',
+            key       TEXT    NOT NULL,
+            value     TEXT    NOT NULL,
+            updated   REAL    NOT NULL DEFAULT (unixepoch('now', 'subsec')),
+            PRIMARY KEY (user_id, key)
         )
     """)
+    c.execute("CREATE INDEX IF NOT EXISTS idx_facts_user ON facts(user_id)")
     c.commit()
 
 
@@ -78,7 +84,8 @@ def load_recent_history(n: int = 15, user_id: str = "default") -> list:
 def save_fact(key: str, value: str, user_id: str = "default"):
     c = _conn()
     c.execute(
-        "INSERT INTO facts (user_id, key, value) VALUES (?, ?, ?) ON CONFLICT(user_id, key) DO UPDATE SET value=excluded.value, updated=unixepoch('now','subsec')",
+        "INSERT INTO facts (user_id, key, value) VALUES (?, ?, ?) "
+        "ON CONFLICT(user_id, key) DO UPDATE SET value=excluded.value, updated=unixepoch('now','subsec')",
         (user_id, key, value),
     )
     c.commit()
