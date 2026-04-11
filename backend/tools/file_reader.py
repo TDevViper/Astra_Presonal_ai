@@ -14,8 +14,7 @@ def extract_filepath(text: str) -> str | None:
 
 
 def list_files(directory: str = ".") -> dict:
-    try:
-        target = os.path.realpath(os.path.join(BASE, directory))
+    target = os.path.realpath(os.path.join(BASE, directory))
     _base_real = os.path.realpath(BASE)
     if not target.startswith(_base_real + os.sep) and target != _base_real:
         return {"success": False, "error": "Access denied", "files": [], "count": 0}
