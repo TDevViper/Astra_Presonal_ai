@@ -47,43 +47,44 @@ def init_db():
     c.commit()
 
 
-def save_exchange(user_msg: str, assistant_msg: str, intent: str = None):
+def save_exchange(user_msg: str, assistant_msg: str, intent: str = None, user_id: str = "default"):
     c = _conn()
     c.execute(
-        "INSERT INTO conversations (role, content, intent) VALUES (?, ?, ?)",
-        ("user", user_msg, intent),
+        "INSERT INTO conversations (user_id, role, content, intent) VALUES (?, ?, ?, ?)",
+        (user_id, "user", user_msg, intent),
     )
     c.execute(
-        "INSERT INTO conversations (role, content, intent) VALUES (?, ?, ?)",
-        ("assistant", assistant_msg, intent),
+        "INSERT INTO conversations (user_id, role, content, intent) VALUES (?, ?, ?, ?)",
+        (user_id, "assistant", assistant_msg, intent),
     )
     c.commit()
 
 
-def load_recent_history(n: int = 15) -> list:
+def load_recent_history(n: int = 15, user_id: str = "default") -> list:
     c = _conn()
     rows = c.execute(
         """
         SELECT role, content FROM (
             SELECT id, role, content FROM conversations
+            WHERE user_id = ?
             ORDER BY id DESC LIMIT ?
         ) ORDER BY id ASC
         """,
-        (n,),
+        (user_id, n),
     ).fetchall()
     return [{"role": r["role"], "content": r["content"]} for r in rows]
 
 
-def save_fact(key: str, value: str):
+def save_fact(key: str, value: str, user_id: str = "default"):
     c = _conn()
     c.execute(
-        "INSERT INTO facts (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated=unixepoch('now','subsec')",
-        (key, value),
+        "INSERT INTO facts (user_id, key, value) VALUES (?, ?, ?) ON CONFLICT(user_id, key) DO UPDATE SET value=excluded.value, updated=unixepoch('now','subsec')",
+        (user_id, key, value),
     )
     c.commit()
 
 
-def get_fact(key: str) -> Optional[str]:
+def get_fact(key: str, user_id: str = "default") -> Optional[str]:
     c = _conn()
-    row = c.execute("SELECT value FROM facts WHERE key=?", (key,)).fetchone()
+    row = c.execute("SELECT value FROM facts WHERE user_id=? AND key=?", (user_id, key)).fetchone()
     return row["value"] if row else None

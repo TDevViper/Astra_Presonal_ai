@@ -80,9 +80,10 @@ def propose_shell(command: str) -> Dict:
             "message":     "⛔ This command is permanently blocked for safety.",
         }
     warnings = {
-        "safe":     "This command is read-only and safe to run.",
-        "elevated": "⚠️ This command can modify files or install software. Review carefully.",
-        "root":     "🔴 This requires sudo/root access. Type 'I confirm sudo' to proceed.",
+        "safe":      "This command is read-only and safe to run.",
+        "elevated":  "⚠️ This command can modify files or install software. Review carefully.",
+        "root":      "🔴 This requires sudo/root access. Type 'I confirm sudo' to proceed.",
+        "dangerous": "⛔ Command contains shell metacharacters and is blocked.",
     }
     return {
         "approved":         False,
@@ -104,7 +105,7 @@ def execute_shell(command: str, confirmed: bool = False,
     """
     tier = classify_command(command)
 
-    if tier == "blocked":
+    if tier in ("blocked", "dangerous"):
         return {"success": False, "output": "⛔ Blocked command.", "tier": tier}
 
     if tier == "root" and not sudo_confirmed:
@@ -119,8 +120,9 @@ def execute_shell(command: str, confirmed: bool = False,
 
     try:
         logger.info("shell_executor [%s]: %s", tier, command[:80])
+        _safe_cmd = " ".join(shlex.quote(p) for p in shlex.split(command))
         result = subprocess.run(
-            shlex.split(command), shell=False, capture_output=True, text=True,
+            shlex.split(_safe_cmd), shell=False, capture_output=True, text=True,
             timeout=30, cwd=os.path.expanduser("~")
         )
         output = result.stdout.strip() or result.stderr.strip() or "(no output)"
@@ -136,3 +138,10 @@ def execute_shell(command: str, confirmed: bool = False,
     except Exception as e:
         logger.error("shell_executor error: %s", e)
         return {"success": False, "output": f"Error: {e}", "tier": tier}
+
+
+async def execute_shell_async(command: str, confirmed: bool = False,
+                               sudo_confirmed: bool = False) -> dict:
+    """Async wrapper — runs execute_shell in a thread to avoid blocking event loop."""
+    import asyncio
+    return await asyncio.to_thread(execute_shell, command, confirmed, sudo_confirmed)
