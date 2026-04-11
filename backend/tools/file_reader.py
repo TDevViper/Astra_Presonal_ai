@@ -14,10 +14,11 @@ def extract_filepath(text: str) -> str | None:
 
 
 def list_files(directory: str = ".") -> dict:
-    target = os.path.realpath(os.path.join(BASE, directory))
-    _base_real = os.path.realpath(BASE)
-    if not target.startswith(_base_real + os.sep) and target != _base_real:
-        return {"success": False, "error": "Access denied", "files": [], "count": 0}
+    try:
+        target = os.path.realpath(os.path.join(BASE, directory))
+        _base_real = os.path.realpath(BASE)
+        if not target.startswith(_base_real + os.sep) and target != _base_real:
+            return {"success": False, "error": "Access denied", "files": [], "count": 0}
         entries = []
         for name in sorted(os.listdir(target))[:50]:
             full = os.path.join(target, name)
