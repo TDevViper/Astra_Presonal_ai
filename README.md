@@ -1,12 +1,13 @@
-from pathlib import Path
+<div align="center">
 
-readme = '''<div align="center">
+```
 █████╗ ███████╗████████╗██████╗  █████╗
 ██╔══██╗██╔════╝╚══██╔══╝██╔══██╗██╔══██╗
 ███████║███████╗   ██║   ██████╔╝███████║
 ██╔══██║╚════██║   ██║   ██╔══██╗██╔══██║
 ██║  ██║███████║   ██║   ██║  ██║██║  ██║
 ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝
+```
 
 **Local Personal AI System · Pipeline Architecture · 100% Private**
 
@@ -44,6 +45,8 @@ This is not a chatbot wrapper. It is a production-quality local AI backend with:
 ---
 
 ## Architecture
+
+```
 User Request
 │
 ▼
@@ -69,6 +72,7 @@ Handlers run in order. First match wins.
 [RequestContext]           per-request, immutable, no shared state
 [MemoryTransaction]        batch all writes, commit once at end
 [ObservabilityStore]       async writes, non-blocking
+```
 
 ### Key architectural properties
 
@@ -89,7 +93,7 @@ Handlers run in order. First match wins.
 | Prompt injection | Multi-pattern filter on every `/chat` message |
 | Rate limiting | Per-user role-based limits (Redis sliding window, in-memory fallback) |
 | Tool approval | HMAC-signed server-side tokens (60s TTL) — client `approved: true` is rejected |
-| Python sandbox | AST-checked, dunder blocklist (`__base__`, `__mro__`, `__dict__`…), CPU/RAM limits |
+| Python sandbox | AST-checked, dunder blocklist (`__base__`, `__mro__`, `__dict__`...), CPU/RAM limits |
 | Shell executor | 3-tier: safe → elevated → root; `dangerous` tier (metacharacters) hard-blocked; `shlex.quote` on all args |
 | File reader | `os.path.realpath` + bounds check — path traversal blocked |
 | Refresh tokens | Single-use rotation with Redis blacklist; `POST /logout` invalidates immediately |
@@ -101,26 +105,34 @@ Handlers run in order. First match wins.
 ---
 
 ## Memory System
+
+```
 Layer 1 — Working memory
-Last 15 conversation turns, loaded per-request from SQLite (user_id scoped)
-Written back atomically at request end via MemoryTransaction
+  Last 15 conversation turns, loaded per-request from SQLite (user_id scoped)
+  Written back atomically at request end via MemoryTransaction
+
 Layer 2 — Episodic memory
-Past sessions with intent + emotion tags
-Queryable by time range and topic
+  Past sessions with intent + emotion tags
+  Queryable by time range and topic
+
 Layer 3 — Semantic memory
-ChromaDB vector index (BGE-small-en-v1.5 embeddings)
-Decay scoring — recent facts ranked higher
-Contradiction detection before storing new facts
-Priority weighting — name (3×), preference (2×), general (1×)
+  ChromaDB vector index (BGE-small-en-v1.5 embeddings)
+  Decay scoring — recent facts ranked higher
+  Contradiction detection before storing new facts
+  Priority weighting — name (3x), preference (2x), general (1x)
+
 Layer 4 — Structured facts
-Extracted from every conversation (location, name, preferences)
-Stored via MemoryTransaction (single atomic write per request)
-Indexed into ChromaDB for semantic retrieval
-user_id column on all tables — no data blending between users
+  Extracted from every conversation (location, name, preferences)
+  Stored via MemoryTransaction (single atomic write per request)
+  Indexed into ChromaDB for semantic retrieval
+  user_id column on all tables — no data blending between users
+```
 
 ---
 
 ## Agent Loop
+
+```
 User: "Why is my CPU spiking when I run the model?"
 │
 ▼
@@ -131,16 +143,17 @@ Plan      — [memory_recall, tool_execute: system_monitor, llm_reply]
 │
 ▼
 Act       — memory_recall + tool_execute run concurrently via asyncio.gather
-Ollama calls wrapped in asyncio.to_thread — event loop never blocked
-Observation: CPU 94%, top process: ollama runner (87%)
+            Ollama calls wrapped in asyncio.to_thread — event loop never blocked
+            Observation: CPU 94%, top process: ollama runner (87%)
 │
 ▼
 Reflect   — critic pass: does the draft answer the question?
-confidence >= 0.75 → APPROVED
+            confidence >= 0.75 → APPROVED
 │
 ▼
 Reply     — "Your Ollama runner is using 87% CPU during inference.
-Set num_threads to half your core count..."
+             Set num_threads to half your core count..."
+```
 
 Available tools: `web_search` · `read_file` · `run_python` · `memory_recall` · `system_monitor` · `git` · `calculate`
 
@@ -243,14 +256,19 @@ docker compose up -d
 ```
 
 ### 6. Open
+
+```
 http://localhost:5173   (dev)
 http://localhost:3000   (Docker)
+```
 
 ---
 
 ## API
 
 All endpoints require `X-API-Key` header. Protected endpoints additionally require `Authorization: Bearer <jwt>`.
+
+```
 POST /auth/register       → Create account
 POST /auth/login          → Get JWT access + refresh tokens
 POST /auth/refresh        → Rotate refresh token (single-use)
@@ -271,10 +289,13 @@ POST /model/switch        → Switch active model (requires model_select)
 GET  /knowledge/graph     → Knowledge graph
 GET  /observability       → Request traces (requires view_traces)
 POST /feedback            → Thumbs up/down (feeds quality gate)
+```
 
 ---
 
 ## Project Structure
+
+```
 Astra/
 ├── docker-compose.yml
 ├── prometheus.yml
@@ -308,12 +329,13 @@ Astra/
 │   │   ├── python_sandbox.py        # AST-checked + hardened dunder blocklist
 │   │   ├── file_reader.py           # Path traversal blocked via realpath + bounds check
 │   │   └── git_tool.py              # Subcommand allowlist + metachar rejection
-│   ├── api/routers/                 # FastAPI routers (auth, chat, memory, health…)
+│   ├── api/routers/                 # FastAPI routers (auth, chat, memory, health...)
 │   └── tests/                       # 113 passing tests
 └── frontend/
-└── src/
-├── App.jsx
-└── components/
+    └── src/
+        ├── App.jsx
+        └── components/
+```
 
 ---
 
@@ -350,8 +372,3 @@ Every conversation stays on your machine. Every memory is yours.
 *Built by Arnav Yadav*
 
 </div>
-'''
-
-Path("README.md").write_text(readme)
-print("DONE")
-EOF
