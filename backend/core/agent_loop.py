@@ -293,9 +293,6 @@ async def _act_llm(
 ) -> Tuple[str, float]:
     try:
         import ollama
-        import requests
-        GPU_HOST = os.getenv("REMOTE_GPU_HOST", "")
-
         try:
             alive = _check_gpu_cached()
         except Exception:
@@ -349,10 +346,6 @@ async def _act_reflect(
     """
     try:
         import ollama
-        import requests
-
-        GPU_HOST = os.getenv("REMOTE_GPU_HOST", "")
-
         try:
             alive = _check_gpu_cached()
         except Exception:
@@ -391,16 +384,17 @@ Output:"""
         except Exception as e:
             logger.error("reflect LLM call failed: %s", e)
             return draft_reply, 0.70
+
+        if result == "APPROVED":
             log_event(agent_logger, "reflect_approved")
             return draft_reply, 0.95
-        else:
-            log_event(
-                agent_logger,
-                "reflect_improved",
-                original_len=len(draft_reply),
-                new_len=len(result),
-            )
-            return result, 0.90
+        log_event(
+            agent_logger,
+            "reflect_improved",
+            original_len=len(draft_reply),
+            new_len=len(result),
+        )
+        return result, 0.90
 
     except Exception as e:
         logger.warning(f"Reflect failed: {e}")
