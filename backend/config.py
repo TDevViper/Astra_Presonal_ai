@@ -79,3 +79,34 @@ OLLAMA_NUM_CTX = config.ollama_num_ctx
 FALLBACK_OPENAI_KEY = os.getenv("OPENAI_API_KEY", "")
 FALLBACK_ANTHROPIC_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 ENABLE_CLOUD_FALLBACK = os.getenv("ENABLE_CLOUD_FALLBACK", "false").lower() == "true"
+
+# ── Pydantic Settings (preferred) — validates all env vars at startup ─────────
+try:
+    from pydantic_settings import BaseSettings
+    from pydantic import ConfigDict
+
+    class Settings(BaseSettings):
+        model_config = ConfigDict(env_file=".env", case_sensitive=False, extra="ignore")
+        ollama_host: str = "http://localhost:11434"
+        default_model: str = "phi3:mini"
+        vision_model: str = "llava:7b"
+        research_model: str = "llama3.2:3b"
+        technical_model: str = "mistral"
+        redis_url: str = "redis://localhost:6379"
+        flask_host: str = "0.0.0.0"
+        flask_port: int = 5050
+        flask_env: str = "production"
+        jwt_secret_key: str = ""
+        astra_api_key: str = ""
+        serper_api_key: str = ""
+        picovoice_api_key: str = ""
+        enable_memory: bool = True
+        enable_emotions: bool = True
+        allow_code_execution: bool = False
+        enable_shell_exec: bool = False
+        ollama_num_predict: int = 1024
+        ollama_num_ctx: int = 8192
+
+    settings = Settings()
+except ImportError:
+    settings = None  # pydantic-settings not installed — fall back to config class above

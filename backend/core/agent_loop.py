@@ -323,10 +323,13 @@ async def _act_llm(
         try:
             import ollama
 
-            resp = ollama.Client().chat(
-                model=model,
-                messages=messages,
-                options={"num_predict": 300, "temperature": 0.65},
+            import asyncio as _aio
+            resp = await _aio.to_thread(
+                lambda: ollama.Client().chat(
+                    model=model,
+                    messages=messages,
+                    options={"num_predict": 300, "temperature": 0.65},
+                )
             )
             return resp["message"]["content"].strip(), 0.75
         except Exception as e:
@@ -372,15 +375,15 @@ Output:"""
         try:
             import ollama
 
-            result = (
-                ollama.Client()
-                .chat(
+            import asyncio as _aio
+            _resp = await _aio.to_thread(
+                lambda: ollama.Client().chat(
                     model=model,
                     messages=[{"role": "user", "content": prompt}],
                     options={"num_predict": 200, "temperature": 0.1},
-                )["message"]["content"]
-                .strip()
+                )
             )
+            result = _resp["message"]["content"].strip()
         except Exception as e:
             logger.error("reflect LLM call failed: %s", e)
             return draft_reply, 0.70
