@@ -1,20 +1,19 @@
-<div align="center">
+from pathlib import Path
 
-```
- █████╗ ███████╗████████╗██████╗  █████╗ 
+readme = '''<div align="center">
+█████╗ ███████╗████████╗██████╗  █████╗
 ██╔══██╗██╔════╝╚══██╔══╝██╔══██╗██╔══██╗
 ███████║███████╗   ██║   ██████╔╝███████║
 ██╔══██║╚════██║   ██║   ██╔══██╗██╔══██║
 ██║  ██║███████║   ██║   ██║  ██║██║  ██║
 ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝
-```
 
 **Local Personal AI System · Pipeline Architecture · 100% Private**
 
 [![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square&logo=python)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-async-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react)](https://react.dev)
-[![Tests](https://img.shields.io/badge/Tests-passing-brightgreen?style=flat-square)](#)
+[![CI](https://github.com/TDevViper/Astra_Presonal_ai/actions/workflows/ci.yml/badge.svg)](https://github.com/TDevViper/Astra_Presonal_ai/actions/workflows/ci.yml)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ed?style=flat-square&logo=docker)](https://docker.com)
 [![Ollama](https://img.shields.io/badge/Ollama-Local_LLM-black?style=flat-square)](https://ollama.ai)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
@@ -32,103 +31,116 @@ ASTRA is a personal AI system that runs entirely on your machine. It combines a 
 This is not a chatbot wrapper. It is a production-quality local AI backend with:
 
 - A **modular pipeline registry** where every handler is an independent, testable class
-- A **hybrid memory system** — episodic, semantic (vector), and structured fact storage
+- A **hybrid memory system** — episodic, semantic (vector), and structured fact storage with per-user isolation
 - A **ReAct agent loop** with async parallel tool execution via `asyncio.gather`
 - A **TruthGuard** hallucination filter on every response
 - A **self-improvement loop** with a quality gate — 3 unique sessions must approve a response before it enters the fine-tune dataset
-- **Full async FastAPI** backend — no blocking calls on the request path
-- **Session-scoped caching** — zero cross-user response leakage
-- **Signed approval tokens** for all destructive tool operations
+- **Full async FastAPI** backend — blocking LLM calls wrapped in `asyncio.to_thread`, nothing blocks the event loop
+- **Session-scoped caching** — zero cross-user response leakage, cache keyed to JWT sub not API key
+- **Signed approval tokens** for all destructive tool operations (HMAC-SHA256, 60s TTL)
+- **RBAC permission matrix** — owner > admin > user > guest, enforced on every route
+- **113 passing tests**, ruff lint clean, CI on every push
 
 ---
 
 ## Architecture
-
-```
 User Request
-     │
-     ▼
+│
+▼
 [FastAPI — main.py]
-  Rate limiter (API-key scoped) · CORS · Request ID · OTel tracing
-     │
-     ▼
+JWT auth · Rate limiter (per-user, Redis-backed) · CORS · Request ID · OTel tracing
+│
+▼
 [PipelineRegistry — core/pipeline/]
-  Handlers run in order. First match wins.
-  ┌──────────────────────┐
-  │ ModeSwitchHandler    │  detect focus / creative / precise mode
-  │ CacheHandler         │  session-scoped SHA-256 cache (Redis / local)
-  │ ChainHandler         │  multi-step query decomposition
-  │ QuickToolHandler     │  time, math, calendar — no LLM needed
-  │ IntentShortcutHandler│  known-pattern fast exits
-  │ MemoryHandler        │  episodic + semantic recall
-  │ WebSearchHandler     │  DuckDuckGo with citation extraction
-  │ AgentHandler         │  ReAct loop with parallel tool calls
-  │ LLMHandler           │  Ollama via pluggable LLMBackend interface
-  └──────────────────────┘
-     │
-     ▼
+Handlers run in order. First match wins.
+┌──────────────────────┐
+│ ModeSwitchHandler    │  detect focus / creative / precise mode
+│ CacheHandler         │  session-scoped SHA-256 cache (Redis / local)
+│ ChainHandler         │  multi-step query decomposition
+│ QuickToolHandler     │  time, math, calendar — no LLM needed
+│ IntentShortcutHandler│  known-pattern fast exits
+│ MemoryHandler        │  episodic + semantic recall
+│ WebSearchHandler     │  DuckDuckGo with citation extraction
+│ AgentHandler         │  ReAct loop with parallel tool calls
+│ LLMHandler           │  Ollama via pluggable LLMBackend interface
+└──────────────────────┘
+│
+▼
 [RequestContext]           per-request, immutable, no shared state
 [MemoryTransaction]        batch all writes, commit once at end
 [ObservabilityStore]       async writes, non-blocking
-```
 
 ### Key architectural properties
 
 - **No shared mutable state** — `Brain` holds no conversation history. History is loaded fresh per request from `memory_db` and written back at the end.
 - **Pluggable LLM backend** — `core/llm_backend.py` defines `LLMBackend(ABC)`. `OllamaBackend` and `StubBackend` (for testing) are included. Adding OpenAI or Anthropic means implementing 4 methods.
 - **Pipeline is open for extension, closed for modification** — adding a new capability means adding a `Handler` subclass and registering it. `brain.py` is never edited.
-- **Single entry point** — `main.py` is the only server. Flask and `app.py` have been removed.
+- **Single entry point** — `main.py` is the only server.
+
+---
+
+## Security Model
+
+| Layer | Implementation |
+|---|---|
+| API auth | JWT Bearer tokens + `X-API-Key` header, validated on every request |
+| RBAC | owner > admin > user > guest, permission matrix on every route |
+| Memory isolation | All memory endpoints require `memory_read` / `memory_write` / `memory_wipe` permission |
+| Prompt injection | Multi-pattern filter on every `/chat` message |
+| Rate limiting | Per-user role-based limits (Redis sliding window, in-memory fallback) |
+| Tool approval | HMAC-signed server-side tokens (60s TTL) — client `approved: true` is rejected |
+| Python sandbox | AST-checked, dunder blocklist (`__base__`, `__mro__`, `__dict__`…), CPU/RAM limits |
+| Shell executor | 3-tier: safe → elevated → root; `dangerous` tier (metacharacters) hard-blocked; `shlex.quote` on all args |
+| File reader | `os.path.realpath` + bounds check — path traversal blocked |
+| Refresh tokens | Single-use rotation with Redis blacklist; `POST /logout` invalidates immediately |
+| CORS | Methods and headers explicitly locked down (no `*`) |
+| Secrets | `JWT_SECRET_KEY` and `ASTRA_API_KEY` required at startup — server refuses to start without them |
+| K8s | Secrets manifest (`k8s/secrets.yaml`) with `secretRef` in deployment |
+| Observability | Jaeger + Prometheus + Grafana (password required, no default) |
 
 ---
 
 ## Memory System
-
-```
 Layer 1 — Working memory
-  Last 15 conversation turns, loaded per-request from SQLite
-  Written back atomically at request end via MemoryTransaction
-
+Last 15 conversation turns, loaded per-request from SQLite (user_id scoped)
+Written back atomically at request end via MemoryTransaction
 Layer 2 — Episodic memory
-  Past sessions with intent + emotion tags
-  Queryable by time range and topic
-
+Past sessions with intent + emotion tags
+Queryable by time range and topic
 Layer 3 — Semantic memory
-  ChromaDB vector index (BGE-small-en-v1.5 embeddings)
-  Decay scoring — recent facts ranked higher
-  Contradiction detection before storing new facts
-  Priority weighting — name (3×), preference (2×), general (1×)
-
+ChromaDB vector index (BGE-small-en-v1.5 embeddings)
+Decay scoring — recent facts ranked higher
+Contradiction detection before storing new facts
+Priority weighting — name (3×), preference (2×), general (1×)
 Layer 4 — Structured facts
-  Extracted from every conversation (location, name, preferences)
-  Stored via MemoryTransaction (single atomic write per request)
-  Indexed into ChromaDB for semantic retrieval
-```
+Extracted from every conversation (location, name, preferences)
+Stored via MemoryTransaction (single atomic write per request)
+Indexed into ChromaDB for semantic retrieval
+user_id column on all tables — no data blending between users
 
 ---
 
 ## Agent Loop
-
-```
 User: "Why is my CPU spiking when I run the model?"
-     │
-     ▼
+│
+▼
 Observe   — complexity: 2, requires_tools: true, requires_reflection: false
-     │
-     ▼
+│
+▼
 Plan      — [memory_recall, tool_execute: system_monitor, llm_reply]
-     │
-     ▼
+│
+▼
 Act       — memory_recall + tool_execute run concurrently via asyncio.gather
-            Observation: CPU 94%, top process: ollama runner (87%)
-     │
-     ▼
+Ollama calls wrapped in asyncio.to_thread — event loop never blocked
+Observation: CPU 94%, top process: ollama runner (87%)
+│
+▼
 Reflect   — critic pass: does the draft answer the question?
-            confidence >= 0.75 → APPROVED
-     │
-     ▼
+confidence >= 0.75 → APPROVED
+│
+▼
 Reply     — "Your Ollama runner is using 87% CPU during inference.
-             Set num_threads to half your core count..."
-```
+Set num_threads to half your core count..."
 
 Available tools: `web_search` · `read_file` · `run_python` · `memory_recall` · `system_monitor` · `git` · `calculate`
 
@@ -139,21 +151,21 @@ Available tools: `web_search` · `read_file` · `run_python` · `memory_recall` 
 | Feature | Status | Notes |
 |---|---|---|
 | 💬 Chat | ✅ | Pipeline registry, streaming SSE, multi-model routing |
-| 🧠 Memory | ✅ | 4-layer hybrid — episodic, semantic, vector, structured |
+| 🧠 Memory | ✅ | 4-layer hybrid — episodic, semantic, vector, structured. Per-user isolated. |
+| 🔐 Auth | ✅ | JWT + RBAC (owner/admin/user/guest), rate limiting per role |
 | 🤖 Agent loop | ✅ | ReAct with async parallel tool execution |
 | 👁️ Vision | ✅ | LLaVA:7b, WebRTC camera, screen capture, face recognition |
 | 🎤 Voice | ✅ | Whisper STT, Kokoro TTS (local) |
 | 🌐 Web search | ✅ | DuckDuckGo with citation extraction |
 | 🐍 Code sandbox | ✅ | AST-checked Python, CPU/RAM limits, signed approval tokens |
-| 🔀 Git tools | ✅ | Status, log, diff, branch, commit proposals |
-| 📁 File reader | ✅ | Read + AI-analyze any local file |
+| 🔀 Git tools | ✅ | Status, log, diff, branch, commit proposals (subcommand allowlist) |
+| 📁 File reader | ✅ | Read + AI-analyze any local file (path traversal blocked) |
 | 💻 System monitor | ✅ | CPU, RAM, disk, top processes |
 | 📅 Calendar | ✅ | macOS Calendar + Reminders integration |
 | 🏠 Smart home | ✅ | Philips Hue, TinyTuya device control |
-| 🔒 Security | ✅ | Injection filter, signed tool tokens, API-key rate limiting |
-| 📊 Observability | ✅ | OpenTelemetry, structured logging, async trace store |
+| 📊 Observability | ✅ | OpenTelemetry, Prometheus, Grafana, Jaeger, structured logging |
 | ♻️ Self-improvement | ✅ | Feedback loop with 3-session quality gate |
-| 🐳 Docker | ✅ | 4-container deployment, memory limits |
+| 🐳 Docker | ✅ | 6-container deployment (backend, frontend, ollama, redis, prometheus, grafana, jaeger) |
 | 🔒 Privacy | ✅ | 100% local, no data leaves device |
 
 ---
@@ -164,12 +176,13 @@ Available tools: `web_search` · `read_file` · `run_python` · `memory_recall` 
 |---|---|
 | Frontend | React 18, Vite, WebRTC, Tailwind |
 | Backend | Python 3.11, FastAPI, async/await throughout |
-| LLM runtime | Ollama (phi3:mini, mistral, llava:7b) via pluggable backend |
-| Vector DB | ChromaDB + FAISS + BGE-small-en-v1.5 |
-| Cache | Redis 7 (session-scoped, SHA-256 keyed) |
-| Database | SQLite (conversation history, structured facts) |
-| Observability | OpenTelemetry + structured JSON logging |
-| Deployment | Docker Compose (4 containers, memory limits) |
+| LLM runtime | Ollama (phi3:mini, mistral, llava:7b) via pluggable LLMBackend ABC |
+| Vector DB | ChromaDB + BGE-small-en-v1.5 |
+| Cache | Redis 7 (session-scoped, SHA-256 keyed, user-isolated) |
+| Database | SQLite WAL (conversation history, structured facts, usage tracking) |
+| Observability | OpenTelemetry + Prometheus + Grafana + Jaeger |
+| Deployment | Docker Compose · Kubernetes (with Sealed Secrets) |
+| CI | GitHub Actions — ruff lint + 113 pytest tests on every push |
 
 ---
 
@@ -182,7 +195,6 @@ Available tools: `web_search` · `read_file` · `run_python` · `memory_recall` 
 - [Ollama](https://ollama.ai) installed and running
 - 8GB RAM minimum (16GB recommended for llava)
 - 20GB disk for models
-- Docker Desktop (optional)
 
 ### 1. Clone
 
@@ -204,11 +216,12 @@ pip install -r backend/requirements.txt
 ```bash
 cp backend/.env.example backend/.env
 
-# Generate a secure API key
+# Generate secure secrets (required — server refuses to start without these)
 python3 -c "import secrets; print(secrets.token_hex(32))"
 
 # Add to backend/.env:
-# ASTRA_API_KEY=<your_key>
+# JWT_SECRET_KEY=<generated above>
+# ASTRA_API_KEY=<generated above>
 # SERPER_API_KEY=<optional, for web search>
 ```
 
@@ -230,78 +243,48 @@ docker compose up -d
 ```
 
 ### 6. Open
-
-```
 http://localhost:5173   (dev)
 http://localhost:3000   (Docker)
-```
 
 ---
 
 ## API
 
-All endpoints require `X-API-Key` header when `ASTRA_API_KEY` is set.
-
-```
+All endpoints require `X-API-Key` header. Protected endpoints additionally require `Authorization: Bearer <jwt>`.
+POST /auth/register       → Create account
+POST /auth/login          → Get JWT access + refresh tokens
+POST /auth/refresh        → Rotate refresh token (single-use)
+POST /auth/logout         → Invalidate refresh token immediately
+GET  /auth/me             → Current user info
 POST /chat                → Full pipeline response
 POST /chat/stream         → Streaming SSE response
-POST /talk                → Voice + Vision combined
+GET  /memory              → Load memory (requires memory_read)
+POST /memory              → Update memory (requires memory_write)
+DELETE /memory            → Wipe memory (requires memory_wipe)
+POST /execute             → Tool execution (signed approval token required)
 POST /voice/listen        → Record + transcribe (Whisper)
 POST /voice/say           → TTS (Kokoro)
 POST /vision/analyze_b64  → Analyze base64 image
-POST /vision/screen       → Analyze current screen
-GET  /memory              → Load memory state
-DELETE /memory            → Wipe memory
-POST /model/switch        → Switch active model
-GET  /health              → System health + dependency status
-POST /execute             → Tool execution (signed token required)
+GET  /health              → Liveness check (public)
+GET  /health/detailed     → Full diagnostics (requires system_stats)
+POST /model/switch        → Switch active model (requires model_select)
 GET  /knowledge/graph     → Knowledge graph
-GET  /api/digest          → Daily digest
-GET  /observability       → Request traces
+GET  /observability       → Request traces (requires view_traces)
 POST /feedback            → Thumbs up/down (feeds quality gate)
-```
-
----
-
-## Security Model
-
-| Layer | Implementation |
-|---|---|
-| API auth | `X-API-Key` header, validated on every request |
-| Prompt injection | Multi-pattern + unicode normalization filter on every message |
-| Rate limiting | Per API-key (not IP) via `slowapi` + Redis |
-| Tool approval | HMAC-signed server-side tokens with 60s TTL — client `approved: true` is rejected |
-| Python sandbox | AST-checked, blocked imports, CPU/RAM limits via `resource` |
-| Shell executor | 3-tier safety: safe → elevated → root, with per-tier confirmation |
-| Cache isolation | Session-scoped keys — no cross-user response leakage |
-
----
-
-## Benchmarks
-
-Measured on Mac M4 (16GB), all models local:
-
-| Metric | Value |
-|---|---|
-| Average response (phi3:mini) | ~1.8s |
-| Streaming first token | ~0.4s |
-| Cache hit | ~12ms |
-| Memory retrieval (ChromaDB) | ~35ms |
-| ReAct loop (3 steps, parallel tools) | ~3.8s |
-| Vision analysis (LLaVA) | ~3.1s |
-| System tool execution | ~95ms |
-| Test suite (86 tests) | ~20s |
 
 ---
 
 ## Project Structure
-
-```
 Astra/
 ├── docker-compose.yml
+├── prometheus.yml
+├── k8s/
+│   ├── deployment.yaml
+│   └── secrets.yaml
 ├── backend/
 │   ├── main.py                      # FastAPI entry point, lifespan manager
-│   ├── config.py
+│   ├── config.py                    # Config class + Pydantic BaseSettings
+│   ├── memory_db.py                 # SQLite WAL — conversations + facts (user_id scoped)
 │   ├── core/
 │   │   ├── brain.py                 # Slim orchestrator — delegates to pipeline
 │   │   ├── brain_singleton.py       # Stateless singleton, no shared history
@@ -311,64 +294,44 @@ Astra/
 │   │   │   ├── handlers.py          # All handler implementations
 │   │   │   └── builder.py           # Wires handlers into registry
 │   │   ├── llm_backend.py           # LLMBackend ABC + OllamaBackend + StubBackend
-│   │   ├── agent_loop.py            # Observe → Plan → Act → Reflect loop
-│   │   ├── memory_manager.py        # Memory façade (load/save/recall)
-│   │   ├── response_cache.py        # Session-scoped Redis/local cache
-│   │   ├── truth_guard.py           # Hallucination filter
-│   │   ├── context_builder.py       # System prompt assembly
-│   │   ├── post_processor.py        # Critic → refine → polish
-│   │   ├── feedback.py              # Thumbs up/down + 3-session quality gate
-│   │   ├── self_improve.py          # Deep LLM scoring for low-confidence replies
-│   │   └── observability.py         # Async trace store + OTel
-│   ├── agents/
-│   │   ├── react_agent.py           # ReAct with asyncio.gather parallel tools
-│   │   ├── planner.py
-│   │   ├── critic.py
-│   │   └── reasoner.py
-│   ├── memory/
-│   │   ├── memory_engine.py         # JSON persistence
-│   │   ├── memory_transaction.py    # Atomic batch-write context manager
-│   │   ├── memory_extractor.py      # Fact extraction from user input
-│   │   ├── memory_recall.py         # Structured recall
-│   │   ├── episodic.py
-│   │   ├── semantic_recall.py       # ChromaDB similarity search
-│   │   └── vector_store.py          # ChromaDB + decay + priority scoring
+│   │   ├── agent_loop.py            # Observe → Plan → Act → Reflect (fully async)
+│   │   ├── response_cache.py        # Session-scoped Redis/local cache (1000 entry cap)
+│   │   └── truth_guard.py           # Hallucination filter
+│   ├── auth/
+│   │   ├── jwt_handler.py           # JWT create/verify (HS256)
+│   │   ├── rbac.py                  # Role hierarchy + permission matrix
+│   │   ├── rate_limiter.py          # Per-user sliding window (Redis pool + in-memory fallback)
+│   │   ├── users_db.py              # bcrypt password hashing, SQLite user store
+│   │   └── usage_tracker.py         # Per-request usage logging
 │   ├── tools/
-│   │   ├── tool_router.py
-│   │   ├── shell_executor.py        # 3-tier safety + HMAC token verification
-│   │   ├── python_sandbox.py        # AST-checked execution
-│   │   └── chain_planner.py
-│   ├── api/routers/                 # FastAPI routers
-│   └── tests/
-│       ├── test_brain_pipeline.py
-│       ├── test_tool_executor.py
-│       ├── test_agent_loop.py
-│       └── test_knowledge_graph.py
+│   │   ├── shell_executor.py        # 3-tier safety + dangerous tier block + shlex.quote
+│   │   ├── python_sandbox.py        # AST-checked + hardened dunder blocklist
+│   │   ├── file_reader.py           # Path traversal blocked via realpath + bounds check
+│   │   └── git_tool.py              # Subcommand allowlist + metachar rejection
+│   ├── api/routers/                 # FastAPI routers (auth, chat, memory, health…)
+│   └── tests/                       # 113 passing tests
 └── frontend/
-    └── src/
-        ├── App.jsx
-        └── components/
-            ├── ErrorBoundary.jsx
-            ├── AgentTrace.jsx
-            ├── KnowledgeGraph.jsx
-            └── LiveVision.jsx
-```
+└── src/
+├── App.jsx
+└── components/
 
 ---
 
 ## Engineering Notes
 
-This project went through a structured audit and refactor cycle. The major decisions:
+**`RequestContext` instead of a stateful Brain singleton** — shared mutable conversation history on a singleton causes guaranteed data corruption under concurrent load. `RequestContext` is immutable and per-request.
 
-**`RequestContext` instead of a stateful Brain singleton** — shared mutable conversation history on a singleton causes guaranteed data corruption under concurrent load. Two requests interleave their histories. `RequestContext` is immutable and per-request, loaded from storage at the start and written back at the end.
+**Pipeline registry instead of an if-chain** — `brain.py` originally contained a 200-line routing function. The `PipelineRegistry` makes each handler independently testable and additive.
 
-**Pipeline registry instead of an if-chain** — `brain.py` originally contained a 200-line routing function. Every new capability required editing the same file. The `PipelineRegistry` makes each handler independently testable and additive — new capabilities are new files, not edits to existing ones.
+**Signed approval tokens for shell execution** — client-supplied `approved: true` is trivially forged. A server-issued HMAC token with a 60-second TTL cannot be replayed.
 
-**Signed approval tokens for shell execution** — client-supplied `approved: true` in a request body is trivially forged. A server-issued HMAC token with a 60-second TTL cannot be replayed or fabricated by an attacker who has the API key.
+**asyncio.to_thread for all LLM calls** — synchronous `ollama.Client().chat()` calls are wrapped so the FastAPI event loop is never blocked. The streaming endpoint uses the async Ollama client directly.
 
-**Feedback quality gate** — a single accidental thumbs-up on a bad response would poison the fine-tune dataset. Requiring 3 approvals from different sessions makes dataset poisoning require coordinated effort rather than a single click.
+**user_id on all storage tables** — `conversations`, `facts`, and usage tables all carry a `user_id` column with indexes. No data blending is possible even if multiple users share an instance.
 
-**What this is not** — ASTRA is a single-tenant local application. It is not architected for multi-user SaaS deployment. The memory system, session model, and storage layer assume one user on one machine. Extending to multi-user requires PostgreSQL with per-user namespacing, a task queue for LLM inference, and JWT-based identity — infrastructure work outside the scope of this project.
+**Refresh token single-use rotation** — on every `/auth/refresh`, the old token is blacklisted (Redis TTL matching expiry, in-memory fallback) before a new one is issued. `/auth/logout` blacklists immediately.
+
+**What this is not** — ASTRA is a single-tenant local application. The memory system, session model, and storage layer assume one primary user. Extending to multi-user SaaS requires PostgreSQL with full per-user namespacing and a task queue for LLM inference.
 
 ---
 
@@ -378,7 +341,7 @@ Most AI assistants are wrappers around cloud APIs. Your data leaves your device,
 
 I built ASTRA to answer a different question: what does a personal AI look like if it runs entirely on your own hardware, remembers you across sessions, and shows you exactly how it reaches every answer?
 
-ASTRA is the result. Every conversation stays on your machine. Every memory is yours.
+Every conversation stays on your machine. Every memory is yours.
 
 ---
 
@@ -387,3 +350,8 @@ ASTRA is the result. Every conversation stays on your machine. Every memory is y
 *Built by Arnav Yadav*
 
 </div>
+'''
+
+Path("README.md").write_text(readme)
+print("DONE")
+EOF
