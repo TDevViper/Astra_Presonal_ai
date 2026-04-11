@@ -9,7 +9,7 @@ httpx==0.27.0
 beautifulsoup4==4.14.3
 lancedb>=0.6.0
 pyarrow>=14.0.0
-faiss-cpu==1.13.2
+# faiss-cpu removed: 1.13.2 does not exist; using lancedb for vector store
 networkx==3.6.1
 numpy==2.4.2
 ollama==0.4.7

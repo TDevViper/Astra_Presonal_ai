@@ -22,14 +22,15 @@ else:
 
 SAFE_COMMANDS = {
     "ls", "pwd", "echo", "cat", "head", "tail", "grep", "find",
-    "git", "python3", "pip", "which", "whoami", "date", "uptime",
-    "df", "du", "ps", "top", "curl", "ping", "dig", "nslookup",
+    "which", "whoami", "date", "uptime",
+    "df", "du", "ps", "top", "ping", "dig", "nslookup",
     "uname", "sw_vers", "system_profiler", "ollama", "redis-cli",
 }
 
 # Tier 2 — needs one confirmation
 ELEVATED_COMMANDS = {
-    "pip install", "pip uninstall", "brew install", "brew uninstall",
+    "pip install", "pip uninstall", "pip",
+    "python3", "git", "curl", "brew install", "brew uninstall",
     "npm install", "npm uninstall", "rm ", "mv ", "cp ",
     "mkdir", "chmod", "chown", "kill", "pkill",
     "docker", "docker-compose", "systemctl", "launchctl",

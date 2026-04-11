@@ -45,9 +45,9 @@ class UsageMiddleware(BaseHTTPMiddleware):
 
         # Only log authenticated requests
         try:
-            user = getattr(
-                request.state, "current_user", None
-            ) or _get_user_from_request(request)
+            user = getattr(request.state, "current_user", None)
+            if user is None:
+                user = _get_user_from_request(request)
             if user:
                 log_event(
                     user_id=user.get("id", "unknown"),

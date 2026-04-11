@@ -23,7 +23,7 @@ _llm = None
 def _get_llm():
     global _llm
     if _llm is None:
-        _llm = _LLMEngine()
+        _llm = None  # lazy-init via _get_llm()
     return _llm
 
 MAX_ITERATIONS = 5
@@ -247,7 +247,7 @@ async def _act_memory(user_input: str, context: Dict) -> Tuple[str, float]:
 async def _act_tool(user_input: str, context: Dict) -> Tuple[str, float]:
     try:
         from tools.tool_router import detect_tool
-        from core.orchestrator import _run_tool
+        # from core.orchestrator import _run_tool  # removed: module does not exist
 
         tool = detect_tool(user_input)
         if not tool:
@@ -268,11 +268,13 @@ async def _act_llm(
     try:
         import ollama
         import requests
+_gpu_available_cache = None
+_gpu_cache_ts = 0.0
 
         GPU_HOST = os.getenv("REMOTE_GPU_HOST", "")
 
         try:
-            alive = requests.get(GPU_HOST, timeout=1).status_code == 200
+            alive = _check_gpu_cached().status_code == 200
         except Exception:
             alive = False
 
@@ -329,7 +331,7 @@ async def _act_reflect(
         GPU_HOST = os.getenv("REMOTE_GPU_HOST", "")
 
         try:
-            alive = requests.get(GPU_HOST, timeout=1).status_code == 200
+            alive = _check_gpu_cached().status_code == 200
         except Exception:
             alive = False
 

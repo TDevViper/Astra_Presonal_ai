@@ -34,6 +34,10 @@ def list_files(directory: str = ".") -> dict:
 
 def read_file(path: str) -> dict:
     full_path = path if os.path.isabs(path) else os.path.join(BASE, path)
+    full_path = os.path.realpath(full_path)
+    _base_real = os.path.realpath(BASE)
+    if not full_path.startswith(_base_real + os.sep) and full_path != _base_real:
+        return {"success": False, "error": "Access denied: path outside project root"}
     if not os.path.exists(full_path):
         return {"success": False, "error": f"File not found: {full_path}"}
     try:

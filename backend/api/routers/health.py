@@ -1,3 +1,5 @@
+from auth.rbac import require_permission
+from fastapi import Depends
 import logging
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
@@ -8,6 +10,11 @@ router = APIRouter()
 
 @router.get("/health")
 async def health():
+    """Public liveness check only."""
+    return {"status": "ok", "version": "5.1"}
+
+@router.get("/health/detailed")
+async def health_detailed(current_user=Depends(require_permission("system_stats"))):
     from api.health import (
         _check_ollama,
         _check_memory,

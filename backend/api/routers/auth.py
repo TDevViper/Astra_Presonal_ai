@@ -123,6 +123,8 @@ def login(request: Request, form: OAuth2PasswordRequestForm = Depends()):
 
 @router.post("/refresh", response_model=TokenResponse)
 def refresh(body: RefreshRequest):
+    if _is_blacklisted(body.refresh_token):
+        raise HTTPException(status_code=401, detail="Token has been revoked")
     user_id = verify_refresh_token(body.refresh_token)
     if not user_id:
         raise HTTPException(

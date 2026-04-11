@@ -22,7 +22,7 @@ def _save(memory):
 
 
 @router.get("/memory")
-async def get_memory():
+async def get_memory(current_user=Depends(require_permission("memory_read"))):
     try:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, _load)
@@ -36,7 +36,7 @@ class MemoryUpdate(BaseModel):
 
 
 @router.post("/memory")
-async def update_memory(body: MemoryUpdate):
+async def update_memory(body: MemoryUpdate, current_user=Depends(require_permission("memory_write"))):
     try:
         loop = asyncio.get_event_loop()
         memory = await loop.run_in_executor(None, _load)
@@ -51,7 +51,7 @@ async def update_memory(body: MemoryUpdate):
 
 
 @router.delete("/memory")
-async def clear_memory():
+async def clear_memory(current_user=Depends(require_permission("memory_wipe"))):
     try:
         loop = asyncio.get_event_loop()
         cur = await loop.run_in_executor(None, _load)
