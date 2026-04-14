@@ -42,7 +42,7 @@ services:
       - ENABLE_SHELL_EXEC=${ENABLE_SHELL_EXEC:-false}
       - OLLAMA_HOST=http://ollama:11434
       - REDIS_URL=redis://redis:6379
-      - FLASK_ENV=production
+      - ASTRA_ENV=production
     volumes:
       - ./backend/memory:/app/memory
       - ./backend/astra_memory.db:/app/astra_memory.db

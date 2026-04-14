@@ -11,9 +11,9 @@ def _int(key: str, default: int) -> int:
 
 class config:
     # Server
-    host = os.getenv("FLASK_HOST", "0.0.0.0")
-    port = _int("FLASK_PORT", 5050)
-    debug = os.getenv("FLASK_ENV", "production") != "production"
+    host = os.getenv("ASTRA_HOST", "0.0.0.0")
+    port = _int("ASTRA_PORT", 5050)
+    debug = os.getenv("ASTRA_ENV", "production") != "production"
 
     # Ollama
     ollama_host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
@@ -48,8 +48,8 @@ class config:
     VISION_MODEL = vision_model
     RESEARCH_MODEL = research_model
     TECHNICAL_MODEL = technical_model
-    FLASK_HOST = host
-    FLASK_PORT = port
+    ASTRA_HOST = host
+    ASTRA_PORT = port
     DEBUG = debug
     REDIS_URL = redis_url
     MEMORY_DIR = memory_dir
@@ -65,8 +65,8 @@ DEFAULT_MODEL = config.default_model
 VISION_MODEL = config.vision_model
 RESEARCH_MODEL = config.research_model
 TECHNICAL_MODEL = config.technical_model
-FLASK_HOST = config.host
-FLASK_PORT = config.port
+ASTRA_HOST = config.host
+ASTRA_PORT = config.port
 DEBUG = config.debug
 MEMORY_DIR = config.memory_dir
 DB_PATH = config.db_path

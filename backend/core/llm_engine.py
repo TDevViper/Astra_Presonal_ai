@@ -40,7 +40,7 @@ OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
 
 def _client():
-    return ollama.Client(host=OLLAMA_HOST)
+    return ollama.AsyncClient(host=OLLAMA_HOST)
 
 
 # Removed _HARD_STOP — it fights against model fine-tuning (E-1 audit finding).
