@@ -192,7 +192,7 @@ export default function App() {
       } catch { /* ignore */ }
     };
     poll();
-    const t = setInterval(poll, 20000);
+    const t = setInterval(() => { if (!document.hidden) poll(); }, 60000);
     return () => clearInterval(t);
   }, []);
 
