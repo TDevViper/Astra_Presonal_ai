@@ -113,7 +113,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 app.add_middleware(RequestIDMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
+    allow_origins=os.getenv("ASTRA_ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",") if os.getenv("ASTRA_ALLOWED_ORIGINS") else [
         "http://localhost:3000",
         "http://localhost:3001",
         "http://localhost:5173",
