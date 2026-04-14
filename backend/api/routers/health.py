@@ -1,4 +1,4 @@
-from auth.rbac import require_permission, require_permission
+from auth.rbac import require_permission
 from fastapi import Depends
 import logging
 from fastapi import APIRouter, HTTPException

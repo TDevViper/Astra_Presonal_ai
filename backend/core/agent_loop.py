@@ -48,7 +48,8 @@ def _get_llm():
     global _llm
     if _llm is None:
         try:
-            from core.brain_singleton import get_brain
+            import asyncio as _aio
+        from core.brain_singleton import get_brain
             _llm = get_brain()._llm
         except Exception as e:
             logger.warning("_get_llm: could not get Brain LLM: %s", e)
@@ -256,9 +257,10 @@ async def _act_memory(user_input: str, context: Dict) -> Tuple[str, float]:
         from memory.memory_engine import load_memory
         from memory.semantic_recall import build_semantic_context
 
-        mem = load_memory()
-        result = memory_recall(user_input, mem, context.get("user_name", "User"))
-        sem, boost = build_semantic_context(
+        import asyncio as _aio
+        mem = await _aio.to_thread(load_memory)
+        result = await _aio.to_thread(memory_recall, user_input, mem, context.get("user_name", "User"))
+        sem, boost = await _aio.to_thread(build_semantic_context,
             user_input, user_name=context.get("user_name", "User")
         )
         combined = ""
@@ -277,13 +279,14 @@ async def _act_tool(user_input: str, context: Dict) -> Tuple[str, float]:
         from tools.tool_router import detect_tool
         # from core.orchestrator import _run_tool  # removed: module does not exist
 
+        import asyncio as _aio
         from core.brain_singleton import get_brain
         tool = detect_tool(user_input)
         if not tool:
             return "", 0.0
 
         brain = get_brain()
-        result = brain._tools.execute(tool, user_input, {}, "User")
+        result = await _aio.to_thread(brain._tools.execute, tool, user_input, {}, "User")
         if result:
             return result.get("reply", ""), result.get("confidence", 0.5)
         return "", 0.0
@@ -306,7 +309,7 @@ async def _act_llm(
         llm = _get_llm()
         if llm is None:
             return "LLM unavailable", 0.0
-        model = llm.select_model("reasoning") if alive else llm.select_model("fast")
+        model = brain.model_manager.select_model("reasoning") if alive else brain.model_manager.select_model("fast")
 
         system = (
             "You are ASTRA, a smart personal AI assistant. "
@@ -365,7 +368,7 @@ async def _act_reflect(
         llm = _get_llm()
         if llm is None:
             return draft_reply, 0.70
-        model = llm.select_model("reasoning") if alive else llm.select_model("fast")
+        model = brain.model_manager.select_model("reasoning") if alive else brain.model_manager.select_model("fast")
 
         prompt = f"""You are reviewing an AI assistant's response.
 

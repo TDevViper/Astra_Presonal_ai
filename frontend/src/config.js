@@ -36,6 +36,7 @@ API.styleRefine = `${BASE_URL}/api/style/refine`;
 API.healthScore = `${BASE_URL}/health/score`;
 API.traces      = `${BASE_URL}/api/traces`;
 API.events      = `${BASE_URL}/api/events`;
+API.login       = `${BASE_URL}/auth/login`;
 
 // API_KEY removed — use JWT Bearer tokens from /auth/login
-export const API_KEY = "";
+export const API_KEY = import.meta.env.VITE_API_KEY || "";
