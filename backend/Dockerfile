@@ -17,4 +17,4 @@ COPY . .
 
 EXPOSE 5050
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5050", "--workers", "1", "--timeout-keep-alive", "120"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5050", "--workers", "4", "--timeout-keep-alive", "120"]
