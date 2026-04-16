@@ -211,7 +211,7 @@ export default function App() {
   const switchMode = useCallback(async (modeId) => {
     try {
       const r = await fetch(API.modeSet, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeader() },
         body: JSON.stringify({ mode: modeId }),
       });
       const d = await r.json();
