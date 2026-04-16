@@ -91,7 +91,7 @@ def quit_app(app_name: str) -> str:
     """Quit any app."""
     resolved = _resolve_app(app_name)
     try:
-        script = f'tell application "{resolved}" to quit'
+        script = f'tell application "{resolved.replace(chr(34), chr(39))}" to quit'
         subprocess.run(["osascript", "-e", script], check=True)
         return f"Closed {resolved}."
     except Exception:
@@ -102,7 +102,7 @@ def switch_to_app(app_name: str) -> str:
     """Bring app to foreground."""
     resolved = _resolve_app(app_name)
     try:
-        script = f'tell application "{resolved}" to activate'
+        script = f'tell application "{resolved.replace(chr(34), chr(39))}" to activate'
         subprocess.run(["osascript", "-e", script], check=True)
         return f"Switched to {resolved}."
     except Exception:
