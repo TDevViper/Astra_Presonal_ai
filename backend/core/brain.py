@@ -386,7 +386,7 @@ class Brain:
                 query_intent,
                 history or [],
             )
-            self._add_to_history("user", user_input)
+            self._add_to_history("user", user_input, history)
             full_reply = ""
             for item in self._llm.stream(
                 user_input,
@@ -402,7 +402,7 @@ class Brain:
                     yield item
                 elif "__full_reply__" in item:
                     full_reply = item["__full_reply__"]
-            self._add_to_history("assistant", full_reply)
+            self._add_to_history("assistant", full_reply, history)
             final_conf = result.get("confidence", 0.6)
             yield {
                 "meta": {
