@@ -309,7 +309,7 @@ async def _act_llm(
         llm = _get_llm()
         if llm is None:
             return "LLM unavailable", 0.0
-        model = brain.model_manager.select_model("reasoning") if alive else brain.model_manager.select_model("fast")
+        model = get_brain().model_manager.select_model("reasoning") if alive else get_brain().model_manager.select_model("fast")
 
         system = (
             "You are ASTRA, a smart personal AI assistant. "
@@ -366,7 +366,7 @@ async def _act_reflect(
         llm = _get_llm()
         if llm is None:
             return draft_reply, 0.70
-        model = brain.model_manager.select_model("reasoning") if alive else brain.model_manager.select_model("fast")
+        model = get_brain().model_manager.select_model("reasoning") if alive else get_brain().model_manager.select_model("fast")
 
         prompt = f"""You are reviewing an AI assistant's response.
 
