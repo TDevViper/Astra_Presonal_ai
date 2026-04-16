@@ -286,7 +286,7 @@ async def _act_tool(user_input: str, context: Dict) -> Tuple[str, float]:
             return "", 0.0
 
         brain = get_brain()
-        result = await _aio.to_thread(brain._tools.execute, tool, user_input, {}, "User")
+        result = await _aio.to_thread(get_brain()._tools.execute, tool, user_input, {}, "User")
         if result:
             return result.get("reply", ""), result.get("confidence", 0.5)
         return "", 0.0
