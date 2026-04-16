@@ -98,7 +98,7 @@ class ResponseCache:
         count = 0
         try:
             if self._redis:
-                keys = self._redis.keys("astra:reply:*")
+                keys = self._list(redis.scan_iter("astra:reply:*"))
                 if keys:
                     count = self._redis.delete(*keys)
             else:

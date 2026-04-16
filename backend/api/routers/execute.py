@@ -22,7 +22,7 @@ router = APIRouter()
 
 DANGEROUS = {"python_sandbox", "git_tool", "file_reader"}
 _TOKEN_TTL = 60  # seconds
-_SECRET = os.getenv("ASTRA_API_KEY", "dev-secret").encode()
+_SECRET = os.environ["ASTRA_API_KEY"].encode()
 
 
 def _issue_token(tool_name: str, params_hash: str) -> str:

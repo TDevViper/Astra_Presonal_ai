@@ -42,7 +42,7 @@ async def chat(request: Request, body: ChatRequest, _=Depends(require_api_key)):
                 pass
         session_id = (_jwt_sub or request.headers.get("X-API-Key", "default"))[:32]
         logger.info("💬 User: %s", user_input[:50])
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(
             None,
             lambda: brain.process(user_input, history=history, session_id=session_id),
