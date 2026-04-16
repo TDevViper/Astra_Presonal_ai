@@ -3,7 +3,7 @@ import csv
 import os
 import re
 
-BASE = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))  # points to backend/
+BASE = os.path.dirname(os.path.dirname(__file__))  # points to backend/
 
 
 def extract_filepath(text: str) -> str | None:

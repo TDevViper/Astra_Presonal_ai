@@ -7,3 +7,7 @@ memory/embedding_cache/
 memory/vector_store/
 *.zip
 *.ppn
+**/__pycache__
+**/*.pyc
+**/__pycache__
+**/*.pyc

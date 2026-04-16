@@ -25,3 +25,5 @@ backend/.env.bak
 .vscode/
 backend/.env
 .env
+backend/.env
+.env
