@@ -46,8 +46,13 @@ BLOCKED = {"rm -rf /", "rm -rf ~", ":(){ :|:& };:", "mkfs", "dd if="}
 _SHELL_METACHAR = frozenset([';', '&&', '||', '`', '$(', '|'])
 
 def _has_shell_injection(cmd: str) -> bool:
+    import shlex as _shlex
+    try:
+        normalized = _shlex.join(_shlex.split(cmd))
+    except ValueError:
+        return True
     for ch in _SHELL_METACHAR:
-        if ch in cmd:
+        if ch in normalized:
             return True
     return False
 
