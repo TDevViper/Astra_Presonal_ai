@@ -49,7 +49,7 @@ def _get_llm():
     if _llm is None:
         try:
             import asyncio as _aio
-        from core.brain_singleton import get_brain
+            from core.brain_singleton import get_brain
             _llm = get_brain()._llm
         except Exception as e:
             logger.warning("_get_llm: could not get Brain LLM: %s", e)
