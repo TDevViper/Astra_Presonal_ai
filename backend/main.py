@@ -64,7 +64,7 @@ async def lifespan(app: FastAPI):
         from core.brain_singleton import get_brain
         import asyncio as _asyncio
 
-        loop = _asyncio.get_event_loop()
+        loop = _asyncio.get_running_loop()
         await loop.run_in_executor(None, get_brain)
         logging.info("🧠 Brain pre-initialized")
     except Exception as e:

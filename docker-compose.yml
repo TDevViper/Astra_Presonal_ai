@@ -38,7 +38,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY must be set}
       - ENABLE_SHELL_EXEC=${ENABLE_SHELL_EXEC:-false}
       - OLLAMA_HOST=http://ollama:11434
       - REDIS_URL=redis://redis:6379

@@ -346,8 +346,8 @@ class Brain:
 
         chain_reply = self._exit.check_chain(user_input, self)
         if chain_reply:
-            self._add_to_history("user", user_input)
-            self._add_to_history("assistant", chain_reply)
+            self._add_to_history("user", user_input, self._history)
+            self._add_to_history("assistant", chain_reply, self._history)
             self._mem.save(memory)
             for word in chain_reply.split(" "):
                 yield {"token": word + " "}
@@ -418,8 +418,8 @@ class Brain:
             return
 
         # Non-LLM result — word-tokenise for streaming consistency
-        self._add_to_history("user", user_input)
-        self._add_to_history("assistant", reply)
+        self._add_to_history("user", user_input, self._history)
+        self._add_to_history("assistant", reply, self._history)
         for word in reply.split(" "):
             yield {"token": word + " "}
 

@@ -22,7 +22,6 @@ API.modeSet   = `${BASE_URL}/mode/set`;
 API.stats     = `${BASE_URL}/system/stats`;
 API.capabilities = `${BASE_URL}/capabilities`;
 
-export default API;
 export { WS_URL };
 API.ambient = `${BASE_URL}/system/stats`;
 API.debug       = `${BASE_URL}/api/debug/screen`;
@@ -40,3 +39,5 @@ API.login       = `${BASE_URL}/auth/login`;
 
 // API_KEY removed — use JWT Bearer tokens from /auth/login
 export const API_KEY = import.meta.env.VITE_API_KEY || "";
+
+export default API;

@@ -189,7 +189,7 @@ export default function App() {
         if (mdl.current)      setCurrentModel(mdl.current);
         if (modeData.modes)   setModes(modeData.modes);
         if (modeData.current) setCurrentMode(modeData.current);
-      } catch { /* ignore */ }
+      } catch (e) { setError(String(e)); }
     };
     poll();
     const t = setInterval(() => { if (!document.hidden) poll(); }, 60000);
@@ -204,7 +204,7 @@ export default function App() {
         body: JSON.stringify({ model }),
       });
       setCurrentModel(model);
-    } catch { /* ignore */ }
+    } catch (e) { setError(String(e)); }
   }, []);
 
   // Switch mode
@@ -219,7 +219,7 @@ export default function App() {
         setCurrentMode(d.mode);
         setTab("chat"); // reset to chat tab on mode switch
       }
-    } catch { /* ignore */ }
+    } catch (e) { setError(String(e)); }
   }, []);
 
   // Stream via HTTP SSE
@@ -251,7 +251,7 @@ export default function App() {
             if (data.type === "done") {
               if (!buffer && data.full) { buffer = data.full; setStreamBuffer(buffer); }
             }
-          } catch { /* ignore */ }
+          } catch (e) { setError(String(e)); }
         }
       }
     } catch (e) {
